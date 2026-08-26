@@ -80,3 +80,17 @@ La URL conserva el producto seleccionado para que navegación, recarga y enlaces
 | Documentos | `GET /inventories/products/:productId/queries/documents` |
 
 Los botones de Acciones, Compras/Prod y Consultas abren un diálogo reutilizable. La respuesta se representa en una tabla dinámica porque los campos cambian según la consulta; el diálogo conserva el nombre visible real del botón.
+
+### Modal Auxiliar
+
+El botón `Auxiliar` ya usa una vista específica comparada contra OMNIS, no la
+tabla dinámica genérica. Consume `GET
+/inventories/products/:productId/queries/ledger?page=1&pageSize=100` y presenta,
+en este orden, `Fecha`, `Doc.`, `T.M.`, `Costo`, `Entradas`, `Salidas`, `Stock`,
+`Alm`, `Lote`, `Usr` y `Reval`. La cantidad positiva o negativa se separa en
+entradas y salidas; el stock se acumula desde el stock anterior del producto.
+
+La ventana conserva `Stock anterior`, el renglón seleccionado y los botones
+visibles `Filtrar almacen` y `Filtrar XXX`. Estos dos filtros y los controles
+Minimizar/Maximizar son solamente visuales en esta etapa; Cerrar sí termina el
+modal.

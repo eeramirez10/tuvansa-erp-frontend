@@ -10,6 +10,7 @@ import { paths } from "@/app/router/paths"
 import { actionPanels, purchasesProductionPanels } from "@/features/inventories/products/constants"
 import { ProductCatalogDetails } from "@/features/inventories/products/components/product-catalog-details"
 import { ProductFormDialog } from "@/features/inventories/products/components/product-form-dialog"
+import { ProductLedgerDialog } from "@/features/inventories/products/components/product-ledger-dialog"
 import { ProductPanelDialog } from "@/features/inventories/products/components/product-panel-dialog"
 import { ProductQueriesPanel } from "@/features/inventories/products/components/product-queries-panel"
 import { ProductSearchDialog } from "@/features/inventories/products/components/product-search-dialog"
@@ -181,7 +182,17 @@ export function ProductCatalogPage() {
         />
       )}
 
-      {selectedPanel && (
+      {selectedPanel?.key === "ledger" && (
+        <ProductLedgerDialog
+          key={`${product.id}-ledger`}
+          onOpenChange={(open) => {
+            if (!open) setSelectedPanel(null)
+          }}
+          product={product}
+        />
+      )}
+
+      {selectedPanel && selectedPanel.key !== "ledger" && (
         <ProductPanelDialog
           key={`${product.id}-${selectedPanel.key}`}
           onOpenChange={(open) => {

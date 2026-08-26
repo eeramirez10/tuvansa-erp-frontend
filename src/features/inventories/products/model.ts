@@ -152,6 +152,19 @@ export type ProductPanelResponse = {
   }
 }
 
+export type ProductLedgerItem = {
+  id: number
+  date: string
+  document: string
+  movementType: string
+  cost: number
+  quantity: number
+  warehouse: string
+  lotId: number
+  userId: number
+  revaluation: number
+}
+
 export type ProductPanelDefinition = {
   key: ProductPanelKey
   label: string
