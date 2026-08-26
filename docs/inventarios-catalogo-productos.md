@@ -199,3 +199,22 @@ flujo de mantenimiento correspondiente.
 La conexión legacy utilizada en la validación actual es de sólo lectura, así que
 el cambio quedará operativo cuando se configure el repositorio escribible; la
 interfaz y el contrato ya no requieren cambios para ello.
+
+## Modales de Compras/Prod
+
+Los seis botones de **Compras/Prod** usan el marco ERP compartido y presentan la
+misma distribución compacta observada en OMNIS:
+
+| Botón visible | Presentación reproducida |
+| --- | --- |
+| Alternos | Producto actual, alternos con código/descripción/stock/precio y navegación |
+| Componentes | Lote, unidad, filtros, componentes, cantidad/importe, totales y comandos inferiores |
+| Especific. Cal | Selector lateral y 15 pruebas con mínimo, máximo, unidad y observaciones |
+| Implosión | Producto actual, productos padre, cantidad y porcentaje de costo |
+| Lotes | Lotes disponibles a la izquierda y movimientos de inventario a la derecha |
+| UEPS / PEPS | Capas con cantidad inicial, costo, advalorem, fecha, documento, lote, caducidad y llave |
+
+El frontend pide hasta 500 registros por modal. En **Lotes**, la tabla derecha
+reutiliza el endpoint de Auxiliar y separa cantidades positivas y negativas en
+Entradas y Salidas. Los comandos internos son visuales por ahora; cerrar la
+ventana sí funciona.

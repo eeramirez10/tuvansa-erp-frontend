@@ -14,7 +14,7 @@ import { ProductCustomerOrdersDialog } from "@/features/inventories/products/com
 import { ProductCustomerOrdersStarDialog } from "@/features/inventories/products/components/product-customer-orders-star-dialog"
 import { ProductFormDialog } from "@/features/inventories/products/components/product-form-dialog"
 import { ProductLedgerDialog } from "@/features/inventories/products/components/product-ledger-dialog"
-import { ProductPanelDialog } from "@/features/inventories/products/components/product-panel-dialog"
+import { ProductPurchasesProductionDialog } from "@/features/inventories/products/components/product-purchases-production-dialog"
 import { ProductQueryDialog } from "@/features/inventories/products/components/product-query-dialog"
 import { ProductQueriesPanel } from "@/features/inventories/products/components/product-queries-panel"
 import { ProductSearchDialog } from "@/features/inventories/products/components/product-search-dialog"
@@ -243,13 +243,13 @@ export function ProductCatalogPage() {
       )}
 
       {selectedPanel?.section === "purchases-production" && (
-        <ProductPanelDialog
+        <ProductPurchasesProductionDialog
           key={`${product.id}-${selectedPanel.key}`}
           onOpenChange={(open) => {
             if (!open) setSelectedPanel(null)
           }}
           panel={selectedPanel}
-          productId={product.id}
+          product={product}
         />
       )}
 
