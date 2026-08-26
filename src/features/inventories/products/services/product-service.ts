@@ -11,6 +11,12 @@ type ItemResponse<T> = {
   data: T
 }
 
+export type ProductBlockStatus = {
+  product: Pick<Product, "id" | "code" | "description">
+  blocked: boolean
+  deactivatedAt: string | null
+}
+
 export type ProductSearchCriteria = {
   q?: string
   status?: "active" | "inactive" | "all"
@@ -118,6 +124,14 @@ export async function updateProduct(
 
 export async function deleteProduct(productId: number) {
   await apiClient.delete(`/inventories/products/${productId}`)
+}
+
+export async function setProductBlocked(productId: number, blocked: boolean) {
+  const response = await apiClient.patch<ItemResponse<ProductBlockStatus>>(
+    `/inventories/products/${productId}/actions/block-status`,
+    { blocked },
+  )
+  return response.data.data
 }
 
 export async function getProductPanel(

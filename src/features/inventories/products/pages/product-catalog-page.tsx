@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router"
 
 import { paths } from "@/app/router/paths"
 import { actionPanels, purchasesProductionPanels } from "@/features/inventories/products/constants"
+import { ProductActionDialog } from "@/features/inventories/products/components/product-action-dialog"
 import { ProductCatalogDetails } from "@/features/inventories/products/components/product-catalog-details"
 import { ProductCustomerOrdersDialog } from "@/features/inventories/products/components/product-customer-orders-dialog"
 import { ProductCustomerOrdersStarDialog } from "@/features/inventories/products/components/product-customer-orders-star-dialog"
@@ -230,8 +231,18 @@ export function ProductCatalogPage() {
         />
       )}
 
-      {selectedPanel &&
-        selectedPanel.section !== "queries" && (
+      {selectedPanel?.section === "actions" && (
+        <ProductActionDialog
+          key={`${product.id}-${selectedPanel.key}`}
+          onOpenChange={(open) => {
+            if (!open) setSelectedPanel(null)
+          }}
+          panel={selectedPanel}
+          product={product}
+        />
+      )}
+
+      {selectedPanel?.section === "purchases-production" && (
         <ProductPanelDialog
           key={`${product.id}-${selectedPanel.key}`}
           onOpenChange={(open) => {

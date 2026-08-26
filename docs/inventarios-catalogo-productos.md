@@ -167,3 +167,35 @@ renglón coincida con la agrupación visible de OMNIS. El frontend solicita hast
 500 renglones por modal. `Documentos` ahora consulta movimientos del producto
 seleccionado; `Piezas` permanece intencionalmente no disponible porque así lo
 declara esta versión del ERP.
+
+## Modales de Acciones
+
+Los 14 botones de **Acciones** usan el mismo marco compacto compartido de las
+consultas, pero cada uno reproduce la distribución observada en OMNIS. Todos
+consumen el endpoint GET indicado al inicio de este documento y conservan el
+scroll X, Y o XY según la ventana original.
+
+| Botón visible | Presentación reproducida |
+| --- | --- |
+| Almacenes | Tabla horizontal por almacén, fila TOTAL y controles inferiores |
+| Alta CT | Aviso literal de Color y Talla no incluido |
+| Bloquear | Confirmación No/Yes; Yes alterna el estado mediante PATCH |
+| Clasificar | Selector doble con familias seleccionadas |
+| Descr. ext. | Cuatro bloques de texto y Cambiar |
+| % Descuentos clis/prv | Filtros, tabla de vigencias/cantidades y scroll XY |
+| Otros | Formulario vertical por secciones de empaque, opciones, precios, importación y producción |
+| Especificaciones | Lista vertical y Cambiar |
+| Foto | Visor y modos Normal/Boceto/Boceto 2/Color/Completo |
+| Inv. CT | Matriz por almacén y selector Stock/Pedido/Disponible/etc. |
+| Precios | Costo, listas 1..13, moneda y plan POS |
+| SKUs | Tabla L/SKU con Cancelar y Aceptar |
+| Prepacks | Matriz horizontal con OK, Cancelar y Reparte |
+
+Excepto el cierre, la selección de Bloquear y su PATCH, los botones internos
+son visuales en esta etapa. Sus escrituras se conectarán cuando se capture cada
+flujo de mantenimiento correspondiente.
+
+`Yes` envía el PATCH de Bloquear y presenta cualquier error devuelto por la API.
+La conexión legacy utilizada en la validación actual es de sólo lectura, así que
+el cambio quedará operativo cuando se configure el repositorio escribible; la
+interfaz y el contrato ya no requieren cambios para ello.
