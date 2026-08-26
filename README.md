@@ -46,6 +46,12 @@ src/
 │  ├─ App.tsx
 │  └─ store.ts                  # Estado global estrictamente de UI
 ├─ features/
+│  ├─ inventories/products/     # Catálogo y operaciones de Inventarios PT
+│  │  ├─ components/
+│  │  ├─ pages/
+│  │  ├─ services/
+│  │  ├─ logic.ts
+│  │  └─ model.ts
 │  └─ workspace/                # Pantalla inicial y navegación del ERP
 │     ├─ components/
 │     ├─ pages/
@@ -67,3 +73,7 @@ Los componentes de `src/shared/ui` son primitives de shadcn. La composición com
 ## Flujo por módulo
 
 Cada módulo se desarrolla en una rama independiente y con commits enfocados. La rama se integra a `main` únicamente después de revisión e indicación expresa. En cada pantalla se mantiene actualizado el [mapa de vistas y endpoints](docs/endpoint-map.md).
+
+## Módulos disponibles
+
+- **Inventarios P.T.**: `/inventarios/productos`. Incluye navegación anterior/siguiente, búsqueda, alta, baja, edición, detalle del catálogo y los paneles de Acciones, Compras/Prod y Consultas. Véase la [trazabilidad completa](docs/inventarios-catalogo-productos.md).

@@ -8,9 +8,11 @@ Este documento es el contrato de trazabilidad entre la interfaz heredada de OMNI
 | --- | --- | --- | --- | --- | --- | --- |
 | General | Selector de módulos | Inicio | Abrir aplicación | Sin petición | Sin caché | Implementado |
 | Cuentas por cobrar | Catálogo de clientes | Carga del catálogo | Abrir vista | `GET /accounts-receivable/clients` | Por definir en el módulo | Próxima rama |
-| Inventarios PT | Catálogo de productos | Carga del catálogo | Abrir vista | `GET /inventories/products` | Por definir en el módulo | Próxima rama |
+| Inventarios PT | Catálogo de productos | Carga del catálogo | Abrir vista | `GET /inventories/products` | `['inventories', 'products', ...]` | Implementado |
 
 Los endpoints son relativos a `VITE_API_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
+
+El desglose de la vista, la barra de navegación y cada botón de **Acciones**, **Compras/Prod** y **Consultas** está en [Inventarios PT: catálogo de productos](inventarios-catalogo-productos.md).
 
 ## Plantilla obligatoria para nuevas pantallas
 
