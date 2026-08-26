@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router"
 
 import { paths } from "@/app/router/paths"
+import { ErpModuleRouteCard } from "@/features/workspace/components/erp-module-route-card"
 import { Button } from "@/shared/ui/button"
 import { cn } from "@/shared/utils/cn"
 
@@ -147,48 +148,52 @@ export function ErpModuleNavigation() {
 
   return (
     <nav aria-label="Módulos del ERP" className="overflow-x-auto border-b bg-card">
-      <div className="mx-auto flex min-w-[40rem] items-start justify-center gap-[6px] px-3 py-3">
-        <div className="mt-4 flex w-[120px] shrink-0 flex-col gap-1">
-          <SplitModuleButton left={receptionModule} right={ordersModule} />
+      <div className="mx-auto flex min-w-[60rem] items-start justify-center gap-4 px-3 py-3">
+        <div className="flex items-start gap-[6px]">
+          <div className="mt-4 flex w-[120px] shrink-0 flex-col gap-1">
+            <SplitModuleButton left={receptionModule} right={ordersModule} />
+          </div>
+
+          <div className="mt-[10px] flex w-[120px] shrink-0 flex-col gap-1">
+            <ModuleButton
+              active={isActive(rawMaterialsModule)}
+              module={rawMaterialsModule}
+            />
+            <ModuleButton
+              active={isActive(accountsPayableModule)}
+              module={accountsPayableModule}
+            />
+          </div>
+
+          <div className="flex w-[120px] shrink-0 flex-col gap-1">
+            <ModuleButton
+              active={isActive(productionModule)}
+              module={productionModule}
+            />
+            <ModuleButton
+              active={isActive(accountingModule)}
+              module={accountingModule}
+            />
+            <ModuleButton active={isActive(bankingModule)} module={bankingModule} />
+          </div>
+
+          <div className="mt-[10px] flex w-[120px] shrink-0 flex-col gap-1">
+            <ModuleButton
+              active={isActive(finishedProductsModule)}
+              module={finishedProductsModule}
+            />
+            <ModuleButton
+              active={isActive(accountsReceivableModule)}
+              module={accountsReceivableModule}
+            />
+          </div>
+
+          <div className="mt-4 flex w-[120px] shrink-0 flex-col gap-1">
+            <SplitModuleButton left={salesOrdersModule} right={invoicingModule} />
+          </div>
         </div>
 
-        <div className="mt-[10px] flex w-[120px] shrink-0 flex-col gap-1">
-          <ModuleButton
-            active={isActive(rawMaterialsModule)}
-            module={rawMaterialsModule}
-          />
-          <ModuleButton
-            active={isActive(accountsPayableModule)}
-            module={accountsPayableModule}
-          />
-        </div>
-
-        <div className="flex w-[120px] shrink-0 flex-col gap-1">
-          <ModuleButton
-            active={isActive(productionModule)}
-            module={productionModule}
-          />
-          <ModuleButton
-            active={isActive(accountingModule)}
-            module={accountingModule}
-          />
-          <ModuleButton active={isActive(bankingModule)} module={bankingModule} />
-        </div>
-
-        <div className="mt-[10px] flex w-[120px] shrink-0 flex-col gap-1">
-          <ModuleButton
-            active={isActive(finishedProductsModule)}
-            module={finishedProductsModule}
-          />
-          <ModuleButton
-            active={isActive(accountsReceivableModule)}
-            module={accountsReceivableModule}
-          />
-        </div>
-
-        <div className="mt-4 flex w-[120px] shrink-0 flex-col gap-1">
-          <SplitModuleButton left={salesOrdersModule} right={invoicingModule} />
-        </div>
+        <ErpModuleRouteCard pathname={location.pathname} />
       </div>
     </nav>
   )
