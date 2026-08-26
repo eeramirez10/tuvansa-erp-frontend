@@ -148,8 +148,9 @@ export function ErpModuleNavigation() {
 
   return (
     <nav aria-label="Módulos del ERP" className="overflow-x-auto border-b bg-card">
-      <div className="mx-auto flex min-w-[60rem] items-start justify-center gap-4 px-3 py-3">
-        <div className="flex items-start gap-[6px]">
+      <div className="mx-auto grid w-full min-w-[74rem] grid-cols-[200px_minmax(0,1fr)_300px] items-start gap-2 px-2 py-3">
+        <div aria-hidden />
+        <div className="flex items-start justify-self-center gap-[6px]">
           <div className="mt-4 flex w-[120px] shrink-0 flex-col gap-1">
             <SplitModuleButton left={receptionModule} right={ordersModule} />
           </div>
@@ -193,7 +194,9 @@ export function ErpModuleNavigation() {
           </div>
         </div>
 
-        <ErpModuleRouteCard pathname={location.pathname} />
+        <div className="justify-self-end">
+          <ErpModuleRouteCard pathname={location.pathname} />
+        </div>
       </div>
     </nav>
   )

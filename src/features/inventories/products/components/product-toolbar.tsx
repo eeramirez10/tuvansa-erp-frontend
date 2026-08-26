@@ -48,12 +48,13 @@ function ToolbarButton({
             aria-label={label}
             disabled={disabled}
             onClick={onClick}
-            size="icon-xs"
+            size="icon-lg"
             variant={destructive ? "destructive" : "outline"}
           />
         }
       >
         <HugeiconsIcon
+          className="size-4"
           data-icon="inline-start"
           icon={icon}
           strokeWidth={2}
@@ -77,7 +78,7 @@ export function ProductToolbar({
     <ErpModuleToolbarPortal>
       <div
         aria-label="Navegación y acciones del producto"
-        className="flex items-center gap-0.5"
+        className="flex items-center gap-1"
         role="toolbar"
       >
         <ToolbarButton
@@ -98,7 +99,7 @@ export function ProductToolbar({
           label="Producto siguiente"
           onClick={onNext}
         />
-        <Separator className="mx-0.5 h-4" orientation="vertical" />
+        <Separator className="mx-0.5 h-5" orientation="vertical" />
         <ToolbarButton
           disabled={disabled}
           icon={FileAddIcon}

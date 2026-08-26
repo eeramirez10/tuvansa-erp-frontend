@@ -18,7 +18,7 @@ function getServerToolbarSlotSnapshot() {
 }
 
 export function ErpModuleToolbarSlot() {
-  return <div className="flex min-h-5 justify-end" id={moduleToolbarSlotId} />
+  return <div className="flex min-h-7 justify-end" id={moduleToolbarSlotId} />
 }
 
 type ErpModuleToolbarPortalProps = {
