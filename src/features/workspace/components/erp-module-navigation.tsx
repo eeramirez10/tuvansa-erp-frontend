@@ -2,32 +2,70 @@ import { NavLink, useLocation } from "react-router"
 
 import { paths } from "@/app/router/paths"
 import { Button } from "@/shared/ui/button"
+import { cn } from "@/shared/utils/cn"
 
 type ErpModuleNavigationItem = {
   label: string
   path?: string
+  tone: string
 }
 
-const receptionModule: ErpModuleNavigationItem = { label: "Recep." }
-const ordersModule: ErpModuleNavigationItem = { label: "Ordenes" }
+const receptionModule: ErpModuleNavigationItem = {
+  label: "Recep.",
+  tone:
+    "border-module-reception/70 bg-module-reception text-module-reception-foreground hover:bg-module-reception/85",
+}
+const ordersModule: ErpModuleNavigationItem = {
+  label: "Ordenes",
+  tone:
+    "border-module-reception/70 bg-module-reception text-module-reception-foreground hover:bg-module-reception/85",
+}
 const rawMaterialsModule: ErpModuleNavigationItem = {
   label: "Inventarios M.P.",
+  tone:
+    "border-module-raw-materials/70 bg-module-raw-materials text-module-raw-materials-foreground hover:bg-module-raw-materials/85",
 }
 const accountsPayableModule: ErpModuleNavigationItem = {
   label: "Cuentas x pagar",
+  tone:
+    "border-module-payable/70 bg-module-payable text-module-payable-foreground hover:bg-module-payable/85",
 }
-const productionModule: ErpModuleNavigationItem = { label: "Producción" }
-const accountingModule: ErpModuleNavigationItem = { label: "Contabilidad" }
-const bankingModule: ErpModuleNavigationItem = { label: "Bancos" }
+const productionModule: ErpModuleNavigationItem = {
+  label: "Producción",
+  tone:
+    "border-module-production/70 bg-module-production text-module-production-foreground hover:bg-module-production/85",
+}
+const accountingModule: ErpModuleNavigationItem = {
+  label: "Contabilidad",
+  tone:
+    "border-module-accounting/70 bg-module-accounting text-module-accounting-foreground hover:bg-module-accounting/85",
+}
+const bankingModule: ErpModuleNavigationItem = {
+  label: "Bancos",
+  tone:
+    "border-module-banking/70 bg-module-banking text-module-banking-foreground hover:bg-module-banking/85",
+}
 const finishedProductsModule: ErpModuleNavigationItem = {
   label: "Inventarios P.T.",
   path: paths.inventoryProducts,
+  tone:
+    "border-module-inventory/70 bg-module-inventory text-module-inventory-foreground hover:bg-module-inventory/85",
 }
 const accountsReceivableModule: ErpModuleNavigationItem = {
   label: "Cuentas x cobrar",
+  tone:
+    "border-module-receivable/70 bg-module-receivable text-module-receivable-foreground hover:bg-module-receivable/85",
 }
-const salesOrdersModule: ErpModuleNavigationItem = { label: "Pedidos" }
-const invoicingModule: ErpModuleNavigationItem = { label: "Factura" }
+const salesOrdersModule: ErpModuleNavigationItem = {
+  label: "Pedidos",
+  tone:
+    "border-module-sales/70 bg-module-sales text-module-sales-foreground hover:bg-module-sales/85",
+}
+const invoicingModule: ErpModuleNavigationItem = {
+  label: "Factura",
+  tone:
+    "border-module-sales/70 bg-module-sales text-module-sales-foreground hover:bg-module-sales/85",
+}
 
 type ModuleButtonProps = {
   module: ErpModuleNavigationItem
@@ -39,17 +77,24 @@ function ModuleButton({ module, active }: ModuleButtonProps) {
     <div className="pb-[7px]">
       {module.path ? (
         <Button
-          className="w-full uppercase"
+          className={cn(
+            "w-full uppercase",
+            module.tone,
+            active && "ring-2 ring-ring ring-offset-1",
+          )}
           nativeButton={false}
           render={<NavLink to={module.path} />}
           size="sm"
-          variant={active ? "default" : "outline"}
+          variant="outline"
         >
           {module.label}
         </Button>
       ) : (
         <Button
-          className="w-full uppercase disabled:opacity-100"
+          className={cn(
+            "w-full uppercase disabled:opacity-100",
+            module.tone,
+          )}
           disabled
           size="sm"
           variant="outline"
@@ -70,7 +115,10 @@ function SplitModuleButton({ left, right }: SplitModuleButtonProps) {
   return (
     <div className="flex w-full gap-0 pb-[7px]">
       <Button
-        className="w-1/2 shrink rounded-r-none border-r-0 px-1 uppercase disabled:opacity-100"
+        className={cn(
+          "w-1/2 shrink rounded-r-none border-r-0 px-1 uppercase disabled:opacity-100",
+          left.tone,
+        )}
         disabled
         size="sm"
         variant="outline"
@@ -78,7 +126,10 @@ function SplitModuleButton({ left, right }: SplitModuleButtonProps) {
         {left.label}
       </Button>
       <Button
-        className="w-1/2 shrink rounded-l-none px-1 uppercase disabled:opacity-100"
+        className={cn(
+          "w-1/2 shrink rounded-l-none px-1 uppercase disabled:opacity-100",
+          right.tone,
+        )}
         disabled
         size="sm"
         variant="outline"
