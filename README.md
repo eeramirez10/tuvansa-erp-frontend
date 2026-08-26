@@ -1,75 +1,69 @@
-# React + TypeScript + Vite
+# TUVANSA ERP Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend para la migración gradual del ERP heredado en OMNIS/PROSCAI. La interfaz conservará el orden de campos, nombres visibles y flujo operativo de cada pantalla, usando componentes web accesibles y reutilizables.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19, TypeScript y Vite
+- React Router en Data Mode
+- Zustand para estado global del cliente
+- TanStack Query para estado y caché del servidor
+- Axios para peticiones HTTP
+- React Hook Form y Zod para formularios y validación
+- shadcn/ui con Base UI, preset Mira y Tailwind CSS 4
+- Hugeicons como biblioteca de iconos del preset
+- pnpm como gestor de paquetes
 
-## React Compiler
+## Inicio local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+pnpm install
+copy .env.example .env
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+La API se espera por defecto en `http://localhost:3000/api`. Se puede cambiar con `VITE_API_URL`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Comandos
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+pnpm dev
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm preview
 ```
+
+## Arquitectura
+
+```text
+src/
+├─ app/                         # Infraestructura y composición de la aplicación
+│  ├─ config/                   # Variables de entorno
+│  ├─ layouts/                  # Layouts generales
+│  ├─ providers/                # QueryClient y providers globales
+│  ├─ router/                   # Rutas Data Mode
+│  ├─ App.tsx
+│  └─ store.ts                  # Estado global estrictamente de UI
+├─ features/
+│  └─ workspace/                # Pantalla inicial y navegación del ERP
+│     ├─ components/
+│     ├─ pages/
+│     ├─ model.ts
+│     └─ workspace-route.tsx
+├─ shared/
+│  ├─ api/                      # Cliente Axios y errores HTTP
+│  ├─ hooks/                    # Hooks transversales
+│  ├─ types/                    # Contratos globales
+│  ├─ ui/                       # Primitives generadas por shadcn
+│  └─ utils/
+└─ main.tsx
+```
+
+Cada módulo nuevo vive dentro de `src/features/<modulo>` y contiene sus propios componentes, servicios HTTP, modelo y lógica. Los datos remotos no se guardan en Zustand: pertenecen a TanStack Query. No se usan archivos índice como barrels; los imports apuntan directamente al archivo propietario.
+
+Los componentes de `src/shared/ui` son primitives de shadcn. La composición común entre módulos vive en `src/shared/components`; los componentes que expresan reglas de negocio se conservan dentro de su feature.
+
+## Flujo por módulo
+
+Cada módulo se desarrolla en una rama independiente y con commits enfocados. La rama se integra a `main` únicamente después de revisión e indicación expresa. En cada pantalla se mantiene actualizado el [mapa de vistas y endpoints](docs/endpoint-map.md).
