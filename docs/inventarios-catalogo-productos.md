@@ -223,10 +223,15 @@ ventana sí funciona.
 
 El icono de lupa situado debajo de la tarjeta **Inventarios P.T.** abre la
 ventana **Encuentra producto**, reproducida a partir de OMNIS. Incluye filtros
-separados de Código y Descripción, lista vertical con ambas columnas y los
+separados de Código, EAN y Descripción, lista vertical con código y descripción y los
 botones visuales Familias, OK y Cancelar.
 
-La búsqueda consulta `GET /inventories/products?q=...&status=all`, selecciona
+La búsqueda consulta `GET /inventories/products?q=...&status=all`; el backend
+compara `q` contra `finv.ICOD`, `finv.IDESCR`, `finv.IEAN` y `finv.IUPC`. Selecciona
 un renglón con clic, también permite abrirlo con doble clic y navega a la ficha
 del producto al pulsar OK. La validación manual con `01300958` abrió
 correctamente `ISEQ=13288`.
+
+El campo EAN normaliza letras a mayúsculas y la API compara sin distinguir
+mayúsculas/minúsculas. Se validó con el EAN alfanumérico `BAHF32X20` del
+producto `01300067` (`ISEQ=12397`).

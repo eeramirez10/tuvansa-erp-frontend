@@ -28,9 +28,10 @@ export function ProductSearchDialog({
   onSelect,
 }: ProductSearchDialogProps) {
   const [code, setCode] = useState("")
+  const [ean, setEan] = useState("")
   const [description, setDescription] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const searchText = useDeferredValue((code || description).trim())
+  const searchText = useDeferredValue((code || ean || description).trim())
   const resultsQuery = useQuery({
     ...productSearchQueryOptions({
       q: searchText,
@@ -48,15 +49,15 @@ export function ProductSearchDialog({
 
   return (
     <ErpDataDialog
-      className="sm:max-w-[31rem]"
-      description="Buscar un producto por código o descripción."
+      className="sm:max-w-[36rem]"
+      description="Buscar un producto por código, EAN o descripción."
       onOpenChange={onOpenChange}
       title="Encuentra producto"
     >
       <ErpDataDialogBody>
         <div
           className="grid gap-0.5"
-          style={{ gridTemplateColumns: "7rem minmax(0, 1fr)" }}
+          style={{ gridTemplateColumns: "7rem 9rem minmax(0, 1fr)" }}
         >
           <label className="grid gap-0.5">
             <span className="px-1">Código</span>
@@ -67,10 +68,31 @@ export function ProductSearchDialog({
               onChange={(event) => {
                 setCode(event.target.value)
                 setSelectedProduct(null)
-                if (event.target.value) setDescription("")
+                if (event.target.value) {
+                  setEan("")
+                  setDescription("")
+                }
               }}
               name="inventory-product-code-search"
               value={code}
+            />
+          </label>
+          <label className="grid gap-0.5">
+            <span className="px-1">EAN</span>
+            <input
+              autoComplete="off"
+              className="h-5 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
+              name="inventory-product-ean-search"
+              onChange={(event) => {
+                const normalizedEan = event.target.value.toUpperCase()
+                setEan(normalizedEan)
+                setSelectedProduct(null)
+                if (normalizedEan) {
+                  setCode("")
+                  setDescription("")
+                }
+              }}
+              value={ean}
             />
           </label>
           <label className="grid gap-0.5">
@@ -81,7 +103,10 @@ export function ProductSearchDialog({
               onChange={(event) => {
                 setDescription(event.target.value)
                 setSelectedProduct(null)
-                if (event.target.value) setCode("")
+                if (event.target.value) {
+                  setCode("")
+                  setEan("")
+                }
               }}
               name="inventory-product-description-search"
               value={description}
