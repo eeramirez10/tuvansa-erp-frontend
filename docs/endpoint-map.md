@@ -7,12 +7,14 @@ Este documento es el contrato de trazabilidad entre la interfaz heredada de OMNI
 | Módulo | Vista de OMNIS/PROSCAI | Control visible | Evento | Método y endpoint | Query key | Estado frontend |
 | --- | --- | --- | --- | --- | --- | --- |
 | General | Selector de módulos | Inicio | Abrir aplicación | Sin petición | Sin caché | Implementado |
-| Cuentas por cobrar | Catálogo de clientes | Carga del catálogo | Abrir vista | `GET /accounts-receivable/clients` | Por definir en el módulo | Próxima rama |
+| Cuentas por cobrar | Catálogo de clientes | Carga del catálogo | Abrir vista | `GET /accounts-receivable/clients` | `['accounts-receivable', 'clients', ...]` | Implementado |
 | Inventarios PT | Catálogo de productos | Carga del catálogo | Abrir vista | `GET /inventories/products` | `['inventories', 'products', ...]` | Implementado |
 
 Los endpoints son relativos a `VITE_API_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 
 El desglose de la vista, la barra de navegación y cada botón de **Acciones**, **Compras/Prod** y **Consultas** está en [Inventarios PT: catálogo de productos](inventarios-catalogo-productos.md).
+
+El detalle equivalente de Cuentas por cobrar está en [Catálogo de clientes](cuentas-por-cobrar-catalogo-clientes.md).
 
 ## Plantilla obligatoria para nuevas pantallas
 
