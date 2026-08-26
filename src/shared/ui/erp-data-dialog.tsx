@@ -17,6 +17,7 @@ type ErpDataDialogProps = {
   onOpenChange: (open: boolean) => void
   children: ReactNode
   className?: string
+  tone?: "inventory" | "receivable"
 }
 
 export function ErpDataDialog({
@@ -25,6 +26,7 @@ export function ErpDataDialog({
   onOpenChange,
   children,
   className,
+  tone = "inventory",
 }: ErpDataDialogProps) {
   const descriptionId = useId()
 
@@ -33,13 +35,23 @@ export function ErpDataDialog({
       <DialogContent
         aria-describedby={descriptionId}
         className={cn(
-          "gap-0 overflow-hidden rounded-sm border border-module-inventory/70 bg-muted p-0 text-[9px]/none shadow-2xl sm:max-w-[46rem]",
+          "gap-0 overflow-hidden rounded-sm bg-muted p-0 text-[9px]/none shadow-2xl sm:max-w-[46rem]",
+          tone === "receivable"
+            ? "border border-module-receivable/70"
+            : "border border-module-inventory/70",
           className,
         )}
         overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
         showCloseButton={false}
       >
-        <header className="flex h-7 items-center justify-between border-b border-module-inventory/50 bg-gradient-to-b from-module-inventory/35 to-module-inventory/15 px-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]">
+        <header
+          className={cn(
+            "flex h-7 items-center justify-between border-b bg-gradient-to-b px-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]",
+            tone === "receivable"
+              ? "border-module-receivable/50 from-module-receivable/35 to-module-receivable/15"
+              : "border-module-inventory/50 from-module-inventory/35 to-module-inventory/15",
+          )}
+        >
           <DialogTitle className="text-[10px] font-normal">{title}</DialogTitle>
           <div className="flex items-center gap-0.5">
             <Button
