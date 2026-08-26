@@ -218,3 +218,15 @@ El frontend pide hasta 500 registros por modal. En **Lotes**, la tabla derecha
 reutiliza el endpoint de Auxiliar y separa cantidades positivas y negativas en
 Entradas y Salidas. Los comandos internos son visuales por ahora; cerrar la
 ventana sí funciona.
+
+## Botón Buscar producto
+
+El icono de lupa situado debajo de la tarjeta **Inventarios P.T.** abre la
+ventana **Encuentra producto**, reproducida a partir de OMNIS. Incluye filtros
+separados de Código y Descripción, lista vertical con ambas columnas y los
+botones visuales Familias, OK y Cancelar.
+
+La búsqueda consulta `GET /inventories/products?q=...&status=all`, selecciona
+un renglón con clic, también permite abrirlo con doble clic y navega a la ficha
+del producto al pulsar OK. La validación manual con `01300958` abrió
+correctamente `ISEQ=13288`.
