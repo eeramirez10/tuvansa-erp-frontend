@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router"
 import { paths } from "@/app/router/paths"
 import { actionPanels, purchasesProductionPanels } from "@/features/inventories/products/constants"
 import { ProductCatalogDetails } from "@/features/inventories/products/components/product-catalog-details"
+import { ProductCustomerOrdersDialog } from "@/features/inventories/products/components/product-customer-orders-dialog"
 import { ProductFormDialog } from "@/features/inventories/products/components/product-form-dialog"
 import { ProductLedgerDialog } from "@/features/inventories/products/components/product-ledger-dialog"
 import { ProductPanelDialog } from "@/features/inventories/products/components/product-panel-dialog"
@@ -192,7 +193,19 @@ export function ProductCatalogPage() {
         />
       )}
 
-      {selectedPanel && selectedPanel.key !== "ledger" && (
+      {selectedPanel?.key === "customer-orders" && (
+        <ProductCustomerOrdersDialog
+          key={`${product.id}-customer-orders`}
+          onOpenChange={(open) => {
+            if (!open) setSelectedPanel(null)
+          }}
+          product={product}
+        />
+      )}
+
+      {selectedPanel &&
+        selectedPanel.key !== "ledger" &&
+        selectedPanel.key !== "customer-orders" && (
         <ProductPanelDialog
           key={`${product.id}-${selectedPanel.key}`}
           onOpenChange={(open) => {

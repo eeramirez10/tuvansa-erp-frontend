@@ -1,0 +1,134 @@
+import type { ComponentProps, ReactNode } from "react"
+import { useId } from "react"
+
+import { Button } from "@/shared/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/shared/ui/dialog"
+import { cn } from "@/shared/utils/cn"
+
+type ErpDataDialogProps = {
+  title: string
+  description: string
+  onOpenChange: (open: boolean) => void
+  children: ReactNode
+  className?: string
+}
+
+export function ErpDataDialog({
+  title,
+  description,
+  onOpenChange,
+  children,
+  className,
+}: ErpDataDialogProps) {
+  const descriptionId = useId()
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open>
+      <DialogContent
+        aria-describedby={descriptionId}
+        className={cn(
+          "gap-0 overflow-hidden rounded-sm border border-module-inventory/70 bg-muted p-0 text-[9px]/none shadow-2xl sm:max-w-[46rem]",
+          className,
+        )}
+        overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
+        showCloseButton={false}
+      >
+        <header className="flex h-7 items-center justify-between border-b border-module-inventory/50 bg-gradient-to-b from-module-inventory/35 to-module-inventory/15 px-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]">
+          <DialogTitle className="text-[10px] font-normal">{title}</DialogTitle>
+          <div className="flex items-center gap-0.5">
+            <Button
+              aria-label="Minimizar"
+              className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[11px]"
+              title="Minimizar"
+              type="button"
+              variant="outline"
+            >
+              <span aria-hidden className="-translate-y-0.5">—</span>
+            </Button>
+            <Button
+              aria-label="Maximizar"
+              className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[10px]"
+              title="Maximizar"
+              type="button"
+              variant="outline"
+            >
+              <span aria-hidden>□</span>
+            </Button>
+            <DialogClose
+              render={
+                <Button
+                  aria-label="Cerrar"
+                  className="h-4.5 w-7 border-destructive/50 bg-destructive/80 p-0 text-[12px] text-white hover:bg-destructive"
+                  title="Cerrar"
+                  type="button"
+                  variant="destructive"
+                />
+              }
+            >
+              <span aria-hidden>×</span>
+            </DialogClose>
+          </div>
+        </header>
+
+        <DialogDescription className="sr-only" id={descriptionId}>
+          {description}
+        </DialogDescription>
+
+        {children}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function ErpDataDialogBody({
+  className,
+  ...props
+}: ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "bg-muted p-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+export function ErpDataTableViewport({
+  className,
+  ...props
+}: ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "overflow-auto border border-input bg-background shadow-inner",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+type ErpDataMetricProps = {
+  label: string
+  value: string
+  className?: string
+}
+
+export function ErpDataMetric({ label, value, className }: ErpDataMetricProps) {
+  return (
+    <label className={cn("grid min-w-20 gap-0.5", className)}>
+      <span className="px-1">{label}</span>
+      <output className="flex h-4 items-center justify-end border border-input bg-background px-1 tabular-nums shadow-inner">
+        {value}
+      </output>
+    </label>
+  )
+}

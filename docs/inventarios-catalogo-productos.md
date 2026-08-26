@@ -94,3 +94,16 @@ La ventana conserva `Stock anterior`, el renglón seleccionado y los botones
 visibles `Filtrar almacen` y `Filtrar XXX`. Estos dos filtros y los controles
 Minimizar/Maximizar son solamente visuales en esta etapa; Cerrar sí termina el
 modal.
+
+### Modal Pedidos por cliente
+
+El botón `Pedidos por cliente` usa el mismo marco reutilizable del modal
+Auxiliar y consume `GET
+/inventories/products/:productId/queries/customer-orders?page=1&pageSize=100`.
+La tabla replica el orden visible de OMNIS: `Código`, `Descripción`, `Fecha E.`,
+`Núm.`, `Pedido`, `Surtido`, `Resta`, `Asignado` y `Núm ellos`; Precio y Factor
+se conservan como las dos columnas finales sin encabezado visible.
+
+El pie calcula y muestra `Asignado`, `Disponible`, `Stock`, `Total` y `Faltante`.
+También conserva los botones `Filtrar pedidos surtidos`, `Asignar`, `Traspasar`
+y Documento. En esta etapa los cuatro son solamente visuales.

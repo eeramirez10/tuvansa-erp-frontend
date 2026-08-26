@@ -165,6 +165,20 @@ export type ProductLedgerItem = {
   revaluation: number
 }
 
+export type ProductCustomerOrderItem = {
+  id: number
+  customerCode: string
+  customerName: string
+  orderedAt: string
+  orderNumber: string
+  quantity: number
+  fulfilled: number
+  assigned: number
+  externalNumber: string
+  price: number
+  factor: number
+}
+
 export type ProductPanelDefinition = {
   key: ProductPanelKey
   label: string

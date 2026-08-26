@@ -8,12 +8,10 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/shared/ui/dialog"
+  ErpDataDialog,
+  ErpDataDialogBody,
+  ErpDataTableViewport,
+} from "@/shared/ui/erp-data-dialog"
 import { Spinner } from "@/shared/ui/spinner"
 
 type ProductLedgerDialogProps = {
@@ -92,55 +90,12 @@ export function ProductLedgerDialog({
   const rows = buildLedgerRows(ledgerQuery.data?.data.items ?? [], openingStock)
 
   return (
-    <Dialog onOpenChange={onOpenChange} open>
-      <DialogContent
-        aria-describedby="product-ledger-description"
-        className="gap-0 overflow-hidden rounded-sm border border-module-inventory/70 bg-muted p-0 text-[9px]/none shadow-2xl sm:max-w-[46rem]"
-        overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
-        showCloseButton={false}
-      >
-        <header className="flex h-7 items-center justify-between border-b border-module-inventory/50 bg-gradient-to-b from-module-inventory/35 to-module-inventory/15 px-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]">
-          <DialogTitle className="text-[10px] font-normal">Auxiliar</DialogTitle>
-          <div className="flex items-center gap-0.5">
-            <Button
-              aria-label="Minimizar"
-              className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[11px]"
-              title="Minimizar"
-              type="button"
-              variant="outline"
-            >
-              <span aria-hidden className="-translate-y-0.5">—</span>
-            </Button>
-            <Button
-              aria-label="Maximizar"
-              className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[10px]"
-              title="Maximizar"
-              type="button"
-              variant="outline"
-            >
-              <span aria-hidden>□</span>
-            </Button>
-            <DialogClose
-              render={
-                <Button
-                  aria-label="Cerrar"
-                  className="h-4.5 w-7 border-destructive/50 bg-destructive/80 p-0 text-[12px] text-white hover:bg-destructive"
-                  title="Cerrar"
-                  type="button"
-                  variant="destructive"
-                />
-              }
-            >
-              <span aria-hidden>×</span>
-            </DialogClose>
-          </div>
-        </header>
-
-        <DialogDescription className="sr-only" id="product-ledger-description">
-          Auxiliar de movimientos del producto {product.code}.
-        </DialogDescription>
-
-        <div className="bg-muted p-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]">
+    <ErpDataDialog
+      description={`Auxiliar de movimientos del producto ${product.code}.`}
+      onOpenChange={onOpenChange}
+      title="Auxiliar"
+    >
+        <ErpDataDialogBody>
           <div className="mb-1 flex h-5 items-center justify-center gap-2">
             <span>Stock anterior</span>
             <output className="flex h-4 min-w-16 items-center justify-end border border-input bg-background px-1 tabular-nums shadow-inner">
@@ -162,7 +117,7 @@ export function ProductLedgerDialog({
               </AlertDescription>
             </Alert>
           ) : (
-            <div className="h-[min(52vh,20rem)] min-h-64 overflow-auto border border-input bg-background shadow-inner">
+            <ErpDataTableViewport className="h-[min(52vh,20rem)] min-h-64">
               <table className="w-[43rem] min-w-full table-fixed border-collapse text-[9px]/none tabular-nums">
                 <colgroup>
                   <col className="w-[4.6rem]" />
@@ -226,7 +181,7 @@ export function ProductLedgerDialog({
                   )}
                 </tbody>
               </table>
-            </div>
+            </ErpDataTableViewport>
           )}
 
           <footer className="flex h-7 items-end gap-2 pl-8">
@@ -237,8 +192,7 @@ export function ProductLedgerDialog({
               Filtrar XXX
             </Button>
           </footer>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </ErpDataDialogBody>
+    </ErpDataDialog>
   )
 }
