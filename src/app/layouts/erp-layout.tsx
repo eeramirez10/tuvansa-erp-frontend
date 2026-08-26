@@ -1,54 +1,44 @@
 import Building01Icon from "@hugeicons/core-free-icons/Building01Icon"
+import Home01Icon from "@hugeicons/core-free-icons/Home01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Outlet } from "react-router"
+import { NavLink, Outlet } from "react-router"
 
-import {
-  selectSetSidebarOpen,
-  selectSidebarOpen,
-  useAppStore,
-} from "@/app/store"
-import { AppSidebar } from "@/features/workspace/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/shared/ui/breadcrumb"
+import { paths } from "@/app/router/paths"
+import { ErpModuleNavigation } from "@/features/workspace/components/erp-module-navigation"
 import { Badge } from "@/shared/ui/badge"
-import { Separator } from "@/shared/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/shared/ui/sidebar"
+import { Button } from "@/shared/ui/button"
 
 export function ErpLayout() {
-  const sidebarOpen = useAppStore(selectSidebarOpen)
-  const setSidebarOpen = useAppStore(selectSetSidebarOpen)
-
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <AppSidebar />
-      <SidebarInset className="min-w-0 overflow-x-hidden">
-        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur">
-          <SidebarTrigger aria-label="Mostrar u ocultar navegación" />
-          <Separator orientation="vertical" className="h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Inicio</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+    <div className="flex min-h-svh min-w-0 flex-col bg-muted/30">
+      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+        <div className="flex h-11 items-center gap-2 px-3">
+          <Button
+            aria-label="Ir al inicio"
+            render={<NavLink to={paths.home} />}
+            size="icon-sm"
+            variant="ghost"
+          >
+            <HugeiconsIcon icon={Home01Icon} strokeWidth={2} />
+          </Button>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">TUVANSA ERP</p>
+            <p className="truncate text-xs text-muted-foreground">Migración de OMNIS</p>
+          </div>
           <Badge className="ml-auto" variant="outline">
-            <HugeiconsIcon data-icon="inline-start" icon={Building01Icon} strokeWidth={2} />
+            <HugeiconsIcon
+              data-icon="inline-start"
+              icon={Building01Icon}
+              strokeWidth={2}
+            />
             TUVANSA
           </Badge>
-        </header>
-        <div className="flex flex-1 flex-col p-3 sm:p-4">
-          <Outlet />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+        <ErpModuleNavigation />
+      </header>
+      <main className="flex min-w-0 flex-1 flex-col p-3">
+        <Outlet />
+      </main>
+    </div>
   )
 }
