@@ -23,13 +23,13 @@ export function ProductPanelButtons({
       <CardHeader className="border-b">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-1">
+      <CardContent className="grid gap-0.5">
         {panels.map((panel) => (
           <Button
             className="w-full justify-start"
             key={panel.key}
             onClick={() => onSelect(panel)}
-            size="sm"
+            size="xs"
             variant="outline"
           >
             {panel.label}

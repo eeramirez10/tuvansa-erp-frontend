@@ -12,9 +12,10 @@ export function ErpLayout() {
   return (
     <div className="flex min-h-svh min-w-0 flex-col bg-muted/30">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="flex h-11 items-center gap-2 px-3">
+        <div className="flex h-8 items-center gap-1.5 px-2">
           <Button
             aria-label="Ir al inicio"
+            nativeButton={false}
             render={<NavLink to={paths.home} />}
             size="icon-sm"
             variant="ghost"
@@ -22,8 +23,8 @@ export function ErpLayout() {
             <HugeiconsIcon icon={Home01Icon} strokeWidth={2} />
           </Button>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">TUVANSA ERP</p>
-            <p className="truncate text-xs text-muted-foreground">Migración de OMNIS</p>
+            <p className="truncate text-[11px]/tight font-semibold">TUVANSA ERP</p>
+            <p className="truncate text-[9px]/tight text-muted-foreground">Migración de OMNIS</p>
           </div>
           <Badge className="ml-auto" variant="outline">
             <HugeiconsIcon
@@ -36,7 +37,7 @@ export function ErpLayout() {
         </div>
         <ErpModuleNavigation />
       </header>
-      <main className="flex min-w-0 flex-1 flex-col p-3">
+      <main className="flex min-w-0 flex-1 flex-col p-2">
         <Outlet />
       </main>
     </div>

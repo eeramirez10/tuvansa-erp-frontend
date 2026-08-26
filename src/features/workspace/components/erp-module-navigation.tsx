@@ -27,7 +27,7 @@ export function ErpModuleNavigation() {
 
   return (
     <nav aria-label="Módulos del ERP" className="overflow-x-auto border-t">
-      <div className="mx-auto flex min-w-max items-center justify-center gap-1 px-3 py-2">
+      <div className="mx-auto flex min-w-max items-center justify-center gap-0.5 px-2 py-1">
         {modules.map((module) => {
           const isActive =
             module.path !== undefined && location.pathname.startsWith(module.path)
@@ -35,14 +35,15 @@ export function ErpModuleNavigation() {
           return module.path ? (
             <Button
               key={module.label}
+              nativeButton={false}
               render={<NavLink to={module.path} />}
-              size="sm"
+              size="xs"
               variant={isActive ? "default" : "outline"}
             >
               {module.label}
             </Button>
           ) : (
-            <Button key={module.label} disabled size="sm" variant="outline">
+            <Button key={module.label} disabled size="xs" variant="outline">
               {module.label}
             </Button>
           )

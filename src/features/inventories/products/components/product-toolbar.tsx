@@ -57,7 +57,7 @@ function ToolbarButton({
             aria-label={label}
             disabled={disabled}
             onClick={onClick}
-            size="icon"
+            size="icon-xs"
             variant={destructive ? "destructive" : "outline"}
           />
         }
@@ -93,7 +93,7 @@ export function ProductToolbar({
         <CardDescription>
           {product.code} · {product.description}
         </CardDescription>
-        <CardAction className="flex items-center gap-1">
+        <CardAction className="flex items-center gap-0.5">
           <ToolbarButton
             disabled={disabled}
             icon={ArrowLeft01Icon}
@@ -112,7 +112,7 @@ export function ProductToolbar({
             label="Producto siguiente"
             onClick={onNext}
           />
-          <Separator className="mx-1 h-5" orientation="vertical" />
+          <Separator className="mx-0.5 h-4" orientation="vertical" />
           <ToolbarButton
             disabled={disabled}
             icon={FileAddIcon}

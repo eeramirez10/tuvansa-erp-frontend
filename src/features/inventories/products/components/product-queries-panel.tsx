@@ -18,13 +18,13 @@ export function ProductQueriesPanel({ onSelect }: ProductQueriesPanelProps) {
       <CardHeader className="border-b">
         <CardTitle>Consultas</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-1">
+      <CardContent className="grid gap-0.5">
         {queryPanelRows.map((row) => (
-          <div className="flex min-w-0 gap-1" key={row.primary.key}>
+          <div className="flex min-w-0 gap-0.5" key={row.primary.key}>
             <Button
               className="min-w-0 flex-1 justify-start"
               onClick={() => onSelect(row.primary)}
-              size="sm"
+              size="xs"
               variant="outline"
             >
               <span className="truncate">{row.primary.label}</span>
@@ -34,7 +34,7 @@ export function ProductQueriesPanel({ onSelect }: ProductQueriesPanelProps) {
                 aria-label={`${row.primary.label} ${shortcut.label}`}
                 key={shortcut.key}
                 onClick={() => onSelect(shortcut)}
-                size="icon-sm"
+                size="icon-xs"
                 variant="outline"
               >
                 {shortcut.label}

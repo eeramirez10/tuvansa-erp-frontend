@@ -122,7 +122,7 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply min-h-svh bg-background text-foreground antialiased;
+    @apply min-h-svh bg-background text-[11px]/tight text-foreground antialiased;
     }
   html {
     @apply font-sans;

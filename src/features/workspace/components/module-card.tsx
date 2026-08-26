@@ -62,6 +62,7 @@ export function ModuleCard({ module }: ModuleCardProps) {
         {isInventoryModule ? (
           <Button
             className="w-full"
+            nativeButton={false}
             render={<NavLink to={paths.inventoryProducts} />}
             variant="outline"
           >

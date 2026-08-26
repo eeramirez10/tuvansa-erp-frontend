@@ -35,7 +35,7 @@ function formatDate(value: string | null) {
 
 export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-2">
       <Card size="sm">
         <CardHeader className="border-b">
           <CardTitle>Catálogo de productos</CardTitle>
@@ -121,8 +121,8 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
         </CardContent>
       </Card>
 
-      <div className="grid min-w-0 gap-3 lg:grid-cols-2">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="grid min-w-0 gap-2 lg:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Card size="sm">
             <CardHeader className="border-b">
               <CardTitle>Precios de Venta</CardTitle>

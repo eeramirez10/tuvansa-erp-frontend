@@ -107,7 +107,7 @@ export function ProductCatalogPage() {
   const controlsDisabled = navigationMutation.isPending || deleteMutation.isPending
 
   return (
-    <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-3">
+    <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
       <ProductToolbar
         disabled={controlsDisabled}
         onCreate={() => setFormMode("create")}
@@ -130,8 +130,8 @@ export function ProductCatalogPage() {
         </Alert>
       )}
 
-      <div className="grid min-w-0 items-start gap-3 xl:grid-cols-[12rem_minmax(0,1fr)_16rem]">
-        <aside className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+      <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
+        <aside className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1">
           <ProductPanelButtons
             onSelect={setSelectedPanel}
             panels={actionPanels}
