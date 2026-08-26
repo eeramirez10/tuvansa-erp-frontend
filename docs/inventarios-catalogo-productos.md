@@ -113,3 +113,18 @@ mayor que la ventana para revisar horizontalmente Precio y Factor, mientras el
 eje vertical permite recorrer todos los pedidos sin aumentar el modal. Esta es
 la regla base para las siguientes ventanas tabulares: antes de implementarlas se
 revisan en OMNIS tanto el extremo derecho como el último registro.
+
+### Modal Pedidos por *
+
+El botón pequeño `*` abre `Pedidos por *`. El resumen consume `GET
+/inventories/products/:productId/queries/customer-orders/star` y los renglones
+pendientes reutilizan `GET
+/inventories/products/:productId/queries/customer-orders?page=1&pageSize=100`,
+filtrando aquellos cuya resta sea mayor que cero.
+
+La tabla presenta `Código`, `Nombre`, `Pedido#`, `Fecha`, `Pedido`, `Surtido`,
+`Resta` y `Asignado`. El pie conserva `Asignado`, `Por Asignar`, `Stock`, `Total`
+y `Faltante`, además de la matriz visual `AGENTE`, `GIRO O SECTOR`, `SUCURSAL`,
+`FLETE`, `ORIGEN`, `PROYECTO` y sus espacios reservados. Los filtros todavía no
+ejecutan acciones. Esta ventana usa desplazamiento vertical; el modal compartido
+permite seleccionar X, Y o XY según la estructura observada en OMNIS.

@@ -179,6 +179,13 @@ export type ProductCustomerOrderItem = {
   factor: number
 }
 
+export type ProductCustomerOrderSummary = {
+  ordered: number
+  assigned: number
+  stock: number
+  pending: number
+}
+
 export type ProductPanelDefinition = {
   key: ProductPanelKey
   label: string
