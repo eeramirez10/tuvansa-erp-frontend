@@ -2,7 +2,9 @@ import ArrowRight01Icon from "@hugeicons/core-free-icons/ArrowRight01Icon"
 import Invoice01Icon from "@hugeicons/core-free-icons/Invoice01Icon"
 import PackageIcon from "@hugeicons/core-free-icons/PackageIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { NavLink } from "react-router"
 
+import { paths } from "@/app/router/paths"
 import type { ErpModule } from "@/features/workspace/model"
 import { Badge } from "@/shared/ui/badge"
 import { Button } from "@/shared/ui/button"
@@ -26,6 +28,8 @@ type ModuleCardProps = {
 }
 
 export function ModuleCard({ module }: ModuleCardProps) {
+  const isInventoryModule = module.id === "finished-goods-inventory"
+
   return (
     <Card className="h-full min-w-0">
       <CardHeader>
@@ -48,15 +52,36 @@ export function ModuleCard({ module }: ModuleCardProps) {
           </div>
           <div className="grid grid-cols-2 items-center gap-3">
             <dt className="text-muted-foreground">Estado del frontend</dt>
-            <dd className="text-right font-medium break-words">Pendiente de módulo</dd>
+            <dd className="text-right font-medium break-words">
+              {isInventoryModule ? "Catálogo disponible" : "Pendiente de módulo"}
+            </dd>
           </div>
         </dl>
       </CardContent>
       <CardFooter className="mt-auto border-t">
-        <Button className="w-full" disabled variant="outline">
-          Se implementará en su rama
-          <HugeiconsIcon data-icon="inline-end" icon={ArrowRight01Icon} strokeWidth={2} />
-        </Button>
+        {isInventoryModule ? (
+          <Button
+            className="w-full"
+            render={<NavLink to={paths.inventoryProducts} />}
+            variant="outline"
+          >
+            Abrir catálogo
+            <HugeiconsIcon
+              data-icon="inline-end"
+              icon={ArrowRight01Icon}
+              strokeWidth={2}
+            />
+          </Button>
+        ) : (
+          <Button className="w-full" disabled variant="outline">
+            Se implementará en su rama
+            <HugeiconsIcon
+              data-icon="inline-end"
+              icon={ArrowRight01Icon}
+              strokeWidth={2}
+            />
+          </Button>
+        )}
       </CardFooter>
     </Card>
   )

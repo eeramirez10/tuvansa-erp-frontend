@@ -14,6 +14,11 @@ export const router = createBrowserRouter([
         index: true,
         lazy: () => import("@/features/workspace/workspace-route"),
       },
+      {
+        path: "inventarios/productos/:productId?",
+        lazy: () =>
+          import("@/features/inventories/products/inventory-products-route"),
+      },
     ],
   },
 ])
