@@ -177,3 +177,32 @@ export type ClientPanelResponse = {
   data: ClientPanelData
   pagination?: { page: number; pageSize: number; total: number }
 }
+
+export type ClientClassification = {
+  id: number | null
+  position: number
+  key: string
+  label: string
+  code: string
+  description: string
+  number: string
+  type: string
+  categoryType: number | null
+}
+
+export type ClientClassificationOption = {
+  id: number
+  code: string
+  description: string
+  number: string
+  type: string
+}
+
+export type ClientClassificationsResponse = {
+  data: {
+    client: ClientIdentity
+    classifications: ClientClassification[]
+    selectedPosition: number
+    options: ClientClassificationOption[]
+  }
+}

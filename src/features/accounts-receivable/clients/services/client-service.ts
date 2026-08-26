@@ -1,6 +1,7 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
   Client,
+  ClientClassificationsResponse,
   ClientMutationInput,
   ClientPanelDefinition,
   ClientPanelResponse,
@@ -96,4 +97,16 @@ export async function getClientPanel(
     },
     ...(response.data.pagination ? { pagination: response.data.pagination } : {}),
   }
+}
+
+export async function getClientClassifications(
+  clientId: number,
+  position: number,
+  signal?: AbortSignal,
+) {
+  const response = await apiClient.get<ClientClassificationsResponse>(
+    `/accounts-receivable/clients/${clientId}/actions/classifications`,
+    { params: { position }, signal },
+  )
+  return response.data
 }

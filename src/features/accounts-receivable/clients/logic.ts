@@ -8,6 +8,7 @@ import type {
 } from "@/features/accounts-receivable/clients/model"
 import {
   getClient,
+  getClientClassifications,
   getClientPanel,
   searchClients,
   type ClientSearchCriteria,
@@ -19,6 +20,8 @@ export const clientKeys = {
   search: (criteria: ClientSearchCriteria) => [...clientKeys.all, "search", criteria] as const,
   panel: (clientId: number, panelKey: string) =>
     [...clientKeys.detail(clientId), "panel", panelKey] as const,
+  classifications: (clientId: number, position: number) =>
+    [...clientKeys.detail(clientId), "classifications", position] as const,
 }
 
 export const clientQueryOptions = (clientId: number) => queryOptions({
@@ -34,6 +37,12 @@ export const clientSearchQueryOptions = (criteria: ClientSearchCriteria) => quer
 export const clientPanelQueryOptions = (clientId: number, panel: ClientPanelDefinition) => queryOptions({
   queryKey: clientKeys.panel(clientId, panel.key),
   queryFn: ({ signal }) => getClientPanel(clientId, panel, signal),
+})
+
+export const clientClassificationsQueryOptions = (clientId: number, position: number) => queryOptions({
+  queryKey: clientKeys.classifications(clientId, position),
+  queryFn: ({ signal }) => getClientClassifications(clientId, position, signal),
+  placeholderData: (previousData) => previousData,
 })
 
 export function getClientFormDefaults(client?: Client): ClientFormValues {

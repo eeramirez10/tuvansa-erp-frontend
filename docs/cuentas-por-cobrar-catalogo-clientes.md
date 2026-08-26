@@ -44,7 +44,7 @@ la confirmación y presenta el error de relaciones que devuelva la API.
 
 | Botón visible | Endpoint | Contenido del modal |
 | --- | --- | --- |
-| Clasificar | `GET /accounts-receivable/clients/:clientId/actions/classifications` | Nueve clasificaciones y opciones disponibles de agente |
+| Clasificar | `GET /accounts-receivable/clients/:clientId/actions/classifications?position=1..9` | Selector de nueve familias; cada cambio carga sus opciones reales de `fag` |
 | Enviar a | `GET /accounts-receivable/clients/:clientId/actions/destinations` | Estado no disponible y razón confirmada por la captura |
 | Bloquear | `GET /accounts-receivable/clients/:clientId/actions/block-status` | Estado actual y evento de bloqueo |
 | Descuentos | `GET /accounts-receivable/clients/:clientId/actions/discounts` | Descuentos, vigencia y rangos |
@@ -82,5 +82,7 @@ mantienen visuales; por ahora no agregan operaciones que la API no publique.
 
 La integración se comprobó con el cliente `000001` (`CLISEQ=15331`). Se
 validaron respuestas reales para cada endpoint; además se revisaron visualmente
-la ficha, Encuentra cliente, Saldo y Clasificar. Los importes pueden diferir de
+la ficha, Encuentra cliente, Saldo y Clasificar. El modal Clasificar replica el
+selector vertical, la tabla de opciones, la tabla de seleccionados y los botones
+Guardar de OMNIS; sus nueve familias consultan la API por posicion. Los importes pueden diferir de
 la base antigua de OMNIS porque el frontend consume la base de desarrollo actual.

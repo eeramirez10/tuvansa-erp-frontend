@@ -17,6 +17,7 @@ import {
 } from "@/shared/ui/erp-data-dialog"
 import { Spinner } from "@/shared/ui/spinner"
 import { cn } from "@/shared/utils/cn"
+import { ClientClassificationsDialog } from "@/features/accounts-receivable/clients/components/client-classifications-dialog"
 
 type ClientPanelDialogProps = {
   client: Client
@@ -114,7 +115,7 @@ function DetailPanel({ detail }: { detail: Record<string, unknown> }) {
   )
 }
 
-export function ClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDialogProps) {
+function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDialogProps) {
   const query = useQuery(clientPanelQueryOptions(client.id, panel))
   const result = query.data
 
@@ -155,4 +156,12 @@ export function ClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDi
       </ErpDataDialogBody>
     </ErpDataDialog>
   )
+}
+
+export function ClientPanelDialog(props: ClientPanelDialogProps) {
+  if (props.panel.key === "classifications") {
+    return <ClientClassificationsDialog client={props.client} onOpenChange={props.onOpenChange} />
+  }
+
+  return <GenericClientPanelDialog {...props} />
 }
