@@ -79,7 +79,11 @@ La URL conserva el producto seleccionado para que navegación, recarga y enlaces
 | Habilitaciones pendientes | `GET /inventories/products/:productId/queries/pending-enablements` |
 | Documentos | `GET /inventories/products/:productId/queries/documents` |
 
-Los botones de Acciones, Compras/Prod y Consultas abren un diálogo reutilizable. La respuesta se representa en una tabla dinámica porque los campos cambian según la consulta; el diálogo conserva el nombre visible real del botón.
+Los botones de Acciones y Compras/Prod conservan el diálogo genérico. Todos los
+botones de Consultas usan el marco `ErpDataDialog` de shadcn/Base UI y una vista
+específica comparada contra OMNIS. Cada vista fija título, orden de columnas,
+totales, botones internos y desplazamiento X/Y; los botones internos siguen
+siendo solamente visuales en esta etapa.
 
 ### Modal Auxiliar
 
@@ -128,3 +132,38 @@ y `Faltante`, además de la matriz visual `AGENTE`, `GIRO O SECTOR`, `SUCURSAL`,
 `FLETE`, `ORIGEN`, `PROYECTO` y sus espacios reservados. Los filtros todavía no
 ejecutan acciones. Esta ventana usa desplazamiento vertical; el modal compartido
 permite seleccionar X, Y o XY según la estructura observada en OMNIS.
+
+### Modales restantes de Consultas
+
+| Botón visible | Título observado en OMNIS | Presentación reproducida |
+| --- | --- | --- |
+| Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
+| Cotizaciones por cliente | Pedidos por cliente | Tabla de cotizaciones, cinco acumulados y botones de filtro/asignación/traspaso |
+| Ventas por cliente | Ventas por cliente | Acumulado por cliente con Cantidad e Importe |
+| Ventas por cliente · * | Ventas por * | Acumulado por cliente y matriz AGENTE/GIRO/SUCURSAL/FLETE/ORIGEN/PROYECTO |
+| Ventas por cliente · CT | Ventas por cliente | Acumulado por producto y panel CT lateral |
+| Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. |
+| Ventas por sucursal | Producto vendidos por sucursal | Acumulado por sucursal y cliente con totales |
+| Ventas anuales | Ventas Anuales | Matriz cliente/año por los doce meses, renglón Totales y Documento |
+| Ventas anuales resumen | Ventas Anuales resumen anual | Matriz año/mes y gráfica inferior |
+| Ordenado a proveedor | Ordenado a proveedores | O.C., sucursal, unidad, pedido/surtido/resta, precio, fechas, almacén, observaciones y Stock/Por llegar/Total |
+| Ordenado a proveedor · CT | Ordenado a proveedores | Tabla y panel CT lateral con totales y botones Pedido/Surtido/Resta |
+| Cotizado a proveedores | Cotizado a proveedores | Pedido/surtido/resta y Stock/Por llegar/Total |
+| Compras por proveedor | Compras por proveedor | Acumulado por proveedor con Cantidad e Importe |
+| Compras por proveedor · DT | Historial de costos | Tres tablas: orden, componentes teórico/real y costos teórico/real |
+| Compras desglosadas | Compras por proveedor | Detalle de documento, fecha, piezas, moneda e importe; botón Último |
+| Compras anuales | Compras Anuales | Matriz proveedor/año por los doce meses y renglón Totales |
+| Compras anuales resumen | Ventas Anuales resumen anual | Matriz año/mes y gráfica inferior, respetando el título heredado |
+| Piezas | Piezas | Aviso `Esta version de OMNIS no contiene el modulo de PIEZAS` y botón OK |
+| Piezas surtidas | Piezas (Surtidas) | Número, piezas, cantidad, almacén, referencias, fechas y botones Etiqueta/Devolución/Baja/Filtro |
+| W.I.P. | W.I.P. | O.P., operación, solicitado, recibido, resta, tiempo, inicio y máquina |
+| W.I.P. · CT | Ordenado a Proveedores | Tabla de producción y panel CT inferior con filtros |
+| E.D.I. | Ventas anuales | Dos matrices mensuales: solicitado y surtido |
+| Habilitaciones pendientes | Habilitaciones pendientes | Documento, necesario, surtido y resta con tres totales |
+| Documentos | Consulta de movimientos de inventario | Cabecera de documento/cliente/fecha y detalle de entradas, salidas, U.M., costo, piezas y almacén |
+
+Las consultas agregadas se calculan en MySQL antes de paginar para que cada
+renglón coincida con la agrupación visible de OMNIS. El frontend solicita hasta
+500 renglones por modal. `Documentos` ahora consulta movimientos del producto
+seleccionado; `Piezas` permanece intencionalmente no disponible porque así lo
+declara esta versión del ERP.

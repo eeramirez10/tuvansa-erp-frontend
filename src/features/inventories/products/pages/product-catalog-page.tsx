@@ -14,6 +14,7 @@ import { ProductCustomerOrdersStarDialog } from "@/features/inventories/products
 import { ProductFormDialog } from "@/features/inventories/products/components/product-form-dialog"
 import { ProductLedgerDialog } from "@/features/inventories/products/components/product-ledger-dialog"
 import { ProductPanelDialog } from "@/features/inventories/products/components/product-panel-dialog"
+import { ProductQueryDialog } from "@/features/inventories/products/components/product-query-dialog"
 import { ProductQueriesPanel } from "@/features/inventories/products/components/product-queries-panel"
 import { ProductSearchDialog } from "@/features/inventories/products/components/product-search-dialog"
 import { ProductPanelButtons } from "@/features/inventories/products/components/product-side-panels"
@@ -217,7 +218,20 @@ export function ProductCatalogPage() {
       {selectedPanel &&
         selectedPanel.key !== "ledger" &&
         selectedPanel.key !== "customer-orders" &&
-        selectedPanel.key !== "customer-orders-star" && (
+        selectedPanel.key !== "customer-orders-star" &&
+        selectedPanel.section === "queries" && (
+        <ProductQueryDialog
+          key={`${product.id}-${selectedPanel.key}`}
+          onOpenChange={(open) => {
+            if (!open) setSelectedPanel(null)
+          }}
+          panel={selectedPanel}
+          product={product}
+        />
+      )}
+
+      {selectedPanel &&
+        selectedPanel.section !== "queries" && (
         <ProductPanelDialog
           key={`${product.id}-${selectedPanel.key}`}
           onOpenChange={(open) => {

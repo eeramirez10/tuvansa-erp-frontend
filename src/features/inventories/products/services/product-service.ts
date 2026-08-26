@@ -125,7 +125,7 @@ export async function getProductPanel(
   panel: ProductPanelKey,
   signal?: AbortSignal,
 ) {
-  const pageSize = panel === "ledger" || panel === "customer-orders" ? 100 : 25
+  const pageSize = 500
   const response = await apiClient.get<ProductPanelResponse>(
     `/inventories/products/${productId}/${productPanelPaths[panel]}`,
     { params: { page: 1, pageSize }, signal },
