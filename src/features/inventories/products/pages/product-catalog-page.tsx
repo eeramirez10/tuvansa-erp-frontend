@@ -116,7 +116,6 @@ export function ProductCatalogPage() {
         onNext={() => navigationMutation.mutate("next")}
         onPrevious={() => navigationMutation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
-        product={product}
       />
 
       {notice && (

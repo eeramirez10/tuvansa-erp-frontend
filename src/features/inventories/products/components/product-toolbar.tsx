@@ -6,16 +6,8 @@ import FileAddIcon from "@hugeicons/core-free-icons/FileAddIcon"
 import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 
-import type { Product } from "@/features/inventories/products/model"
-import { Badge } from "@/shared/ui/badge"
+import { ErpModuleToolbarPortal } from "@/features/workspace/components/erp-module-toolbar-portal"
 import { Button } from "@/shared/ui/button"
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card"
 import { Separator } from "@/shared/ui/separator"
 import {
   Tooltip,
@@ -24,7 +16,6 @@ import {
 } from "@/shared/ui/tooltip"
 
 type ProductToolbarProps = {
-  product: Product
   disabled?: boolean
   onCreate: () => void
   onDelete: () => void
@@ -74,7 +65,6 @@ function ToolbarButton({
 }
 
 export function ProductToolbar({
-  product,
   disabled,
   onCreate,
   onDelete,
@@ -84,56 +74,51 @@ export function ProductToolbar({
   onSearch,
 }: ProductToolbarProps) {
   return (
-    <Card size="sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Inventarios PT
-          <Badge variant="outline">Catálogo de productos</Badge>
-        </CardTitle>
-        <CardDescription>
-          {product.code} · {product.description}
-        </CardDescription>
-        <CardAction className="flex items-center gap-0.5">
-          <ToolbarButton
-            disabled={disabled}
-            icon={ArrowLeft01Icon}
-            label="Producto anterior"
-            onClick={onPrevious}
-          />
-          <ToolbarButton
-            disabled={disabled}
-            icon={Search01Icon}
-            label="Buscar producto"
-            onClick={onSearch}
-          />
-          <ToolbarButton
-            disabled={disabled}
-            icon={ArrowRight01Icon}
-            label="Producto siguiente"
-            onClick={onNext}
-          />
-          <Separator className="mx-0.5 h-4" orientation="vertical" />
-          <ToolbarButton
-            disabled={disabled}
-            icon={FileAddIcon}
-            label="Nuevo producto"
-            onClick={onCreate}
-          />
-          <ToolbarButton
-            destructive
-            disabled={disabled}
-            icon={Delete01Icon}
-            label="Eliminar producto"
-            onClick={onDelete}
-          />
-          <ToolbarButton
-            disabled={disabled}
-            icon={Edit02Icon}
-            label="Editar producto"
-            onClick={onEdit}
-          />
-        </CardAction>
-      </CardHeader>
-    </Card>
+    <ErpModuleToolbarPortal>
+      <div
+        aria-label="Navegación y acciones del producto"
+        className="flex items-center gap-0.5"
+        role="toolbar"
+      >
+        <ToolbarButton
+          disabled={disabled}
+          icon={ArrowLeft01Icon}
+          label="Producto anterior"
+          onClick={onPrevious}
+        />
+        <ToolbarButton
+          disabled={disabled}
+          icon={Search01Icon}
+          label="Buscar producto"
+          onClick={onSearch}
+        />
+        <ToolbarButton
+          disabled={disabled}
+          icon={ArrowRight01Icon}
+          label="Producto siguiente"
+          onClick={onNext}
+        />
+        <Separator className="mx-0.5 h-4" orientation="vertical" />
+        <ToolbarButton
+          disabled={disabled}
+          icon={FileAddIcon}
+          label="Nuevo producto"
+          onClick={onCreate}
+        />
+        <ToolbarButton
+          destructive
+          disabled={disabled}
+          icon={Delete01Icon}
+          label="Eliminar producto"
+          onClick={onDelete}
+        />
+        <ToolbarButton
+          disabled={disabled}
+          icon={Edit02Icon}
+          label="Editar producto"
+          onClick={onEdit}
+        />
+      </div>
+    </ErpModuleToolbarPortal>
   )
 }

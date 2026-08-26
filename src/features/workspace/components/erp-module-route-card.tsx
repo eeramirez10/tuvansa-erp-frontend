@@ -3,6 +3,7 @@ import PackageIcon from "@hugeicons/core-free-icons/PackageIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { paths } from "@/app/router/paths"
+import { ErpModuleToolbarSlot } from "@/features/workspace/components/erp-module-toolbar-portal"
 import { Card, CardContent } from "@/shared/ui/card"
 import { cn } from "@/shared/utils/cn"
 
@@ -33,20 +34,29 @@ export function ErpModuleRouteCard({ pathname }: ErpModuleRouteCardProps) {
     routeCards.find((candidate) => candidate.matches(pathname)) ?? fallbackCard
 
   return (
-    <Card
-      className={cn(
-        "h-20 w-[260px] shrink-0 justify-center py-0 shadow-sm",
-        routeCard.tone,
-      )}
-      size="sm"
-    >
-      <CardContent className="flex h-full items-center justify-between gap-4 px-4">
-        <p className="text-lg/tight font-bold tracking-tight">{routeCard.title}</p>
-        <div className="flex items-center gap-2 rounded-md border border-current/20 bg-background/15 px-2 py-1.5">
-          <span className="text-xs font-bold">{routeCard.abbreviation}</span>
-          <HugeiconsIcon className="size-8" icon={routeCard.icon} strokeWidth={1.8} />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex w-[260px] shrink-0 flex-col gap-1">
+      <Card
+        className={cn(
+          "h-20 w-full justify-center py-0 shadow-sm",
+          routeCard.tone,
+        )}
+        size="sm"
+      >
+        <CardContent className="flex h-full items-center justify-between gap-4 px-4">
+          <p className="text-lg/tight font-bold tracking-tight">
+            {routeCard.title}
+          </p>
+          <div className="flex items-center gap-2 rounded-md border border-current/20 bg-background/15 px-2 py-1.5">
+            <span className="text-xs font-bold">{routeCard.abbreviation}</span>
+            <HugeiconsIcon
+              className="size-8"
+              icon={routeCard.icon}
+              strokeWidth={1.8}
+            />
+          </div>
+        </CardContent>
+      </Card>
+      <ErpModuleToolbarSlot />
+    </div>
   )
 }
