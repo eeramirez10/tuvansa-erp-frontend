@@ -107,3 +107,9 @@ se conservan como las dos columnas finales sin encabezado visible.
 El pie calcula y muestra `Asignado`, `Disponible`, `Stock`, `Total` y `Faltante`.
 También conserva los botones `Filtrar pedidos surtidos`, `Asignar`, `Traspasar`
 y Documento. En esta etapa los cuatro son solamente visuales.
+
+La tabla conserva desplazamiento permanente en ambos ejes. El ancho interno es
+mayor que la ventana para revisar horizontalmente Precio y Factor, mientras el
+eje vertical permite recorrer todos los pedidos sin aumentar el modal. Esta es
+la regla base para las siguientes ventanas tabulares: antes de implementarlas se
+revisan en OMNIS tanto el extremo derecho como el último registro.

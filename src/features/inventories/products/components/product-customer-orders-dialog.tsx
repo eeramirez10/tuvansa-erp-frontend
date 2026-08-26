@@ -105,7 +105,7 @@ export function ProductCustomerOrdersDialog({
           </Alert>
         ) : (
           <ErpDataTableViewport className="h-[min(45vh,17rem)] min-h-64">
-            <table className="w-[57.5rem] min-w-full table-fixed border-collapse text-[9px]/none tabular-nums">
+            <table className="w-[64rem] table-fixed border-collapse text-[9px]/none tabular-nums">
               <colgroup>
                 <col className="w-[5rem]" />
                 <col className="w-[12rem]" />

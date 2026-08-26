@@ -93,7 +93,7 @@ export function ErpDataDialogBody({
   return (
     <div
       className={cn(
-        "bg-muted p-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]",
+        "min-w-0 bg-muted p-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]",
         className,
       )}
       {...props}
@@ -108,7 +108,7 @@ export function ErpDataTableViewport({
   return (
     <div
       className={cn(
-        "overflow-auto border border-input bg-background shadow-inner",
+        "w-full min-w-0 max-w-full overflow-scroll border border-input bg-background shadow-inner [scrollbar-color:var(--border)_var(--muted)] [scrollbar-width:auto]",
         className,
       )}
       {...props}
