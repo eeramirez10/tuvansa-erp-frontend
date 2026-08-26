@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react"
+import { useId, type ComponentProps } from "react"
 
 import { cn } from "@/shared/utils/cn"
 import { Field, FieldLabel } from "@/shared/ui/field"
@@ -17,10 +17,23 @@ export function ReadonlyProductField({
   inputMode,
   className,
 }: ReadonlyProductFieldProps) {
+  const inputId = useId()
+
   return (
-    <Field className={cn(className)}>
-      <FieldLabel>{label}</FieldLabel>
-      <Input inputMode={inputMode} readOnly value={value ?? ""} />
+    <Field
+      className={cn("min-w-0 items-center gap-1", className)}
+      orientation="horizontal"
+    >
+      <FieldLabel className="shrink-0 whitespace-nowrap" htmlFor={inputId}>
+        {label}
+      </FieldLabel>
+      <Input
+        className="h-5 min-w-0 flex-1 px-1 text-[9px]/tight"
+        id={inputId}
+        inputMode={inputMode}
+        readOnly
+        value={value ?? ""}
+      />
     </Field>
   )
 }
