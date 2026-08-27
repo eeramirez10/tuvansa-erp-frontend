@@ -20,6 +20,13 @@ const routeCards = [
     tone:
       "border-module-inventory/70 bg-module-inventory text-module-inventory-foreground",
   },
+  {
+    matches: (pathname: string) => pathname.startsWith(paths.salesOrders),
+    title: "Pedidos",
+    abbreviation: "VTAS",
+    icon: PackageIcon,
+    tone: "border-module-sales/70 bg-module-sales text-module-sales-foreground",
+  },
 ] as const
 
 const fallbackCard = {

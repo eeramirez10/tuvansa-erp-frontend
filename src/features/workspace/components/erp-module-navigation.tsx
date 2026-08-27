@@ -59,6 +59,7 @@ const accountsReceivableModule: ErpModuleNavigationItem = {
 }
 const salesOrdersModule: ErpModuleNavigationItem = {
   label: "Pedidos",
+  path: paths.salesOrders,
   tone:
     "border-module-sales/70 bg-module-sales text-module-sales-foreground hover:bg-module-sales/85",
 }
@@ -113,30 +114,24 @@ type SplitModuleButtonProps = {
 }
 
 function SplitModuleButton({ left, right }: SplitModuleButtonProps) {
+  const location = useLocation()
+  const half = (module: ErpModuleNavigationItem, side: "left" | "right") => {
+    const classes = cn(
+      "w-1/2 shrink px-1 uppercase disabled:opacity-100",
+      side === "left" ? "rounded-r-none border-r-0" : "rounded-l-none",
+      module.tone,
+      module.path && location.pathname.startsWith(module.path) && "ring-2 ring-ring ring-offset-1",
+    )
+    return module.path ? (
+      <Button className={classes} nativeButton={false} render={<NavLink to={module.path} />} size="sm" variant="outline">{module.label}</Button>
+    ) : (
+      <Button className={classes} disabled size="sm" variant="outline">{module.label}</Button>
+    )
+  }
   return (
     <div className="flex w-full gap-0 pb-[7px]">
-      <Button
-        className={cn(
-          "w-1/2 shrink rounded-r-none border-r-0 px-1 uppercase disabled:opacity-100",
-          left.tone,
-        )}
-        disabled
-        size="sm"
-        variant="outline"
-      >
-        {left.label}
-      </Button>
-      <Button
-        className={cn(
-          "w-1/2 shrink rounded-l-none px-1 uppercase disabled:opacity-100",
-          right.tone,
-        )}
-        disabled
-        size="sm"
-        variant="outline"
-      >
-        {right.label}
-      </Button>
+      {half(left, "left")}
+      {half(right, "right")}
     </div>
   )
 }

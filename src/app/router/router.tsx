@@ -19,6 +19,10 @@ export const router = createBrowserRouter([
         lazy: () =>
           import("@/features/inventories/products/inventory-products-route"),
       },
+      {
+        path: "pedidos/:orderId?",
+        lazy: () => import("@/features/sales/orders/sales-orders-route"),
+      },
     ],
   },
 ])
