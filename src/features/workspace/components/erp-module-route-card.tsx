@@ -1,5 +1,6 @@
 import DashboardSquare01Icon from "@hugeicons/core-free-icons/DashboardSquare01Icon"
 import PackageIcon from "@hugeicons/core-free-icons/PackageIcon"
+import UserGroupIcon from "@hugeicons/core-free-icons/UserGroupIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { paths } from "@/app/router/paths"
@@ -12,6 +13,15 @@ type ErpModuleRouteCardProps = {
 }
 
 const routeCards = [
+  {
+    matches: (pathname: string) =>
+      pathname.startsWith(paths.accountsReceivableClients),
+    title: "Clientes",
+    abbreviation: "CXC",
+    icon: UserGroupIcon,
+    tone:
+      "border-module-receivable/70 bg-module-receivable text-module-receivable-foreground",
+  },
   {
     matches: (pathname: string) => pathname.startsWith(paths.inventoryProducts),
     title: "Inventarios",

@@ -54,6 +54,7 @@ const finishedProductsModule: ErpModuleNavigationItem = {
 }
 const accountsReceivableModule: ErpModuleNavigationItem = {
   label: "Cuentas x cobrar",
+  path: paths.accountsReceivableClients,
   tone:
     "border-module-receivable/70 bg-module-receivable text-module-receivable-foreground hover:bg-module-receivable/85",
 }

@@ -28,7 +28,9 @@ type ModuleCardProps = {
 }
 
 export function ModuleCard({ module }: ModuleCardProps) {
-  const isInventoryModule = module.id === "finished-goods-inventory"
+  const modulePath = module.id === "finished-goods-inventory"
+    ? paths.inventoryProducts
+    : paths.accountsReceivableClients
 
   return (
     <Card className="h-full min-w-0">
@@ -53,36 +55,25 @@ export function ModuleCard({ module }: ModuleCardProps) {
           <div className="grid grid-cols-2 items-center gap-3">
             <dt className="text-muted-foreground">Estado del frontend</dt>
             <dd className="text-right font-medium break-words">
-              {isInventoryModule ? "Catálogo disponible" : "Pendiente de módulo"}
+              Catálogo disponible
             </dd>
           </div>
         </dl>
       </CardContent>
       <CardFooter className="mt-auto border-t">
-        {isInventoryModule ? (
-          <Button
-            className="w-full"
-            nativeButton={false}
-            render={<NavLink to={paths.inventoryProducts} />}
-            variant="outline"
-          >
-            Abrir catálogo
-            <HugeiconsIcon
-              data-icon="inline-end"
-              icon={ArrowRight01Icon}
-              strokeWidth={2}
-            />
-          </Button>
-        ) : (
-          <Button className="w-full" disabled variant="outline">
-            Se implementará en su rama
-            <HugeiconsIcon
-              data-icon="inline-end"
-              icon={ArrowRight01Icon}
-              strokeWidth={2}
-            />
-          </Button>
-        )}
+        <Button
+          className="w-full"
+          nativeButton={false}
+          render={<NavLink to={modulePath} />}
+          variant="outline"
+        >
+          Abrir catálogo
+          <HugeiconsIcon
+            data-icon="inline-end"
+            icon={ArrowRight01Icon}
+            strokeWidth={2}
+          />
+        </Button>
       </CardFooter>
     </Card>
   )
