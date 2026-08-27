@@ -1,6 +1,7 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
+import { OrderCommentsContent } from "@/features/sales/orders/components/order-comments-content"
 import { orderPanelQueryOptions } from "@/features/sales/orders/logic"
 import type { Order, OrderPanelDefinition } from "@/features/sales/orders/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -58,13 +59,13 @@ function PrintOptions({ number }: { number: string }) {
 export function OrderPanelDialog({ order, panel, onOpenChange }: { order: Order; panel: OrderPanelDefinition; onOpenChange: (open: boolean) => void }) {
   const query = useQuery(orderPanelQueryOptions(order.id, panel.key))
   const data = query.data?.data
-  const title = panel.key === "invoices" ? "Facturas de pedido" : panel.key === "boxes" ? "Empaque" : panel.key === "classifications" ? "Clasificadores" : panel.key === "pieces" ? "Piezas" : panel.label
+  const title = panel.key === "invoices" ? "Facturas de pedido" : panel.key === "boxes" ? "Empaque" : panel.key === "classifications" ? "Clasificadores" : panel.key === "comments" ? "Comentarios del pedido" : panel.key === "pieces" ? "Piezas" : panel.label
   return (
-    <ErpDataDialog className="sm:max-w-[58rem]" description={`Acción ${panel.label} del pedido ${order.number}`} onOpenChange={onOpenChange} title={title}>
+    <ErpDataDialog className={panel.key === "comments" ? "sm:max-w-[62rem]" : "sm:max-w-[58rem]"} description={`Acción ${panel.label} del pedido ${order.number}`} onOpenChange={onOpenChange} title={title}>
       <ErpDataDialogBody className="grid gap-1.5">
-        {query.isPending ? <div className="grid min-h-64 place-items-center"><Spinner /></div> : query.isError ? <Alert variant="destructive"><HugeiconsIcon icon={InformationCircleIcon} /><AlertTitle>No fue posible cargar la acción</AlertTitle><AlertDescription>Revise la conexión con la API.</AlertDescription></Alert> : !data?.available ? <Alert><HugeiconsIcon icon={InformationCircleIcon} /><AlertTitle>Acción no disponible</AlertTitle><AlertDescription>{data?.reason}</AlertDescription></Alert> : panel.key === "classifications" ? <Classifications items={data.items} /> : panel.key === "boxes" ? <Boxes /> : panel.key === "print" ? <PrintOptions number={order.number} /> : <DataTable items={data.items} />}
-        {data?.summary && <div className="flex flex-wrap gap-1">{Object.entries(data.summary).map(([key, metric]) => <ErpDataMetric key={key} label={columnLabels[key] ?? key} value={format(metric)} />)}</div>}
-        <footer className="flex justify-end gap-1">{panel.key === "classifications" && <Button size="sm" variant="outline">Guardar</Button>}{panel.key === "pieces" && <Button size="sm" variant="outline">Piezas</Button>}<Button onClick={() => onOpenChange(false)} size="sm" variant="outline">Cerrar</Button></footer>
+        {query.isPending ? <div className="grid min-h-64 place-items-center"><Spinner /></div> : query.isError ? <Alert variant="destructive"><HugeiconsIcon icon={InformationCircleIcon} /><AlertTitle>No fue posible cargar la acción</AlertTitle><AlertDescription>Revise la conexión con la API.</AlertDescription></Alert> : !data?.available ? <Alert><HugeiconsIcon icon={InformationCircleIcon} /><AlertTitle>Acción no disponible</AlertTitle><AlertDescription>{data?.reason}</AlertDescription></Alert> : panel.key === "comments" ? <OrderCommentsContent order={order} panel={data} /> : panel.key === "classifications" ? <Classifications items={data.items} /> : panel.key === "boxes" ? <Boxes /> : panel.key === "print" ? <PrintOptions number={order.number} /> : <DataTable items={data.items} />}
+        {panel.key !== "comments" && data?.summary && <div className="flex flex-wrap gap-1">{Object.entries(data.summary).map(([key, metric]) => <ErpDataMetric key={key} label={columnLabels[key] ?? key} value={format(metric)} />)}</div>}
+        <footer className="flex justify-end gap-1">{panel.key === "classifications" && <Button size="sm" variant="outline">Guardar</Button>}{panel.key === "pieces" && <Button size="sm" variant="outline">Piezas</Button>}{panel.key === "comments" && <Button onClick={() => onOpenChange(false)} size="sm">Ok</Button>}<Button onClick={() => onOpenChange(false)} size="sm" variant="outline">{panel.key === "comments" ? "Cancelar" : "Cerrar"}</Button></footer>
       </ErpDataDialogBody>
     </ErpDataDialog>
   )
