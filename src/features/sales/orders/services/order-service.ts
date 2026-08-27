@@ -5,7 +5,10 @@ import type {
 
 type ItemResponse<T> = { data: T }
 export type OrderSearchCriteria = {
-  q?: string; status?: string; customerCode?: string; from?: string; to?: string
+  q?: string; orderNumber?: string; customerOrderNumber?: string
+  status?: string; customerCode?: string; orderedAt?: string; dueAt?: string
+  agent?: string; branch?: number; warehouse?: string; authorization?: string
+  minimumFulfillmentPercentage?: number; from?: string; to?: string
   page?: number; pageSize?: number
 }
 
