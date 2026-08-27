@@ -29,3 +29,27 @@ export const actionDialogWidths: Partial<Record<OrderPanelKey, string>> = {
   pieces: "sm:max-w-[52rem]",
   transfer: "sm:max-w-[31rem]",
 }
+
+export const secondaryActionDialogTitles: Partial<Record<OrderPanelKey, string>> = {
+  "assign-ct": "Captura color y talla",
+  consolidate: "Consolidar pedido",
+  ct: "Pedido CyT",
+  "split-ct": "Divide ct",
+  export: "Entrada color y talla",
+  "purchase-order": "Duplica O.C.",
+  split: "Split",
+  branch: "Duplica Pedido",
+  wip: "W.I.P.",
+}
+
+export const secondaryActionDialogWidths: Partial<Record<OrderPanelKey, string>> = {
+  "assign-ct": "sm:max-w-[37rem]",
+  consolidate: "sm:max-w-[31rem]",
+  ct: "sm:max-w-[44rem]",
+  "split-ct": "sm:max-w-[45rem]",
+  export: "sm:max-w-[52rem]",
+  "purchase-order": "sm:max-w-[22rem]",
+  split: "sm:max-w-[48rem]",
+  branch: "sm:max-w-[19rem]",
+  wip: "sm:max-w-[41rem]",
+}
