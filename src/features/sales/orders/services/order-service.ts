@@ -34,6 +34,13 @@ export async function getOrder(orderId: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<Order>>(`/sales/orders/${orderId}`, { signal })
   return response.data.data
 }
+export async function getOrderByNumber(orderNumber: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<Order>>(
+    `/sales/orders/by-number/${encodeURIComponent(orderNumber)}`,
+    { signal },
+  )
+  return response.data.data
+}
 export async function getAdjacentOrder(orderId: number, direction: "previous" | "next") {
   const response = await apiClient.get<ItemResponse<Order | null>>(`/sales/orders/${orderId}/${direction}`)
   return response.data.data
