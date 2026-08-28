@@ -93,6 +93,14 @@ export async function getProduct(productId: number, signal?: AbortSignal) {
   return response.data.data
 }
 
+export async function getFirstActiveProduct(signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<Product>>(
+    "/inventories/products/first",
+    { signal },
+  )
+  return response.data.data
+}
+
 export async function getAdjacentProduct(
   productId: number,
   direction: "previous" | "next",

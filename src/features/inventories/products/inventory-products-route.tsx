@@ -4,21 +4,16 @@ import { redirect } from "react-router"
 import { queryClient } from "@/app/providers/query-client"
 import { paths } from "@/app/router/paths"
 import {
+  firstActiveProductQueryOptions,
+  productKeys,
   productQueryOptions,
-  productSearchQueryOptions,
 } from "@/features/inventories/products/logic"
 import { ProductCatalogPage } from "@/features/inventories/products/pages/product-catalog-page"
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (params.productId === undefined) {
-    const result = await queryClient.ensureQueryData(
-      productSearchQueryOptions({ status: "active", page: 1, pageSize: 1 }),
-    )
-    const firstProduct = result.data[0]
-
-    if (!firstProduct) {
-      throw new Response("No hay productos disponibles", { status: 404 })
-    }
+    const firstProduct = await queryClient.ensureQueryData(firstActiveProductQueryOptions())
+    queryClient.setQueryData(productKeys.detail(firstProduct.id), firstProduct)
 
     return redirect(paths.inventoryProduct(firstProduct.id))
   }

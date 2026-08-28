@@ -8,6 +8,7 @@ import type {
 } from "@/features/inventories/products/model"
 import {
   getProduct,
+  getFirstActiveProduct,
   getProductPanel,
   searchProducts,
   type ProductSearchCriteria,
@@ -15,6 +16,7 @@ import {
 
 export const productKeys = {
   all: ["inventories", "products"] as const,
+  firstActive: () => [...productKeys.all, "first-active"] as const,
   detail: (productId: number) => [...productKeys.all, "detail", productId] as const,
   search: (criteria: ProductSearchCriteria) =>
     [...productKeys.all, "search", criteria] as const,
@@ -26,6 +28,13 @@ export function productQueryOptions(productId: number) {
   return queryOptions({
     queryKey: productKeys.detail(productId),
     queryFn: ({ signal }) => getProduct(productId, signal),
+  })
+}
+
+export function firstActiveProductQueryOptions() {
+  return queryOptions({
+    queryKey: productKeys.firstActive(),
+    queryFn: ({ signal }) => getFirstActiveProduct(signal),
   })
 }
 
