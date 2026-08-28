@@ -8,6 +8,7 @@ import type {
 } from "@/features/accounts-receivable/clients/model"
 import {
   getClient,
+  getFirstActiveClient,
   getClientClassifications,
   getClientPanel,
   searchClients,
@@ -16,6 +17,7 @@ import {
 
 export const clientKeys = {
   all: ["accounts-receivable", "clients"] as const,
+  firstActive: () => [...clientKeys.all, "first-active"] as const,
   detail: (clientId: number) => [...clientKeys.all, "detail", clientId] as const,
   search: (criteria: ClientSearchCriteria) => [...clientKeys.all, "search", criteria] as const,
   panel: (clientId: number, panelKey: string) =>
@@ -27,6 +29,11 @@ export const clientKeys = {
 export const clientQueryOptions = (clientId: number) => queryOptions({
   queryKey: clientKeys.detail(clientId),
   queryFn: ({ signal }) => getClient(clientId, signal),
+})
+
+export const firstActiveClientQueryOptions = () => queryOptions({
+  queryKey: clientKeys.firstActive(),
+  queryFn: ({ signal }) => getFirstActiveClient(signal),
 })
 
 export const clientSearchQueryOptions = (criteria: ClientSearchCriteria) => queryOptions({

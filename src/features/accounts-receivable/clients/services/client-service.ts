@@ -37,6 +37,14 @@ export async function getClient(clientId: number, signal?: AbortSignal) {
   return response.data.data
 }
 
+export async function getFirstActiveClient(signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<Client>>(
+    "/accounts-receivable/clients/first",
+    { signal },
+  )
+  return response.data.data
+}
+
 export async function getAdjacentClient(clientId: number, direction: "previous" | "next") {
   const response = await apiClient.get<ItemResponse<Client | null>>(
     `/accounts-receivable/clients/${clientId}/${direction}`,
