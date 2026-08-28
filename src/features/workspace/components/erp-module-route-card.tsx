@@ -1,4 +1,5 @@
 import DashboardSquare01Icon from "@hugeicons/core-free-icons/DashboardSquare01Icon"
+import Invoice03Icon from "@hugeicons/core-free-icons/Invoice03Icon"
 import PackageIcon from "@hugeicons/core-free-icons/PackageIcon"
 import UserGroupIcon from "@hugeicons/core-free-icons/UserGroupIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -35,6 +36,13 @@ const routeCards = [
     title: "Pedidos",
     abbreviation: "VTAS",
     icon: PackageIcon,
+    tone: "border-module-sales/70 bg-module-sales text-module-sales-foreground",
+  },
+  {
+    matches: (pathname: string) => pathname.startsWith(paths.salesInvoices),
+    title: "Facturación",
+    abbreviation: "VTAS",
+    icon: Invoice03Icon,
     tone: "border-module-sales/70 bg-module-sales text-module-sales-foreground",
   },
 ] as const

@@ -7,4 +7,6 @@ export const paths = {
     `/cuentas-por-cobrar/clientes/${clientId}`,
   salesOrders: "/pedidos",
   salesOrder: (orderId: number) => `/pedidos/${orderId}`,
+  salesInvoices: "/facturacion",
+  salesInvoice: (invoiceId: number) => `/facturacion/${invoiceId}`,
 } as const

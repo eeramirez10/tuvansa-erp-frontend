@@ -66,6 +66,7 @@ const salesOrdersModule: ErpModuleNavigationItem = {
 }
 const invoicingModule: ErpModuleNavigationItem = {
   label: "Factura",
+  path: paths.salesInvoices,
   tone:
     "border-module-sales/70 bg-module-sales text-module-sales-foreground hover:bg-module-sales/85",
 }

@@ -28,6 +28,10 @@ export const router = createBrowserRouter([
         path: "pedidos/:orderId?",
         lazy: () => import("@/features/sales/orders/sales-orders-route"),
       },
+      {
+        path: "facturacion/:invoiceId?",
+        lazy: () => import("@/features/sales/invoicing/sales-invoicing-route"),
+      },
     ],
   },
 ])
