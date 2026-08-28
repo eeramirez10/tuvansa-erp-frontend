@@ -117,8 +117,11 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
           </div>
         </form>
 
-        <ErpDataTableViewport className="h-[24rem]" axes="xy">
-          <Table className="min-w-[760px] text-[9px]">
+        <ErpDataTableViewport className="relative h-[24rem]" axes="none">
+          <Table
+            className="min-w-[760px] text-[9px]"
+            containerClassName="h-full overflow-scroll [scrollbar-width:auto]"
+          >
             <TableHeader><TableRow>
               {['Pedido','Ped. Cliente','Cliente','Nombre','Fecha','Vencimiento','Status','Sucursal','Almacén','Autoriz.','% surt'].map((column) => <TableHead className="h-5 whitespace-nowrap px-1 text-[9px]" key={column}>{column}</TableHead>)}
             </TableRow></TableHeader>
@@ -145,7 +148,7 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
               ))}
             </TableBody>
           </Table>
-          {submitted !== null && !result.isFetching && result.data?.data.length === 0 && <div className="grid h-20 place-items-center text-muted-foreground">No se encontraron pedidos.</div>}
+          {submitted !== null && !result.isFetching && result.data?.data.length === 0 && <div className="pointer-events-none absolute inset-0 grid place-items-center pb-4 text-muted-foreground">No se encontraron pedidos.</div>}
         </ErpDataTableViewport>
 
         <footer className="flex items-center justify-between gap-1">

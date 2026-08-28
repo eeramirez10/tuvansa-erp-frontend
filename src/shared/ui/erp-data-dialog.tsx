@@ -262,7 +262,7 @@ export function ErpDataDialogBody({
 }
 
 type ErpDataTableViewportProps = ComponentProps<"div"> & {
-  axes?: "xy" | "x" | "y"
+  axes?: "xy" | "x" | "y" | "none"
 }
 
 export function ErpDataTableViewport({
@@ -271,7 +271,9 @@ export function ErpDataTableViewport({
   ...props
 }: ErpDataTableViewportProps) {
   const overflowClass =
-    axes === "x"
+    axes === "none"
+      ? "overflow-hidden"
+      : axes === "x"
       ? "overflow-x-scroll overflow-y-hidden"
       : axes === "y"
         ? "overflow-x-hidden overflow-y-scroll"
