@@ -55,8 +55,11 @@ export function OrderCatalogDetails({ order }: { order: Order }) {
 
       <Card className="min-w-0" size="sm">
         <CardContent className="p-0">
-          <div className="h-[19rem] w-full overflow-scroll border-y [scrollbar-width:auto]">
-            <Table className="min-w-[1180px] text-[9px]">
+          <div className="h-[19rem] w-full overflow-hidden border-y">
+            <Table
+              className="min-w-[1180px] text-[9px]"
+              containerClassName="h-full overflow-scroll [scrollbar-width:auto]"
+            >
               <TableHeader className="sticky top-0 z-[1] bg-muted">
                 <TableRow>
                   {['Producto','Descripción','Pedido','Surtido','Resta','U.M.','Asignado','Suc','Precio','Cls','Moneda','Pzas.','Descto','Publi','SKU','Color','Talla'].map((column) => (
