@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { orderSearchQueryOptions } from "@/features/sales/orders/logic"
-import type { Order } from "@/features/sales/orders/model"
+import type { OrderSummary } from "@/features/sales/orders/model"
 import type { OrderSearchCriteria } from "@/features/sales/orders/services/order-service"
 import { Button } from "@/shared/ui/button"
 import { ErpDataDialog, ErpDataDialogBody, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
@@ -67,11 +67,11 @@ const displayDate = (value: string | null) => {
 
 export function OrderSearchDialog({ onOpenChange, onSelect }: {
   onOpenChange: (open: boolean) => void
-  onSelect: (order: Order) => void
+  onSelect: (orderId: number) => void
 }) {
   const [filters, setFilters] = useState<SearchFilters>(emptyFilters)
   const [submitted, setSubmitted] = useState<Omit<OrderSearchCriteria, "page" | "pageSize"> | null>(null)
-  const [selected, setSelected] = useState<Order | null>(null)
+  const [selected, setSelected] = useState<OrderSummary | null>(null)
   const [page, setPage] = useState(1)
   const result = useQuery({
     ...orderSearchQueryOptions({ ...(submitted ?? {}), page, pageSize: 100 }),
@@ -128,7 +128,7 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
                   className={selected?.id === order.id ? "bg-module-sales/20" : "cursor-default"}
                   key={order.id}
                   onClick={() => setSelected(order)}
-                  onDoubleClick={() => onSelect(order)}
+                  onDoubleClick={() => onSelect(order.id)}
                 >
                   <TableCell className="px-1 py-0.5">{order.number}</TableCell>
                   <TableCell className="px-1 py-0.5">{order.customerOrderNumber}</TableCell>
@@ -156,7 +156,7 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
           </div>
           <div className="flex gap-1">
             <Button onClick={searchAuthorized} size="sm" variant="outline">Pedidos O.K.</Button>
-            <Button disabled={!selected} onClick={() => selected && onSelect(selected)} size="sm">✓ OK</Button>
+            <Button disabled={!selected} onClick={() => selected && onSelect(selected.id)} size="sm">✓ OK</Button>
             <Button onClick={() => onOpenChange(false)} size="sm" variant="outline">× Cancelar</Button>
           </div>
         </footer>

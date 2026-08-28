@@ -70,6 +70,11 @@ export function OrderCatalogPage() {
     openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })
   }
   const openOrder = (next: Order) => { queryClient.setQueryData(orderKeys.detail(next.id), next); void navigate(paths.salesOrder(next.id)) }
+  const openSearchResult = (selectedOrderId: number) => {
+    setSearchOpen(false)
+    queryClient.removeQueries({ queryKey: orderKeys.detail(selectedOrderId), exact: true })
+    void navigate(paths.salesOrder(selectedOrderId))
+  }
   const navigation = useMutation({ mutationFn: (direction: "previous" | "next") => getAdjacentOrder(order.id, direction), onSuccess: (next, direction) => next ? openOrder(next) : setNotice({ kind: "success", title: "Fin del catálogo", message: direction === "previous" ? "Este es el primer pedido disponible." : "Este es el último pedido disponible." }), onError: (error) => setNotice({ kind: "error", title: "No fue posible navegar", message: getApiErrorMessage(error) }) })
   const deletion = useMutation({ mutationFn: () => deleteOrder(order.id), onSuccess: async () => { setDeleteOpen(false); await queryClient.invalidateQueries({ queryKey: orderKeys.all }); void navigate(paths.salesOrders, { replace: true }) }, onError: (error) => { setDeleteOpen(false); setNotice({ kind: "error", title: "No fue posible eliminar el pedido", message: getApiErrorMessage(error) }) } })
   useEffect(() => {
@@ -94,7 +99,7 @@ export function OrderCatalogPage() {
         <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={selectPanel} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={selectPanel} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
         <OrderCatalogDetails order={order} />
       </div>
-      {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); openOrder(selected) }} /></DesktopWindowIdentity>}
+      {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={openSearchResult} /></DesktopWindowIdentity>}
       {formMode === "create" && <DesktopWindowIdentity id="orders:create:new"><OrderCaptureDialog onCustomerSearch={(initialCode, onSelect) => setCustomerSearch({ initialCode, onSelect })} onProductSearch={(initialCode, warehouse, onSelect) => setProductSearch({initialCode,warehouse,onSelect})} onOpenChange={open => { if (!open) { setCustomerSearch(null); setProductSearch(null); setFormMode(null) } }} onSaved={saved => { setCustomerSearch(null); setProductSearch(null); setFormMode(null); setNotice({ kind: "success", title: "Alta guardada", message: saved.number }); openOrder(saved) }} /></DesktopWindowIdentity>}
       {formMode === "create" && customerSearch && <DesktopWindowIdentity id="orders:capture:customer-search"><OrderCustomerMatchesDialog initialCode={customerSearch.initialCode} onOpenChange={open => { if (!open) setCustomerSearch(null) }} onSelect={match => { const select = customerSearch.onSelect; setCustomerSearch(null); select(match) }} /></DesktopWindowIdentity>}
       {formMode !== null && productSearch && <DesktopWindowIdentity id="orders:capture:product-search"><OrderProductMatchesDialog initialCode={productSearch.initialCode} warehouse={productSearch.warehouse} onOpenChange={open => { if (!open) setProductSearch(null) }} onSelect={match => { const select = productSearch.onSelect; setProductSearch(null); select(match) }} /></DesktopWindowIdentity>}

@@ -71,8 +71,10 @@ export type Order = {
   lines: OrderLine[]
 }
 
+export type OrderSummary = Omit<Order, "lines">
+
 export type OrderSearchResponse = {
-  data: Order[]
+  data: OrderSummary[]
   pagination: { page: number; pageSize: number; total: number; pages: number }
 }
 
