@@ -22,7 +22,7 @@ copy .env.example .env
 pnpm dev
 ```
 
-La API se espera por defecto en `http://localhost:3000/api`. Se puede cambiar con `VITE_API_URL`.
+La API se espera por defecto en `http://localhost:3000/api`. Se puede cambiar con `VITE_API_BASE_URL`.
 
 ## Comandos
 

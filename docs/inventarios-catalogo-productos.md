@@ -1,6 +1,6 @@
 # Inventarios PT: catálogo de productos
 
-Trazabilidad de la pantalla heredada de OMNIS/PROSCAI con la ruta web `/inventarios/productos/:productId`. Todos los endpoints son relativos a `VITE_API_URL` y reciben el identificador interno del producto en `:productId`.
+Trazabilidad de la pantalla heredada de OMNIS/PROSCAI con la ruta web `/inventarios/productos/:productId`. Todos los endpoints son relativos a `VITE_API_BASE_URL` y reciben el identificador interno del producto en `:productId`.
 
 ## Vista y barra de navegación
 
