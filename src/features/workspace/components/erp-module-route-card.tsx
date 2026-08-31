@@ -16,6 +16,13 @@ type ErpModuleRouteCardProps = {
 
 const routeCards = [
   {
+    matches: (pathname: string) => pathname.startsWith(paths.accountsPayableSuppliers),
+    title: "Cuentas x Pagar",
+    abbreviation: "CXP",
+    icon: UserGroupIcon,
+    tone: "border-module-payable/70 bg-module-payable text-module-payable-foreground",
+  },
+  {
     matches: (pathname: string) => pathname.startsWith(paths.bankAccounts),
     title: "Bancos",
     abbreviation: "$",

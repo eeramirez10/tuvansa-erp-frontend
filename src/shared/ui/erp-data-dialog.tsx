@@ -17,7 +17,7 @@ type ErpDataDialogProps = {
   onOpenChange: (open: boolean) => void
   children: ReactNode
   className?: string
-  tone?: "inventory" | "receivable" | "sales" | "banking"
+  tone?: "inventory" | "receivable" | "payable" | "sales" | "banking"
 }
 
 export function ErpDataDialog({
@@ -38,6 +38,8 @@ export function ErpDataDialog({
           "gap-0 overflow-hidden rounded-sm bg-muted p-0 text-[9px]/none shadow-2xl sm:max-w-[46rem]",
           tone === "banking"
             ? "border border-module-banking/70"
+            : tone === "payable"
+            ? "border border-module-payable/70"
             : tone === "receivable"
             ? "border border-module-receivable/70"
             : tone === "sales"
@@ -53,6 +55,8 @@ export function ErpDataDialog({
             "flex h-7 items-center justify-between border-b bg-gradient-to-b px-1.5 [font-family:Tahoma,'Segoe_UI',sans-serif]",
             tone === "banking"
               ? "border-module-banking/50 from-module-banking/35 to-module-banking/15"
+              : tone === "payable"
+              ? "border-module-payable/50 from-module-payable/35 to-module-payable/15"
               : tone === "receivable"
               ? "border-module-receivable/50 from-module-receivable/35 to-module-receivable/15"
               : tone === "sales"
