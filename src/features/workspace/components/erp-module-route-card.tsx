@@ -1,4 +1,5 @@
 import DashboardSquare01Icon from "@hugeicons/core-free-icons/DashboardSquare01Icon"
+import BankIcon from "@hugeicons/core-free-icons/BankIcon"
 import Invoice03Icon from "@hugeicons/core-free-icons/Invoice03Icon"
 import PackageIcon from "@hugeicons/core-free-icons/PackageIcon"
 import UserGroupIcon from "@hugeicons/core-free-icons/UserGroupIcon"
@@ -14,6 +15,13 @@ type ErpModuleRouteCardProps = {
 }
 
 const routeCards = [
+  {
+    matches: (pathname: string) => pathname.startsWith(paths.bankAccounts),
+    title: "Bancos",
+    abbreviation: "$",
+    icon: BankIcon,
+    tone: "border-module-banking/70 bg-module-banking text-module-banking-foreground",
+  },
   {
     matches: (pathname: string) =>
       pathname.startsWith(paths.accountsReceivableClients),

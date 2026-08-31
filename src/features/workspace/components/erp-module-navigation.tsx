@@ -43,6 +43,7 @@ const accountingModule: ErpModuleNavigationItem = {
 }
 const bankingModule: ErpModuleNavigationItem = {
   label: "Bancos",
+  path: paths.bankAccounts,
   tone:
     "border-module-banking/70 bg-module-banking text-module-banking-foreground hover:bg-module-banking/85",
 }

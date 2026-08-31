@@ -32,6 +32,10 @@ export const router = createBrowserRouter([
         path: "facturacion/:invoiceId?",
         lazy: () => import("@/features/sales/invoicing/sales-invoicing-route"),
       },
+      {
+        path: "bancos/:bankAccountId?",
+        lazy: () => import("@/features/treasury/banking/treasury-banking-route"),
+      },
     ],
   },
 ])
