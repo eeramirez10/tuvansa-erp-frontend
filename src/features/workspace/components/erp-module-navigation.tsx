@@ -42,6 +42,7 @@ const productionModule: ErpModuleNavigationItem = {
 }
 const accountingModule: ErpModuleNavigationItem = {
   label: "Contabilidad",
+  path: paths.accountingPolicies,
   tone:
     "border-module-accounting/70 bg-module-accounting text-module-accounting-foreground hover:bg-module-accounting/85",
 }
