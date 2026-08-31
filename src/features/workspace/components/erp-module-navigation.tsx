@@ -18,6 +18,7 @@ const receptionModule: ErpModuleNavigationItem = {
 }
 const ordersModule: ErpModuleNavigationItem = {
   label: "Ordenes",
+  path: paths.purchaseOrders,
   tone:
     "border-module-reception/70 bg-module-reception text-module-reception-foreground hover:bg-module-reception/85",
 }
