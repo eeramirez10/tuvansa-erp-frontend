@@ -13,6 +13,7 @@ type ErpModuleNavigationItem = {
 
 const receptionModule: ErpModuleNavigationItem = {
   label: "Recep.",
+  path: paths.purchaseReceptions,
   tone:
     "border-module-reception/70 bg-module-reception text-module-reception-foreground hover:bg-module-reception/85",
 }

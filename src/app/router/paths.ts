@@ -11,6 +11,9 @@ export const paths = {
   purchaseOrders: "/ordenes-compra",
   purchaseOrder: (purchaseOrderId: number) =>
     `/ordenes-compra/${purchaseOrderId}`,
+  purchaseReceptions: "/recepciones",
+  purchaseReception: (purchaseReceptionId: number) =>
+    `/recepciones/${purchaseReceptionId}`,
   salesOrders: "/pedidos",
   salesOrder: (orderId: number) => `/pedidos/${orderId}`,
   salesInvoices: "/facturacion",
