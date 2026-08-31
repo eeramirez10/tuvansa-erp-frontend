@@ -25,6 +25,7 @@ const ordersModule: ErpModuleNavigationItem = {
 }
 const rawMaterialsModule: ErpModuleNavigationItem = {
   label: "Inventarios M.P.",
+  path: paths.inventoryProducts,
   tone:
     "border-module-raw-materials/70 bg-module-raw-materials text-module-raw-materials-foreground hover:bg-module-raw-materials/85",
 }
