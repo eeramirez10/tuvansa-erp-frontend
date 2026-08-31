@@ -25,26 +25,26 @@ export function PurchaseOrderDetails({ purchaseOrder }: { purchaseOrder: Purchas
         <CardHeader className="border-b bg-module-reception/15 py-1">
           <CardTitle className="text-module-reception-foreground">Orden de compra</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-x-2 gap-y-1 py-1 md:grid-cols-12">
-          <ReadonlyField className="md:col-span-2" label="Pedido" fieldValue={purchaseOrder.number} />
-          <ReadonlyField className="md:col-span-3" label="Pedido prv" fieldValue={purchaseOrder.supplierOrderNumber} />
-          <ReadonlyField className="md:col-span-2" label="Sucursal" fieldValue={purchaseOrder.branch} />
-          <ReadonlyField className="md:col-span-2" label="Depto" fieldValue={purchaseOrder.department} />
-          <ReadonlyField className="md:col-span-2" label="Status" fieldValue={purchaseOrder.status} />
-          <ReadonlyField className="md:col-span-1" label="Tipo" fieldValue={purchaseOrder.documentKind === "quote" ? "COTIZ" : "PEDIDO"} />
-          <ReadonlyField className="md:col-span-2" label="Proveedor" fieldValue={purchaseOrder.supplier.code} />
-          <ReadonlyField className="md:col-span-6" label="Nombre" fieldValue={purchaseOrder.supplier.name} />
-          <ReadonlyField className="md:col-span-2" label="Almacén" fieldValue={purchaseOrder.warehouse} />
-          <div className="grid min-w-0 gap-0.5 md:col-span-2">
+        <CardContent className="grid grid-cols-3 gap-x-2 gap-y-1 py-1">
+          <ReadonlyField label="Pedido" fieldValue={purchaseOrder.number} />
+          <ReadonlyField label="Pedido prv" fieldValue={purchaseOrder.supplierOrderNumber} />
+          <ReadonlyField label="Tipo" fieldValue={purchaseOrder.documentKind === "quote" ? "COTIZ" : "PEDIDO"} />
+          <ReadonlyField label="Proveedor" fieldValue={purchaseOrder.supplier.code} />
+          <ReadonlyField label="Nombre" fieldValue={purchaseOrder.supplier.name} />
+          <ReadonlyField label="Status" fieldValue={purchaseOrder.status} />
+          <ReadonlyField label="Fecha" fieldValue={purchaseOrder.dates.orderedAt} />
+          <ReadonlyField label="Desde" fieldValue={purchaseOrder.dates.from} />
+          <ReadonlyField label="Vence" fieldValue={purchaseOrder.dates.dueAt} />
+          <ReadonlyField label="Sucursal" fieldValue={purchaseOrder.branch} />
+          <ReadonlyField label="Depto" fieldValue={purchaseOrder.department} />
+          <ReadonlyField label="Almacén" fieldValue={purchaseOrder.warehouse} />
+          <ReadonlyField label="Clasif. 1" fieldValue={purchaseOrder.classifications[0]} />
+          <ReadonlyField label="Clasif. 8" fieldValue={purchaseOrder.classifications[7]} />
+          <ReadonlyField label="Clasif. 9" fieldValue={purchaseOrder.classifications[8]} />
+          <div className="grid min-w-0 gap-0.5">
             <Label className="text-[9px]/none" htmlFor="purchase-order-initial">Inicial</Label>
             <div className="flex h-4 items-center px-1"><Checkbox checked={purchaseOrder.initial} disabled id="purchase-order-initial" /></div>
           </div>
-          <ReadonlyField className="md:col-span-2" label="Fecha" fieldValue={purchaseOrder.dates.orderedAt} />
-          <ReadonlyField className="md:col-span-2" label="Desde" fieldValue={purchaseOrder.dates.from} />
-          <ReadonlyField className="md:col-span-2" label="Vence" fieldValue={purchaseOrder.dates.dueAt} />
-          <ReadonlyField className="md:col-span-2" label="Clasif. 1" fieldValue={purchaseOrder.classifications[0]} />
-          <ReadonlyField className="md:col-span-2" label="Clasif. 8" fieldValue={purchaseOrder.classifications[7]} />
-          <ReadonlyField className="md:col-span-2" label="Clasif. 9" fieldValue={purchaseOrder.classifications[8]} />
         </CardContent>
       </Card>
 
