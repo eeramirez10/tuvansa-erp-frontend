@@ -39,7 +39,7 @@ export function PurchaseOrderCatalogPage() {
   })
 
   return (
-    <main className="grid min-w-[74rem] gap-2 p-2 lg:grid-cols-[9rem_minmax(0,1fr)]">
+    <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
       <PurchaseOrderToolbar
         disabled={navigation.isPending}
         onNext={() => navigation.mutate("next")}
