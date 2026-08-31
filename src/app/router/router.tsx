@@ -30,6 +30,16 @@ export const router = createBrowserRouter([
           import("@/features/accounts-payable/suppliers/accounts-payable-suppliers-route"),
       },
       {
+        path: "recepciones/:purchaseReceptionId?",
+        lazy: () =>
+          import("@/features/purchasing/purchase-receptions/purchase-receptions-route"),
+      },
+      {
+        path: "ordenes-compra/:purchaseOrderId?",
+        lazy: () =>
+          import("@/features/purchasing/purchase-orders/purchase-orders-route"),
+      },
+      {
         path: "pedidos/:orderId?",
         lazy: () => import("@/features/sales/orders/sales-orders-route"),
       },
