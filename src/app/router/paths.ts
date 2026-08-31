@@ -5,6 +5,9 @@ export const paths = {
   accountsReceivableClients: "/cuentas-por-cobrar/clientes",
   accountsReceivableClient: (clientId: number) =>
     `/cuentas-por-cobrar/clientes/${clientId}`,
+  accountsPayableSuppliers: "/cuentas-por-pagar/proveedores",
+  accountsPayableSupplier: (supplierId: number) =>
+    `/cuentas-por-pagar/proveedores/${supplierId}`,
   salesOrders: "/pedidos",
   salesOrder: (orderId: number) => `/pedidos/${orderId}`,
   salesInvoices: "/facturacion",

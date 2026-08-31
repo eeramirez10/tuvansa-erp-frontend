@@ -28,6 +28,7 @@ const rawMaterialsModule: ErpModuleNavigationItem = {
 }
 const accountsPayableModule: ErpModuleNavigationItem = {
   label: "Cuentas x pagar",
+  path: paths.accountsPayableSuppliers,
   tone:
     "border-module-payable/70 bg-module-payable text-module-payable-foreground hover:bg-module-payable/85",
 }
