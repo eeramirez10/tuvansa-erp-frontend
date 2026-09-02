@@ -25,6 +25,7 @@ const ordersModule: ErpModuleNavigationItem = {
 }
 const rawMaterialsModule: ErpModuleNavigationItem = {
   label: "Inventarios M.P.",
+  path: paths.inventoryProducts,
   tone:
     "border-module-raw-materials/70 bg-module-raw-materials text-module-raw-materials-foreground hover:bg-module-raw-materials/85",
 }
@@ -41,6 +42,7 @@ const productionModule: ErpModuleNavigationItem = {
 }
 const accountingModule: ErpModuleNavigationItem = {
   label: "Contabilidad",
+  path: paths.accountingPolicies,
   tone:
     "border-module-accounting/70 bg-module-accounting text-module-accounting-foreground hover:bg-module-accounting/85",
 }
