@@ -28,14 +28,7 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Checkbox } from "@/shared/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog"
+import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import {
   Field,
   FieldError,
@@ -112,18 +105,13 @@ export function ProductFormDialog({
   })
 
   return (
-    <Dialog onOpenChange={onOpenChange} open>
-      <DialogContent className="sm:max-w-5xl">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "create" ? "Nuevo producto" : "Editar producto"}
-          </DialogTitle>
-          <DialogDescription>
-            Capture los campos de la ficha de Inventarios PT. Los acumulados se
-            calculan en el ERP y son de consulta.
-          </DialogDescription>
-        </DialogHeader>
-
+    <ErpDataDialog
+      className="sm:max-w-5xl"
+      description="Capture los campos de la ficha de Inventarios PT. Los acumulados se calculan en el ERP y son de consulta."
+      onOpenChange={onOpenChange}
+      title={mode === "create" ? "Nuevo producto" : "Editar producto"}
+    >
+      <ErpDataDialogBody className="p-3">
         <form
           className="flex min-h-0 flex-col gap-3"
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
@@ -344,7 +332,7 @@ export function ProductFormDialog({
             </div>
           </ScrollArea>
 
-          <DialogFooter>
+          <footer className="flex justify-end gap-2">
             <Button
               disabled={mutation.isPending}
               onClick={() => onOpenChange(false)}
@@ -365,9 +353,9 @@ export function ProductFormDialog({
               )}
               Guardar
             </Button>
-          </DialogFooter>
+          </footer>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
   )
 }

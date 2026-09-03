@@ -13,8 +13,10 @@ import type { PurchaseReception, PurchaseReceptionAction } from "@/features/purc
 import { getAdjacentPurchaseReception } from "@/features/purchasing/purchase-receptions/services/purchase-reception-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { title: string; message: string; error?: boolean }
+type PurchaseReceptionActionWindow = { reception: PurchaseReception; action: PurchaseReceptionAction }
 
 export function PurchaseReceptionCatalogPage() {
   const id = Number(useParams().purchaseReceptionId)
@@ -22,7 +24,7 @@ export function PurchaseReceptionCatalogPage() {
   const queryClient = useQueryClient()
   const { data: reception } = useSuspenseQuery(purchaseReceptionQueryOptions(id))
   const [searchOpen, setSearchOpen] = useState(false)
-  const [action, setAction] = useState<PurchaseReceptionAction | null>(null)
+  const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseReceptionActionWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openReception = (next: PurchaseReception) => {
@@ -46,19 +48,19 @@ export function PurchaseReceptionCatalogPage() {
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
       />
-      <aside><PurchaseReceptionActionButtons actions={purchaseReceptionActions} onSelect={setAction} /></aside>
+      <aside><PurchaseReceptionActionButtons actions={purchaseReceptionActions} onSelect={(action) => openActionWindow(`purchase-receptions:${reception.id}:${action.key}`, { reception, action })} /></aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
         <PurchaseReceptionDetails reception={reception} />
       </section>
 
       {searchOpen && (
-        <PurchaseReceptionSearchDialog
+        <DesktopWindowIdentity id="purchase-receptions:search"><PurchaseReceptionSearchDialog
           onOpenChange={setSearchOpen}
           onSelect={(selected) => { setSearchOpen(false); void navigate(paths.purchaseReception(selected.id)) }}
-        />
+        /></DesktopWindowIdentity>
       )}
-      {action && <PurchaseReceptionActionDialog action={action} onClose={() => setAction(null)} reception={reception} />}
+      {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseReceptionActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} reception={window.payload.reception} /></DesktopWindowIdentity>)}
     </main>
   )
 }

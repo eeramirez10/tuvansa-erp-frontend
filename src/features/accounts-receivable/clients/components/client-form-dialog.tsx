@@ -11,7 +11,7 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Checkbox } from "@/shared/ui/checkbox"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
+import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Field, FieldError as FormFieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/shared/ui/field"
 import { Input } from "@/shared/ui/input"
 import { ScrollArea } from "@/shared/ui/scroll-area"
@@ -62,12 +62,8 @@ export function ClientFormDialog({ mode, client, onOpenChange, onSaved }: Client
   const registerNumber = (name: "priceList" | "discount1" | "discount2" | "discount3" | "paymentTermDays" | "creditLimit") => form.register(name, { valueAsNumber: true })
 
   return (
-    <Dialog onOpenChange={onOpenChange} open>
-      <DialogContent className="sm:max-w-5xl">
-        <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Nuevo cliente" : "Editar cliente"}</DialogTitle>
-          <DialogDescription>Capture los campos visibles del Catálogo de clientes.</DialogDescription>
-        </DialogHeader>
+    <ErpDataDialog className="sm:max-w-5xl" description="Capture los campos visibles del Catálogo de clientes." onOpenChange={onOpenChange} title={mode === "create" ? "Nuevo cliente" : "Editar cliente"} tone="receivable">
+      <ErpDataDialogBody className="p-3">
         <form className="flex min-h-0 flex-col gap-3" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <ScrollArea className="h-[68vh] pr-3">
             <div className="flex flex-col gap-3">
@@ -117,12 +113,12 @@ export function ClientFormDialog({ mode, client, onOpenChange, onSaved }: Client
               </FieldSet>
             </div>
           </ScrollArea>
-          <DialogFooter>
+          <footer className="flex justify-end gap-2">
             <Button disabled={mutation.isPending} onClick={() => onOpenChange(false)} type="button" variant="outline">Cancelar</Button>
             <Button disabled={mutation.isPending} type="submit">{mutation.isPending ? <Spinner data-icon="inline-start" /> : <HugeiconsIcon data-icon="inline-start" icon={FloppyDiskIcon} strokeWidth={2} />}Guardar</Button>
-          </DialogFooter>
+          </footer>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
   )
 }

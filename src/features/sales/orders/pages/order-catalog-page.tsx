@@ -20,8 +20,10 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/shared/ui/alert-dialog"
 import { Spinner } from "@/shared/ui/spinner"
+import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { kind: "success" | "error"; title: string; message: string }
+type OrderPanelWindow = { order: Order; panel: OrderPanelDefinition }
 export function OrderCatalogPage() {
   const orderId = Number(useParams().orderId)
   const navigate = useNavigate(); const queryClient = useQueryClient()
@@ -29,7 +31,7 @@ export function OrderCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [panel, setPanel] = useState<OrderPanelDefinition | null>(null)
+  const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<OrderPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
   const openOrder = (next: Order) => { queryClient.setQueryData(orderKeys.detail(next.id), next); void navigate(paths.salesOrder(next.id)) }
   const navigation = useMutation({ mutationFn: (direction: "previous" | "next") => getAdjacentOrder(order.id, direction), onSuccess: (next, direction) => next ? openOrder(next) : setNotice({ kind: "success", title: "Fin del catálogo", message: direction === "previous" ? "Este es el primer pedido disponible." : "Este es el último pedido disponible." }), onError: (error) => setNotice({ kind: "error", title: "No fue posible navegar", message: getApiErrorMessage(error) }) })
@@ -39,12 +41,12 @@ export function OrderCatalogPage() {
       <OrderToolbar disabled={navigation.isPending || deletion.isPending} onCreate={() => setFormMode("create")} onDelete={() => setDeleteOpen(true)} onEdit={() => setFormMode("edit")} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
       {notice && <Alert variant={notice.kind === "error" ? "destructive" : "default"}><HugeiconsIcon icon={notice.kind === "error" ? AlertCircleIcon : InformationCircleIcon} /><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
-        <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={setPanel} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={setPanel} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
+        <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={(panel) => openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={(panel) => openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
         <OrderCatalogDetails order={order} />
       </div>
-      {searchOpen && <OrderSearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); openOrder(selected) }} />}
-      {formMode && <OrderFormDialog mode={formMode} onOpenChange={(open) => { if (!open) setFormMode(null) }} onSaved={(saved) => { setFormMode(null); setNotice({ kind: "success", title: formMode === "create" ? "Pedido creado" : "Pedido actualizado", message: saved.number }); openOrder(saved) }} order={formMode === "edit" ? order : undefined} />}
-      {panel && <OrderPanelDialog key={`${order.id}-${panel.key}`} onOpenChange={(open) => { if (!open) setPanel(null) }} order={order} panel={panel} />}
+      {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); openOrder(selected) }} /></DesktopWindowIdentity>}
+      {formMode && <DesktopWindowIdentity id={`orders:${formMode}:${formMode === "edit" ? order.id : "new"}`}><OrderFormDialog mode={formMode} onOpenChange={(open) => { if (!open) setFormMode(null) }} onSaved={(saved) => { setFormMode(null); setNotice({ kind: "success", title: formMode === "create" ? "Pedido creado" : "Pedido actualizado", message: saved.number }); openOrder(saved) }} order={formMode === "edit" ? order : undefined} /></DesktopWindowIdentity>}
+      {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><OrderPanelDialog onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} order={window.payload.order} panel={window.payload.panel} /></DesktopWindowIdentity>)}
       <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogMedia><HugeiconsIcon icon={Delete01Icon} /></AlertDialogMedia><AlertDialogTitle>¿Eliminar el pedido {order.number}?</AlertDialogTitle><AlertDialogDescription>Se eliminarán el encabezado y sus partidas si no existen facturas ni cantidades surtidas.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction disabled={deletion.isPending} onClick={() => deletion.mutate()} variant="destructive">{deletion.isPending && <Spinner />}Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </section>
   )

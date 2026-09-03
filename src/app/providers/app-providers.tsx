@@ -1,6 +1,7 @@
 import { lazy, Suspense, type PropsWithChildren } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
 
+import { InterfaceSizeProvider } from "@/app/providers/interface-size-provider"
 import { queryClient } from "@/app/providers/query-client"
 import { TooltipProvider } from "@/shared/ui/tooltip"
 
@@ -14,13 +15,15 @@ const ReactQueryDevtools = import.meta.env.DEV
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>{children}</TooltipProvider>
-      {ReactQueryDevtools && (
-        <Suspense fallback={null}>
-          <ReactQueryDevtools initialIsOpen={false} />
-        </Suspense>
-      )}
-    </QueryClientProvider>
+    <InterfaceSizeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>{children}</TooltipProvider>
+        {ReactQueryDevtools && (
+          <Suspense fallback={null}>
+            <ReactQueryDevtools initialIsOpen={false} />
+          </Suspense>
+        )}
+      </QueryClientProvider>
+    </InterfaceSizeProvider>
   )
 }

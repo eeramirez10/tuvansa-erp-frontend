@@ -8,13 +8,7 @@ import type { ProductPanelDefinition } from "@/features/inventories/products/mod
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Badge } from "@/shared/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog"
+import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import {
   Empty,
   EmptyDescription,
@@ -57,11 +51,16 @@ export function ProductPanelDialog({
     : []
 
   return (
-    <Dialog onOpenChange={onOpenChange} open>
-      <DialogContent className="sm:max-w-5xl">
-        <DialogHeader>
+    <ErpDataDialog
+      className="sm:max-w-5xl"
+      description="Consulta relacionada con el producto seleccionado en Inventarios PT."
+      onOpenChange={onOpenChange}
+      title={panel.label}
+    >
+      <ErpDataDialogBody className="grid gap-2 p-3">
+        <div>
           <div className="flex items-center gap-2 pr-7">
-            <DialogTitle>{panel.label}</DialogTitle>
+            <strong>{panel.label}</strong>
             {panelQuery.data && (
               <Badge variant="outline">
                 {panelQuery.data.data.source === "mysql"
@@ -72,10 +71,7 @@ export function ProductPanelDialog({
               </Badge>
             )}
           </div>
-          <DialogDescription>
-            Consulta relacionada con el producto seleccionado en Inventarios PT.
-          </DialogDescription>
-        </DialogHeader>
+        </div>
 
         {panelQuery.isPending ? (
           <div className="flex min-h-48 items-center justify-center gap-2 text-muted-foreground">
@@ -140,7 +136,7 @@ export function ProductPanelDialog({
             </Table>
           </ScrollArea>
         )}
-      </DialogContent>
-    </Dialog>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
   )
 }
