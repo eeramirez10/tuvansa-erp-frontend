@@ -2,12 +2,14 @@ import { queryOptions } from "@tanstack/react-query"
 
 import type {
   Client,
+  ClientAnalyticsCriteria,
   ClientFormValues,
   ClientMutationInput,
   ClientPanelDefinition,
 } from "@/features/accounts-receivable/clients/model"
 import {
   getClient,
+  getClientAnalytics,
   getFirstActiveClient,
   getClientClassifications,
   getClientPanel,
@@ -24,6 +26,8 @@ export const clientKeys = {
     [...clientKeys.detail(clientId), "panel", panelKey] as const,
   classifications: (clientId: number, position: number) =>
     [...clientKeys.detail(clientId), "classifications", position] as const,
+  analytics: (criteria: ClientAnalyticsCriteria) =>
+    [...clientKeys.all, "analytics", criteria] as const,
 }
 
 export const clientQueryOptions = (clientId: number) => queryOptions({
@@ -49,6 +53,12 @@ export const clientPanelQueryOptions = (clientId: number, panel: ClientPanelDefi
 export const clientClassificationsQueryOptions = (clientId: number, position: number) => queryOptions({
   queryKey: clientKeys.classifications(clientId, position),
   queryFn: ({ signal }) => getClientClassifications(clientId, position, signal),
+  placeholderData: (previousData) => previousData,
+})
+
+export const clientAnalyticsQueryOptions = (criteria: ClientAnalyticsCriteria) => queryOptions({
+  queryKey: clientKeys.analytics(criteria),
+  queryFn: ({ signal }) => getClientAnalytics(criteria, signal),
   placeholderData: (previousData) => previousData,
 })
 

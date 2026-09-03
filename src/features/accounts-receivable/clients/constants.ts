@@ -44,6 +44,9 @@ export const clientActionPanels: readonly ClientPanelDefinition[] = [
 
 export const clientQueryPanels: readonly ClientPanelDefinition[] = [
   {
+    key: "client-analytics", label: "Análisis de clientes", title: "Reporte analítico de clientes", section: "queries", path: "", dataKey: "", columns: [],
+  },
+  {
     key: "balance", label: "Saldo", title: "Saldo del cliente", section: "queries", path: "balance", dataKey: "documents",
     columns: [text("number", "Documento"), date("date", "Fecha"), date("dueDate", "Vence"), number("daysOverdue", "Días"), money("amountInBaseCurrency", "Importe M.N."), money("amount", "Importe"), text("currency.name", "Moneda"), number("exchangeRate", "T.C."), text("reference", "Referencia"), text("customerOrder", "Pedido cliente"), text("deliveryReceipt", "Talón")],
   },

@@ -118,7 +118,7 @@ export function ClientCatalogPage() {
         </aside>
         <ClientCatalogDetails client={client} />
         <aside className="min-w-0">
-          <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientQueryPanels} title="Consultas" />
+          <ClientPanelButtons onSelect={(panel) => openPanelWindow(panel.key === "client-analytics" ? "clients:analytics" : `clients:${client.id}:${panel.key}`, { client, panel })} panels={clientQueryPanels} title="Consultas" />
         </aside>
       </div>
 

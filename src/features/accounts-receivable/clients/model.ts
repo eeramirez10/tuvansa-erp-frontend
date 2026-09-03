@@ -120,6 +120,7 @@ export type ClientMutationInput = {
 export type ClientPanelSection = "actions" | "queries"
 
 export type ClientPanelKey =
+  | "client-analytics"
   | "classifications"
   | "destinations"
   | "block-status"
@@ -205,4 +206,67 @@ export type ClientClassificationsResponse = {
     selectedPosition: number
     options: ClientClassificationOption[]
   }
+}
+
+export type ClientRiskLevel = "healthy" | "watch" | "overdue" | "critical"
+
+export type ClientAnalyticsCriteria = {
+  q?: string
+  status: "active" | "inactive" | "all"
+  risk: ClientRiskLevel | "all"
+  page: number
+  pageSize: number
+}
+
+export type ClientAnalyticsItem = {
+  id: number
+  code: string
+  name: string
+  branch: string
+  isActive: boolean
+  paymentTermDays: number
+  actualPaymentTermDays: number
+  creditLimit: number
+  totalBalance: number
+  overdueBalance: number
+  notDueBalance: number
+  availableCredit: number
+  creditUsedPercentage: number | null
+  pendingDocumentCount: number
+  overdueDocumentCount: number
+  oldestOverdueDate: string | null
+  maximumDaysOverdue: number
+  lastPurchaseAt: string | null
+  lastPaymentAt: string | null
+  lastOrderAt: string | null
+  accumulatedSales: number
+  openOrderCount: number
+  openOrderAmount: number
+  risk: ClientRiskLevel
+}
+
+export type ClientAnalyticsResponse = {
+  data: {
+    scope: { branchCode: string; branchName: string; asOf: string }
+    summary: {
+      clientCount: number
+      activeClientCount: number
+      creditLimit: number
+      totalBalance: number
+      overdueBalance: number
+      notDueBalance: number
+      overdueDocumentCount: number
+      openOrderCount: number
+      openOrderAmount: number
+      aging: {
+        notDue: number
+        days1To30: number
+        days31To60: number
+        days61To90: number
+        over90: number
+      }
+    }
+    clients: ClientAnalyticsItem[]
+  }
+  pagination: { page: number; pageSize: number; total: number }
 }

@@ -18,6 +18,7 @@ import {
 import { Spinner } from "@/shared/ui/spinner"
 import { cn } from "@/shared/utils/cn"
 import { ClientClassificationsDialog } from "@/features/accounts-receivable/clients/components/client-classifications-dialog"
+import { ClientAnalyticsDialog } from "@/features/accounts-receivable/clients/components/client-analytics-dialog"
 
 type ClientPanelDialogProps = {
   client: Client
@@ -159,6 +160,10 @@ function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDi
 }
 
 export function ClientPanelDialog(props: ClientPanelDialogProps) {
+  if (props.panel.key === "client-analytics") {
+    return <ClientAnalyticsDialog onOpenChange={props.onOpenChange} />
+  }
+
   if (props.panel.key === "classifications") {
     return <ClientClassificationsDialog client={props.client} onOpenChange={props.onOpenChange} />
   }

@@ -1,6 +1,8 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
   Client,
+  ClientAnalyticsCriteria,
+  ClientAnalyticsResponse,
   ClientClassificationsResponse,
   ClientMutationInput,
   ClientPanelDefinition,
@@ -115,6 +117,17 @@ export async function getClientClassifications(
   const response = await apiClient.get<ClientClassificationsResponse>(
     `/accounts-receivable/clients/${clientId}/actions/classifications`,
     { params: { position }, signal },
+  )
+  return response.data
+}
+
+export async function getClientAnalytics(
+  criteria: ClientAnalyticsCriteria,
+  signal?: AbortSignal,
+) {
+  const response = await apiClient.get<ClientAnalyticsResponse>(
+    "/accounts-receivable/clients/reports/analytics",
+    { params: criteria, signal },
   )
   return response.data
 }
