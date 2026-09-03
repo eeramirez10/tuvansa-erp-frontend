@@ -48,6 +48,7 @@ export function ErpDataDialog({
   const interfaceScale = interfaceSize === "large" ? 1.2 : 1
   const availableWidth = (window.innerWidth - 16) / interfaceScale
   const availableHeight = (window.innerHeight - 48) / interfaceScale
+  const defaultWindowWidth = Math.min(736, availableWidth)
   const windowId = useDesktopWindowId(
     providedWindowId ?? `erp-window-${generatedWindowId}`,
   )
@@ -65,7 +66,10 @@ export function ErpDataDialog({
   )
   const [position, setPosition] = useState(() => {
     const offset = (nextWindowOffset++ % 7) * 24
-    return { x: 8 + offset, y: 80 + offset }
+    return {
+      x: Math.max(8, (availableWidth - defaultWindowWidth) / 2 + offset),
+      y: 80 + offset,
+    }
   })
   const [size, setSize] = useState<{
     width: number | string
@@ -107,16 +111,15 @@ export function ErpDataDialog({
       bounds="window"
       cancel=".erp-window-controls"
       className={cn(
-        "fixed flex max-h-[calc(100vh-3rem)] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-sm border bg-muted text-[9px]/none shadow-2xl [font-family:Tahoma,'Segoe_UI',sans-serif]",
-        "sm:max-w-[46rem]",
+        "fixed flex max-h-[calc(100vh-3rem)] !max-w-none flex-col overflow-hidden rounded-sm border bg-muted text-[9px]/none shadow-2xl [font-family:Tahoma,'Segoe_UI',sans-serif]",
         toneClasses,
-        maximized && "!max-w-none",
         className,
+        "!max-w-none",
       )}
       default={{
         x: position.x,
         y: position.y,
-        width: availableWidth,
+        width: defaultWindowWidth,
         height: "auto",
       }}
       disableDragging={maximized}
