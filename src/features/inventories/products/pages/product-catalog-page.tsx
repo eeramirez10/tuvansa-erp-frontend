@@ -40,11 +40,52 @@ import {
 } from "@/shared/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Spinner } from "@/shared/ui/spinner"
+import {
+  DesktopWindowIdentity,
+  useDesktopWindowCollection,
+} from "@/shared/ui/desktop-window-context"
 
 type Notice = {
   kind: "success" | "error"
   title: string
   message: string
+}
+
+type ProductPanelWindow = {
+  panel: ProductPanelDefinition
+  product: Product
+}
+
+function OpenProductPanel({
+  id,
+  window,
+  onClose,
+}: {
+  id: string
+  window: ProductPanelWindow
+  onClose: () => void
+}) {
+  const { panel, product } = window
+  const onOpenChange = (open: boolean) => {
+    if (!open) onClose()
+  }
+
+  let content
+  if (panel.key === "ledger") {
+    content = <ProductLedgerDialog onOpenChange={onOpenChange} product={product} />
+  } else if (panel.key === "customer-orders") {
+    content = <ProductCustomerOrdersDialog onOpenChange={onOpenChange} product={product} />
+  } else if (panel.key === "customer-orders-star") {
+    content = <ProductCustomerOrdersStarDialog onOpenChange={onOpenChange} product={product} />
+  } else if (panel.section === "queries") {
+    content = <ProductQueryDialog onOpenChange={onOpenChange} panel={panel} product={product} />
+  } else if (panel.section === "actions") {
+    content = <ProductActionDialog onOpenChange={onOpenChange} panel={panel} product={product} />
+  } else {
+    content = <ProductPurchasesProductionDialog onOpenChange={onOpenChange} panel={panel} product={product} />
+  }
+
+  return <DesktopWindowIdentity id={id}>{content}</DesktopWindowIdentity>
 }
 
 export function ProductCatalogPage() {
@@ -56,8 +97,11 @@ export function ProductCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [selectedPanel, setSelectedPanel] =
-    useState<ProductPanelDefinition | null>(null)
+  const {
+    windows: panelWindows,
+    openWindow: openPanelWindow,
+    closeWindow: closePanelWindow,
+  } = useDesktopWindowCollection<ProductPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openProduct = (nextProduct: Product) => {
@@ -137,12 +181,22 @@ export function ProductCatalogPage() {
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1">
           <ProductPanelButtons
-            onSelect={setSelectedPanel}
+            onSelect={(panel) =>
+              openPanelWindow(`inventory:${product.id}:${panel.key}`, {
+                panel,
+                product,
+              })
+            }
             panels={actionPanels}
             title="Acciones"
           />
           <ProductPanelButtons
-            onSelect={setSelectedPanel}
+            onSelect={(panel) =>
+              openPanelWindow(`inventory:${product.id}:${panel.key}`, {
+                panel,
+                product,
+              })
+            }
             panels={purchasesProductionPanels}
             title="Compras/Prod"
           />
@@ -151,107 +205,60 @@ export function ProductCatalogPage() {
         <ProductCatalogDetails product={product} />
 
         <aside className="min-w-0">
-          <ProductQueriesPanel onSelect={setSelectedPanel} />
+          <ProductQueriesPanel
+            onSelect={(panel) =>
+              openPanelWindow(`inventory:${product.id}:${panel.key}`, {
+                panel,
+                product,
+              })
+            }
+          />
         </aside>
       </div>
 
       {searchOpen && (
-        <ProductSearchDialog
-          onOpenChange={setSearchOpen}
-          onSelect={(selectedProduct) => {
-            setSearchOpen(false)
-            setNotice(null)
-            openProduct(selectedProduct)
-          }}
-        />
+        <DesktopWindowIdentity id="inventory:search">
+          <ProductSearchDialog
+            onOpenChange={setSearchOpen}
+            onSelect={(selectedProduct) => {
+              setSearchOpen(false)
+              setNotice(null)
+              openProduct(selectedProduct)
+            }}
+          />
+        </DesktopWindowIdentity>
       )}
 
       {formMode && (
-        <ProductFormDialog
-          key={`${formMode}-${product.id}`}
-          mode={formMode}
-          onOpenChange={(open) => {
-            if (!open) setFormMode(null)
-          }}
-          onSaved={(savedProduct, mode) => {
-            setFormMode(null)
-            setNotice({
-              kind: "success",
-              title: mode === "create" ? "Producto creado" : "Producto actualizado",
-              message: `${savedProduct.code} · ${savedProduct.description}`,
-            })
-            openProduct(savedProduct)
-          }}
-          product={formMode === "edit" ? product : undefined}
-        />
+        <DesktopWindowIdentity id={`inventory:${formMode}:${formMode === "edit" ? product.id : "new"}`}>
+          <ProductFormDialog
+            key={`${formMode}-${product.id}`}
+            mode={formMode}
+            onOpenChange={(open) => {
+              if (!open) setFormMode(null)
+            }}
+            onSaved={(savedProduct, mode) => {
+              setFormMode(null)
+              setNotice({
+                kind: "success",
+                title: mode === "create" ? "Producto creado" : "Producto actualizado",
+                message: `${savedProduct.code} · ${savedProduct.description}`,
+              })
+              openProduct(savedProduct)
+            }}
+            product={formMode === "edit" ? product : undefined}
+          />
+        </DesktopWindowIdentity>
       )}
 
-      {selectedPanel?.key === "ledger" && (
-        <ProductLedgerDialog
-          key={`${product.id}-ledger`}
-          onOpenChange={(open) => {
-            if (!open) setSelectedPanel(null)
-          }}
-          product={product}
+      {panelWindows.map((window) => (
+        <OpenProductPanel
+          id={window.id}
+          key={window.id}
+          onClose={() => closePanelWindow(window.id)}
+          window={window.payload}
         />
-      )}
-
-      {selectedPanel?.key === "customer-orders" && (
-        <ProductCustomerOrdersDialog
-          key={`${product.id}-customer-orders`}
-          onOpenChange={(open) => {
-            if (!open) setSelectedPanel(null)
-          }}
-          product={product}
-        />
-      )}
-
-      {selectedPanel?.key === "customer-orders-star" && (
-        <ProductCustomerOrdersStarDialog
-          key={`${product.id}-customer-orders-star`}
-          onOpenChange={(open) => {
-            if (!open) setSelectedPanel(null)
-          }}
-          product={product}
-        />
-      )}
-
-      {selectedPanel &&
-        selectedPanel.key !== "ledger" &&
-        selectedPanel.key !== "customer-orders" &&
-        selectedPanel.key !== "customer-orders-star" &&
-        selectedPanel.section === "queries" && (
-        <ProductQueryDialog
-          key={`${product.id}-${selectedPanel.key}`}
-          onOpenChange={(open) => {
-            if (!open) setSelectedPanel(null)
-          }}
-          panel={selectedPanel}
-          product={product}
-        />
-      )}
-
-      {selectedPanel?.section === "actions" && (
-        <ProductActionDialog
-          key={`${product.id}-${selectedPanel.key}`}
-          onOpenChange={(open) => {
-            if (!open) setSelectedPanel(null)
-          }}
-          panel={selectedPanel}
-          product={product}
-        />
-      )}
-
-      {selectedPanel?.section === "purchases-production" && (
-        <ProductPurchasesProductionDialog
-          key={`${product.id}-${selectedPanel.key}`}
-          onOpenChange={(open) => {
-            if (!open) setSelectedPanel(null)
-          }}
-          panel={selectedPanel}
-          product={product}
-        />
-      )}
+      ))}
 
       <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
         <AlertDialogContent>

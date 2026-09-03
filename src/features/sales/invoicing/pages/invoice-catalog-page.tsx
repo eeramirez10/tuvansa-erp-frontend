@@ -17,8 +17,10 @@ import type { Invoice, InvoicePanelDefinition } from "@/features/sales/invoicing
 import { getAdjacentInvoice } from "@/features/sales/invoicing/services/invoice-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { kind: "success" | "error"; title: string; message: string }
+type InvoicePanelWindow = { invoice: Invoice; panel: InvoicePanelDefinition }
 
 export function InvoiceCatalogPage() {
   const invoiceId = Number(useParams().invoiceId)
@@ -26,7 +28,7 @@ export function InvoiceCatalogPage() {
   const queryClient = useQueryClient()
   const { data: invoice } = useSuspenseQuery(invoiceQueryOptions(invoiceId))
   const [searchOpen, setSearchOpen] = useState(false)
-  const [panel, setPanel] = useState<InvoicePanelDefinition | null>(null)
+  const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<InvoicePanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openFullInvoice = (next: Invoice) => {
@@ -83,23 +85,16 @@ export function InvoiceCatalogPage() {
 
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
         <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-          <InvoicePanelButtons onSelect={setPanel} panels={invoiceActionPanels} title="Acciones" />
-          <InvoicePanelButtons onSelect={setPanel} panels={invoiceSummaryPanels} title="Sumarios" />
+          <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceActionPanels} title="Acciones" />
+          <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceSummaryPanels} title="Sumarios" />
         </aside>
         <InvoiceCatalogDetails invoice={invoice} />
       </div>
 
       {searchOpen && (
-        <InvoiceSearchDialog onOpenChange={setSearchOpen} onSelect={selectSearchResult} />
+        <DesktopWindowIdentity id="invoices:search"><InvoiceSearchDialog onOpenChange={setSearchOpen} onSelect={selectSearchResult} /></DesktopWindowIdentity>
       )}
-      {panel && (
-        <InvoicePanelDialog
-          invoice={invoice}
-          key={`${invoice.id}-${panel.key}`}
-          onOpenChange={(open) => { if (!open) setPanel(null) }}
-          panel={panel}
-        />
-      )}
+      {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><InvoicePanelDialog invoice={window.payload.invoice} onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} panel={window.payload.panel} /></DesktopWindowIdentity>)}
     </section>
   )
 }

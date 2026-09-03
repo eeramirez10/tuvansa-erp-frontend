@@ -13,8 +13,10 @@ import type { PurchaseOrder, PurchaseOrderAction } from "@/features/purchasing/p
 import { getAdjacentPurchaseOrder } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { title: string; message: string; error?: boolean }
+type PurchaseOrderActionWindow = { purchaseOrder: PurchaseOrder; action: PurchaseOrderAction }
 
 export function PurchaseOrderCatalogPage() {
   const id = Number(useParams().purchaseOrderId)
@@ -22,7 +24,7 @@ export function PurchaseOrderCatalogPage() {
   const queryClient = useQueryClient()
   const { data: purchaseOrder } = useSuspenseQuery(purchaseOrderQueryOptions(id))
   const [searchOpen, setSearchOpen] = useState(false)
-  const [action, setAction] = useState<PurchaseOrderAction | null>(null)
+  const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseOrderActionWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openPurchaseOrder = (next: PurchaseOrder) => {
@@ -46,19 +48,19 @@ export function PurchaseOrderCatalogPage() {
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
       />
-      <aside><PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={setAction} /></aside>
+      <aside><PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={(action) => openActionWindow(`purchase-orders:${purchaseOrder.id}:${action.key}`, { purchaseOrder, action })} /></aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
         <PurchaseOrderDetails purchaseOrder={purchaseOrder} />
       </section>
 
       {searchOpen && (
-        <PurchaseOrderSearchDialog
+        <DesktopWindowIdentity id="purchase-orders:search"><PurchaseOrderSearchDialog
           onOpenChange={setSearchOpen}
           onSelect={(selected) => { setSearchOpen(false); void navigate(paths.purchaseOrder(selected.id)) }}
-        />
+        /></DesktopWindowIdentity>
       )}
-      {action && <PurchaseOrderActionDialog action={action} onClose={() => setAction(null)} purchaseOrder={purchaseOrder} />}
+      {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder} /></DesktopWindowIdentity>)}
     </main>
   )
 }

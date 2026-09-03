@@ -16,8 +16,10 @@ import type { Supplier, SupplierPanelDefinition } from "@/features/accounts-paya
 import { getAdjacentSupplier } from "@/features/accounts-payable/suppliers/services/supplier-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { kind: "success" | "error"; title: string; message: string }
+type SupplierPanelWindow = { supplier: Supplier; panel: SupplierPanelDefinition }
 
 export function SupplierCatalogPage() {
   const supplierId = Number(useParams().supplierId)
@@ -26,7 +28,7 @@ export function SupplierCatalogPage() {
   const { data: supplier } = useSuspenseQuery(supplierQueryOptions(supplierId))
   const [searchOpen, setSearchOpen] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
-  const [selectedPanel, setSelectedPanel] = useState<SupplierPanelDefinition | null>(null)
+  const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<SupplierPanelWindow>()
 
   const openSupplier = (nextSupplier: Supplier) => {
     queryClient.setQueryData(supplierKeys.detail(nextSupplier.id), nextSupplier)
@@ -67,13 +69,13 @@ export function SupplierCatalogPage() {
       )}
 
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
-        <aside className="min-w-0"><SupplierPanelButtons onSelect={setSelectedPanel} panels={supplierActionPanels} title="Acciones" /></aside>
+        <aside className="min-w-0"><SupplierPanelButtons onSelect={(panel) => openPanelWindow(`suppliers:${supplier.id}:${panel.key}`, { supplier, panel })} panels={supplierActionPanels} title="Acciones" /></aside>
         <SupplierCatalogDetails supplier={supplier} />
-        <aside className="min-w-0"><SupplierPanelButtons onSelect={setSelectedPanel} panels={supplierQueryPanels} title="Consultas" /></aside>
+        <aside className="min-w-0"><SupplierPanelButtons onSelect={(panel) => openPanelWindow(`suppliers:${supplier.id}:${panel.key}`, { supplier, panel })} panels={supplierQueryPanels} title="Consultas" /></aside>
       </div>
 
-      {searchOpen && <SupplierSearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); setNotice(null); openSupplier(selected) }} />}
-      {selectedPanel && <SupplierPanelDialog key={`${supplier.id}-${selectedPanel.key}`} onOpenChange={(open) => { if (!open) setSelectedPanel(null) }} panel={selectedPanel} supplier={supplier} />}
+      {searchOpen && <DesktopWindowIdentity id="suppliers:search"><SupplierSearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); setNotice(null); openSupplier(selected) }} /></DesktopWindowIdentity>}
+      {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><SupplierPanelDialog onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} panel={window.payload.panel} supplier={window.payload.supplier} /></DesktopWindowIdentity>)}
     </section>
   )
 }

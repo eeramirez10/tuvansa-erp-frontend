@@ -31,8 +31,13 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog"
 import { Spinner } from "@/shared/ui/spinner"
+import {
+  DesktopWindowIdentity,
+  useDesktopWindowCollection,
+} from "@/shared/ui/desktop-window-context"
 
 type Notice = { kind: "success" | "error"; title: string; message: string }
+type ClientPanelWindow = { client: Client; panel: ClientPanelDefinition }
 
 export function ClientCatalogPage() {
   const params = useParams()
@@ -43,7 +48,11 @@ export function ClientCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [selectedPanel, setSelectedPanel] = useState<ClientPanelDefinition | null>(null)
+  const {
+    windows: panelWindows,
+    openWindow: openPanelWindow,
+    closeWindow: closePanelWindow,
+  } = useDesktopWindowCollection<ClientPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openClient = (nextClient: Client) => {
@@ -105,29 +114,39 @@ export function ClientCatalogPage() {
 
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="min-w-0">
-          <ClientPanelButtons onSelect={setSelectedPanel} panels={clientActionPanels} title="Acciones" />
+          <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientActionPanels} title="Acciones" />
         </aside>
         <ClientCatalogDetails client={client} />
         <aside className="min-w-0">
-          <ClientPanelButtons onSelect={setSelectedPanel} panels={clientQueryPanels} title="Consultas" />
+          <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientQueryPanels} title="Consultas" />
         </aside>
       </div>
 
-      {searchOpen && <ClientSearchDialog onOpenChange={setSearchOpen} onSelect={(selectedClient) => { setSearchOpen(false); setNotice(null); openClient(selectedClient) }} />}
+      {searchOpen && <DesktopWindowIdentity id="clients:search"><ClientSearchDialog onOpenChange={setSearchOpen} onSelect={(selectedClient) => { setSearchOpen(false); setNotice(null); openClient(selectedClient) }} /></DesktopWindowIdentity>}
       {formMode && (
-        <ClientFormDialog
-          client={formMode === "edit" ? client : undefined}
-          key={`${formMode}-${client.id}`}
-          mode={formMode}
-          onOpenChange={(open) => { if (!open) setFormMode(null) }}
-          onSaved={(savedClient, mode) => {
-            setFormMode(null)
-            setNotice({ kind: "success", title: mode === "create" ? "Cliente creado" : "Cliente actualizado", message: `${savedClient.code} · ${savedClient.name}` })
-            openClient(savedClient)
-          }}
-        />
+        <DesktopWindowIdentity id={`clients:${formMode}:${formMode === "edit" ? client.id : "new"}`}>
+          <ClientFormDialog
+            client={formMode === "edit" ? client : undefined}
+            key={`${formMode}-${client.id}`}
+            mode={formMode}
+            onOpenChange={(open) => { if (!open) setFormMode(null) }}
+            onSaved={(savedClient, mode) => {
+              setFormMode(null)
+              setNotice({ kind: "success", title: mode === "create" ? "Cliente creado" : "Cliente actualizado", message: `${savedClient.code} · ${savedClient.name}` })
+              openClient(savedClient)
+            }}
+          />
+        </DesktopWindowIdentity>
       )}
-      {selectedPanel && <ClientPanelDialog client={client} key={`${client.id}-${selectedPanel.key}`} onOpenChange={(open) => { if (!open) setSelectedPanel(null) }} panel={selectedPanel} />}
+      {panelWindows.map((window) => (
+        <DesktopWindowIdentity id={window.id} key={window.id}>
+          <ClientPanelDialog
+            client={window.payload.client}
+            onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }}
+            panel={window.payload.panel}
+          />
+        </DesktopWindowIdentity>
+      ))}
 
       <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
         <AlertDialogContent>

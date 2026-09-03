@@ -1,6 +1,7 @@
 import { Outlet } from "react-router"
 
 import { ErpModuleNavigation } from "@/features/workspace/components/erp-module-navigation"
+import { DesktopWindowTaskbar } from "@/shared/ui/desktop-window-taskbar"
 
 export function ErpLayout() {
   return (
@@ -11,6 +12,7 @@ export function ErpLayout() {
       <main className="flex min-w-0 flex-1 flex-col p-2">
         <Outlet />
       </main>
+      <DesktopWindowTaskbar />
     </div>
   )
 }
