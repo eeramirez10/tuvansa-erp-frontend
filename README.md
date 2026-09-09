@@ -1,5 +1,9 @@
 # TUVANSA ERP Frontend
 
+Para continuar desde otra instalación de Codex CLI, lee
+[`AGENTS.md`](AGENTS.md) y la
+[`guía de traspaso`](docs/PROSCAI-MIGRATION-HANDOFF.md).
+
 Frontend para la migración gradual del ERP heredado en OMNIS/PROSCAI. La interfaz conservará el orden de campos, nombres visibles y flujo operativo de cada pantalla, usando componentes web accesibles y reutilizables.
 
 ## Stack
