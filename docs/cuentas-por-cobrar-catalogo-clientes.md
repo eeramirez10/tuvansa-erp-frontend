@@ -2,6 +2,16 @@
 
 ## Alcance
 
+### Verifica fiscal (2026-09-14)
+
+Acciones incorpora **Verifica fiscal**. Ctrl + clic muestra Yes/No y Yes abre **Cliente - Datos Fiscal**, con RFC, Código postal, Régimen fiscal, nombre, régimen de capital, Otro, Cancelar y OK. Cargar y cancelar no escriben. OK guarda con un token de versión; cambios concurrentes requieren cerrar y abrir de nuevo. El nombre completo se muestra antes de guardar y la tabla permite scroll.
+
+**La verificación automática está pendiente:** el clic normal informa que debe realizarse en PROSCAI (HTTP 501). Guardar cambios deja el marcador fiscal pendiente; no se copia el checksum observado. Act. está deshabilitado hasta capturar su comportamiento. La composición `nombre, código` es una regla derivada, no un algoritmo general confirmado de OMNIS.
+
+Evidencia local en el backend: `captures/sql/new-version/accounts-receivable/verifica-fiscal-ctrl-confirm.md`. Contrato, diferencias y procedencia SQL: `docs/modules/accounts-receivable/client-fiscal-verification.md` del backend. Esta entrega no equivale a la verificación completa de PROSCAI.
+
+El proveedor se integrará después por decisión del usuario. Ya están preparados el contrato tipado y la presentación de respuestas: integración pendiente, rechazo, error temporal y validación del proveedor con sincronización legada pendiente. El editor continúa disponible mediante Ctrl + clic.
+
 La ruta `/cuentas-por-cobrar/clientes/:clientId?` reproduce la pantalla
 **Cuentas por cobrar > Catálogo de clientes** de OMNIS. Comparte con Inventarios
 PT la navegación superior, la tarjeta contextual del módulo, la barra de

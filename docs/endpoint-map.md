@@ -4,6 +4,22 @@ Este documento es el contrato de trazabilidad entre la interfaz heredada de OMNI
 
 ## Estado inicial
 
+### Verifica fiscal: edición disponible, verificación pendiente
+
+Prefijo: `/api/accounts-receivable/clients/:clientId/actions/fiscal-verification`.
+
+| Vista / control | Evento | Endpoint | Caché / estado |
+|---|---|---|---|
+| Clientes / Verifica fiscal | Clic | POST `/verify` | 501 explícito; no verifica ni escribe |
+| Clientes / Verifica fiscal | Ctrl + clic, Yes | GET `/` | clientKeys.detail(id) + fiscal-verification; sólo lectura |
+| Cliente - Datos Fiscal / OK | Guardar | PATCH `/` | expectedVersion + values; invalida clientKeys.all; cambios quedan pendientes |
+| Cliente - Datos Fiscal / Cancelar | Cierre | Ninguno | Descarta formulario |
+| Cliente - Datos Fiscal / Act. | Deshabilitado | Ninguno | Operación pendiente de captura |
+
+SQL y diferencias se documentan en `docs/modules/accounts-receivable/client-fiscal-verification.md` del backend. El frontend no calcula ni envía CLICFDI4CS.
+
+La conexión al proveedor se pospuso por decisión del usuario. El servicio y la UI están preparados para mostrar el mensaje de POST `/verify`: actualmente 501 por integración pendiente; con un adaptador futuro, rechazo 422, indisponibilidad 503, conflicto 409 o validación del proveedor 200 con `legacySync: pending`. Este último resultado no marca al cliente como verificado en PROSCAI. `verificationAvailable` es booleano y actualmente false.
+
 | Módulo | Vista de OMNIS/PROSCAI | Control visible | Evento | Método y endpoint | Query key | Estado frontend |
 | --- | --- | --- | --- | --- | --- | --- |
 | General | Selector de módulos | Inicio | Abrir aplicación | Sin petición | Sin caché | Implementado |

@@ -1,3 +1,4 @@
+import { ClientFiscalAction } from "@/features/accounts-receivable/clients/components/client-fiscal-action"
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon"
 import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon"
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
@@ -114,7 +115,7 @@ export function ClientCatalogPage() {
 
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="min-w-0">
-          <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientActionPanels} title="Acciones" />
+          <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientActionPanels} title="Acciones"><ClientFiscalAction key={client.id} clientId={client.id} /></ClientPanelButtons>
         </aside>
         <ClientCatalogDetails client={client} />
         <aside className="min-w-0">
