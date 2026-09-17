@@ -12,6 +12,8 @@ La captura de pedidos está limitada temporalmente al almacén **01 México**. L
 
 Las notificaciones usan un adaptador global en `shared/notifications`; los módulos no importan directamente la librería Sonner. El contenedor compartido admite estados success, error, warning e info y se muestra sobre las ventanas ERP.
 
+La ficha central de Pedido conserva la distribución observada en PROSCAI: ocho bandas de ancho desigual en el primer renglón (Pedido, Pedido cliente, Carrito, Status., Surtido, Anticipo, Canal y Sucursal), Cliente y Nombre ocupan el bloque izquierdo del segundo, y Fecha/Desde/Vence/Agt./Plazo/Almacén forman el tercero. La tabla mantiene las proporciones visibles de Producto y Descripción, seguida por cantidades e importes; abajo, Totales ocupa cerca de un tercio del ancho e Importes el espacio restante. Carrito, Anticipo, Canal y la primera Sucursal permanecen visibles pero vacíos porque el contrato HTTP aún no expone esos valores.
+
 El primer OK conserva un borrador local; no inserta un encabezado como OMNIS hasta el OK final. Cancelar Comentarios regresa a Captura. Cerrar un borrador pide confirmar descarte. Durante el guardado se deshabilitan controles; los errores conservan el contenido y no se reintenta automáticamente.
 
 Arquitectura: `capture-model.ts` contiene tipos/Zod/cálculo visual; `capture-logic.ts`, claves de consulta; `services/order-capture-service.ts`, Axios; `components/order-capture-dialog.tsx`, React Hook Form y la ventana compartida. La caché incluye código, almacén, tipo y cliente. Al guardar se invalidan pedidos, productos y clientes; al convertir se invalidan pedidos y productos. La selección se carga inmediatamente y las respuestas atrasadas no sustituyen otra selección.
