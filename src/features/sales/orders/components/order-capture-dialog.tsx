@@ -101,7 +101,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
     try {
       const value = await queryClient.fetchQuery(captureProductQuery(code, form.getValues("warehouse"), "P", form.getValues("customerCode")))
       if (version !== lookupVersion.current || lineForm.getValues("productCode").trim() !== code) return
-      setProduct(value); lineForm.setValue("price", value.price); lineForm.setValue("discount", 0)
+      setProduct(value); lineForm.setValue("productCode", value.code); lineForm.setValue("price", value.price); lineForm.setValue("discount", 0)
     } catch (e) { if (version === lookupVersion.current) setError(getApiErrorMessage(e)) }
     finally { if (version === lookupVersion.current) setLoading(false) }
   }
@@ -159,7 +159,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
               </div>
               <fieldset disabled={!customer} className="ml-[7.9375rem] mr-5 grid min-w-0 gap-1 pt-4">
                 <div className="overflow-x-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead className="bg-muted"><tr>{lineColumns.map(([label]) => <th className="h-6 border-r border-input px-1 font-normal last:border-r-0" key={label}>{label}</th>)}</tr></thead><tbody><tr>
-                  <td><Input aria-label="Código del producto" className={inputClass} {...lineForm.register("productCode", { onChange: () => setProduct(null) })} onBlur={e => { void lineForm.register("productCode").onBlur(e); void loadProduct() }} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void loadProduct() } }} /></td>
+                  <td><Input aria-label="Código o IEAN del producto" className={inputClass} title="Código o IEAN" {...lineForm.register("productCode", { onChange: () => setProduct(null) })} onBlur={e => { void lineForm.register("productCode").onBlur(e); void loadProduct() }} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void loadProduct() } }} /></td>
                   <td><Input aria-label="Descripción del producto" className={inputClass} value={product?.description ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Cantidad" className={inputClass} type="number" step="0.001" {...lineForm.register("quantity", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly /></td>

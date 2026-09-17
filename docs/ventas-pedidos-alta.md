@@ -1,6 +1,6 @@
 # Pedidos: alta de la versión nueva
 
-Ruta `/pedidos/:orderId`. El botón **Nuevo pedido** (hoja) abre el modal **Captura de pedido**. Su primer paso permite elegir Almacén y después habilita el formulario dentro del mismo modal. La captura incluye cliente por código, agente visible, fechas, referencia, departamento e Inicial. Código de producto + Enter/Tab carga descripción, unidad y precio. Se captura cantidad, precio y Dto; **Agregar partida** o Tab desde Pzas. incorpora el renglón al borrador y vuelve al código. Permite múltiples partidas y quitar renglones antes de guardar.
+Ruta `/pedidos/:orderId`. El botón **Nuevo pedido** (hoja) abre el modal **Captura de pedido**. Su primer paso permite elegir Almacén y después habilita el formulario dentro del mismo modal. La captura incluye cliente por código, agente visible, fechas, referencia, departamento e Inicial. Código de producto o IEAN + Enter/Tab carga el ICOD canónico, descripción, unidad y precio; por ejemplo, `tsc480` resuelve `01300938`. Se captura cantidad, precio y Dto; **Agregar partida** o Tab desde Pzas. incorpora el renglón al borrador y vuelve al código. Permite múltiples partidas y quitar renglones antes de guardar.
 
 Columnas: Código, Descripción, Cantidad, UM, Precio, Dto, Importe, Sucursal, Pzas. Listado con scroll X/Y, totales de cantidad, volumen, peso, subtotal, descuento, IVA y Gran Total. Los importes se actualizan en pantalla; el servidor los recalcula.
 

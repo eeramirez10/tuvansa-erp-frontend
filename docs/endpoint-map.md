@@ -14,7 +14,7 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 | --- | --- | --- | --- | --- |
 | Pedidos / Nuevo (hoja) | Abrir Captura de pedido en un modal; el primer paso selecciona Almacén | GET `/sales/orders/capture/options` | sales/orders/capture/options | order-capture-dialog.tsx |
 | Captura / Cliente | Enter o salir del campo | GET `/sales/orders/capture/customers/:code` | sales/orders/capture/customer/code | order-capture-service.ts |
-| Captura / Código | Enter o salir del campo | GET `/sales/orders/capture/products/:code?warehouse=...&typeCode=P&customerCode=...` | sales/orders/capture/product/code/warehouse/typeCode/customerCode | order-capture-service.ts |
+| Captura / Código | Enter o salir del campo; acepta ICOD o IEAN y muestra el ICOD canónico | GET `/sales/orders/capture/products/:identifier?warehouse=...&typeCode=P&customerCode=...` | sales/orders/capture/product/identifier/warehouse/typeCode/customerCode | order-capture-service.ts |
 | Captura / Agregar partida, Tab desde Pzas. | Incorporar renglón | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
 | Captura / OK | Abrir Comentarios | Sin escritura HTTP | Borrador | order-capture-dialog.tsx |
 | Comentarios / OK | Guardar alta completa | POST `/sales/orders/capture` | saveCapturedOrder; invalida pedidos/productos/clientes | order-capture-service.ts |
