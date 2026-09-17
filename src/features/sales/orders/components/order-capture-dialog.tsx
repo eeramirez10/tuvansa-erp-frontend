@@ -8,8 +8,8 @@ import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery,
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
+import { notifications } from "@/shared/notifications/notifications"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/shared/ui/alert-dialog"
 import { Button } from "@/shared/ui/button"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
@@ -39,7 +39,6 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState<Order | null>(null)
   const [discard, setDiscard] = useState(false)
-  const [priceWarning, setPriceWarning] = useState(false)
   const lookupVersion = useRef(0)
   const saving = useRef(false)
   const form = useForm<CaptureHeader>({ resolver: zodResolver(captureHeaderSchema), defaultValues: {
@@ -105,9 +104,16 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
     } catch (e) { if (version === lookupVersion.current) setError(getApiErrorMessage(e)) }
     finally { if (version === lookupVersion.current) setLoading(false) }
   }
+  const warnPriceBelowCost = () => {
+    notifications.warning("Precio debajo del costo", {
+      description: "No se puede vender abajo del costo",
+      id: "order-price-below-cost",
+    })
+    lineForm.setFocus("price")
+  }
   const addLine = lineForm.handleSubmit(value => {
     if (!product || product.code !== value.productCode.trim()) { setError("Carga el producto antes de agregar la partida."); return }
-    if (value.price < product.cost) { setPriceWarning(true); return }
+    if (value.price < product.cost) { warnPriceBelowCost(); return }
     setLines(current => [...current, { ...value, product }]); setProduct(null); setError("")
     lineForm.reset({ productCode: "", quantity: 0, price: 0, discount: 0 }); lineForm.setFocus("productCode")
   })
@@ -163,7 +169,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
                   <td><Input aria-label="Descripción del producto" className={inputClass} value={product?.description ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Cantidad" className={inputClass} type="number" step="0.001" {...lineForm.register("quantity", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly /></td>
-                  <td><Input aria-label="Precio" className={inputClass} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && lineForm.getValues("price") < product.cost) setPriceWarning(true) } })} /></td>
+                  <td><Input aria-label="Precio" className={inputClass} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && lineForm.getValues("price") < product.cost) warnPriceBelowCost() } })} /></td>
                   <td><Input aria-label="Dto" className={inputClass} type="number" step="0.01" {...lineForm.register("discount", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="Importe" className={inputClass} readOnly value={money((draft.quantity || 0) * (draft.price || 0) * (1 - (draft.discount || 0)/100))} /></td>
                   <td><Input aria-label="Sucursal de la partida" className={inputClass} value="0" readOnly title="Asignación de sucursal pendiente de captura" /></td>
@@ -199,7 +205,6 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
           {loading && <div role="status" className="flex items-center gap-1"><Spinner />Cargando datos…</div>}
         </>}
       </div>
-      <AlertDialog open={priceWarning} onOpenChange={setPriceWarning}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Advertencia</AlertDialogTitle><AlertDialogDescription>No se puede vender abajo del costo</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogAction onClick={() => { setPriceWarning(false); lineForm.setFocus("price") }}>OK</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </ErpDataDialogBody>
   </ErpDataDialog>
 }

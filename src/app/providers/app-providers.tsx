@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query"
 
 import { InterfaceSizeProvider } from "@/app/providers/interface-size-provider"
 import { queryClient } from "@/app/providers/query-client"
+import { AppToaster } from "@/shared/ui/app-toaster"
 import { TooltipProvider } from "@/shared/ui/tooltip"
 
 const ReactQueryDevtools = import.meta.env.DEV
@@ -18,6 +19,7 @@ export function AppProviders({ children }: PropsWithChildren) {
     <InterfaceSizeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>{children}</TooltipProvider>
+        <AppToaster />
         {ReactQueryDevtools && (
           <Suspense fallback={null}>
             <ReactQueryDevtools initialIsOpen={false} />

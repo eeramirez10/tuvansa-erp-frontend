@@ -6,7 +6,11 @@ Columnas: Código, Descripción, Cantidad, UM, Precio, Dto, Importe, Sucursal, P
 
 **OK** abre **Comentarios del pedido**. Se pueden modificar referencia, fechas, departamento, Inicial, plazo, tienda y Obs. (máximo 21 caracteres observado). Su OK guarda mediante POST `/sales/orders/capture`. El servidor asigna el folio; el mostrado en la captura es orientativo. Se muestra **¿Continuo?**: Sí inicia otro borrador y No navega al registro guardado. El resultado inicial es cotización, como en el ejercicio; **Cotiz** alterna entre Pedido y Cotización mediante POST.
 
-La captura posterior de `P021066` agregó los comportamientos de mantenimiento: Tab sobre un cliente parcial abre **Encuentra cliente** como una ventana ERP independiente delante de **Captura de pedido**, con búsqueda por Código, Nombre y RFC; un precio inferior al costo muestra `No se puede vender abajo del costo`; Ctrl+A autoriza o desautoriza; Ctrl+P abre `Asignación de Pedido`; y `Cambio de pedido` expone sólo las partidas. Asignar requiere autorización, desautorizar requiere desasignar y un pedido autorizado no puede editarse.
+La captura posterior de `P021066` agregó los comportamientos de mantenimiento: Tab sobre un cliente parcial abre **Encuentra cliente** como una ventana ERP independiente delante de **Captura de pedido**, con búsqueda por Código, Nombre y RFC; un precio inferior al costo muestra el toast global `No se puede vender abajo del costo` en la esquina inferior derecha; Ctrl+A autoriza o desautoriza; Ctrl+P abre `Asignación de Pedido`; y `Cambio de pedido` expone sólo las partidas. Asignar requiere autorización, desautorizar requiere desasignar y un pedido autorizado no puede editarse.
+
+La captura de pedidos está limitada temporalmente al almacén **01 México**. La resolución por IEAN cruza FINV con FALM mediante ISEQ y ALMNUM; `TSC480` corresponde a `01300938` en este almacén. La selección de sucursal según permisos del usuario queda pendiente.
+
+Las notificaciones usan un adaptador global en `shared/notifications`; los módulos no importan directamente la librería Sonner. El contenedor compartido admite estados success, error, warning e info y se muestra sobre las ventanas ERP.
 
 El primer OK conserva un borrador local; no inserta un encabezado como OMNIS hasta el OK final. Cancelar Comentarios regresa a Captura. Cerrar un borrador pide confirmar descarte. Durante el guardado se deshabilitan controles; los errores conservan el contenido y no se reintenta automáticamente.
 
