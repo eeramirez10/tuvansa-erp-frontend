@@ -21,6 +21,7 @@ export type OrderLine = {
 }
 
 export type Order = {
+  storage?: { source: "postgres"; legacyId: number | null; revision: number }
   id: number
   number: string
   customerOrderNumber: string
@@ -82,7 +83,7 @@ export type OrderPanel = {
   section: OrderPanelSection
   button: string
   available: boolean
-  source: "mysql" | "static" | "not-available"
+  source: "mysql" | "postgres" | "static" | "not-available"
   items: Array<Record<string, unknown>>
   summary?: Record<string, unknown>
   reason?: string

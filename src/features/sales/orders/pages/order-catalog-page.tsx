@@ -8,6 +8,8 @@ import { useNavigate, useParams } from "react-router"
 import { paths } from "@/app/router/paths"
 import { OrderCatalogDetails } from "@/features/sales/orders/components/order-catalog-details"
 import { OrderFormDialog } from "@/features/sales/orders/components/order-form-dialog"
+import { OrderCaptureDialog } from "@/features/sales/orders/components/order-capture-dialog"
+import { convertQuoteToOrder } from "@/features/sales/orders/services/order-capture-service"
 import { OrderPanelDialog } from "@/features/sales/orders/components/order-panel-dialog"
 import { OrderSearchDialog } from "@/features/sales/orders/components/order-search-dialog"
 import { OrderPanelButtons } from "@/features/sales/orders/components/order-side-panels"
@@ -33,6 +35,15 @@ export function OrderCatalogPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<OrderPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const conversion = useMutation({ mutationFn: () => convertQuoteToOrder(order.id), onSuccess: async next => {
+    await queryClient.invalidateQueries({ queryKey: orderKeys.all })
+    await queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
+    openOrder(next); setNotice({ kind: "success", title: "Pedido", message: `${next.number} convertido a pedido.` })
+  }, onError: error => setNotice({ kind: "error", title: "No fue posible convertir", message: getApiErrorMessage(error) }) })
+  const selectPanel = (panel: OrderPanelDefinition) => {
+    if (panel.key === "quote-conversion" && order.documentKind === "quote") { if (!conversion.isPending) conversion.mutate(); return }
+    openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })
+  }
   const openOrder = (next: Order) => { queryClient.setQueryData(orderKeys.detail(next.id), next); void navigate(paths.salesOrder(next.id)) }
   const navigation = useMutation({ mutationFn: (direction: "previous" | "next") => getAdjacentOrder(order.id, direction), onSuccess: (next, direction) => next ? openOrder(next) : setNotice({ kind: "success", title: "Fin del catálogo", message: direction === "previous" ? "Este es el primer pedido disponible." : "Este es el último pedido disponible." }), onError: (error) => setNotice({ kind: "error", title: "No fue posible navegar", message: getApiErrorMessage(error) }) })
   const deletion = useMutation({ mutationFn: () => deleteOrder(order.id), onSuccess: async () => { setDeleteOpen(false); await queryClient.invalidateQueries({ queryKey: orderKeys.all }); void navigate(paths.salesOrders, { replace: true }) }, onError: (error) => { setDeleteOpen(false); setNotice({ kind: "error", title: "No fue posible eliminar el pedido", message: getApiErrorMessage(error) }) } })
@@ -41,11 +52,12 @@ export function OrderCatalogPage() {
       <OrderToolbar disabled={navigation.isPending || deletion.isPending} onCreate={() => setFormMode("create")} onDelete={() => setDeleteOpen(true)} onEdit={() => setFormMode("edit")} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
       {notice && <Alert variant={notice.kind === "error" ? "destructive" : "default"}><HugeiconsIcon icon={notice.kind === "error" ? AlertCircleIcon : InformationCircleIcon} /><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
-        <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={(panel) => openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={(panel) => openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
+        <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={selectPanel} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={selectPanel} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
         <OrderCatalogDetails order={order} />
       </div>
       {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); openOrder(selected) }} /></DesktopWindowIdentity>}
-      {formMode && <DesktopWindowIdentity id={`orders:${formMode}:${formMode === "edit" ? order.id : "new"}`}><OrderFormDialog mode={formMode} onOpenChange={(open) => { if (!open) setFormMode(null) }} onSaved={(saved) => { setFormMode(null); setNotice({ kind: "success", title: formMode === "create" ? "Pedido creado" : "Pedido actualizado", message: saved.number }); openOrder(saved) }} order={formMode === "edit" ? order : undefined} /></DesktopWindowIdentity>}
+      {formMode === "create" && <DesktopWindowIdentity id="orders:create:new"><OrderCaptureDialog onOpenChange={open => { if (!open) setFormMode(null) }} onSaved={saved => { setFormMode(null); setNotice({ kind: "success", title: "Alta guardada", message: saved.number }); openOrder(saved) }} /></DesktopWindowIdentity>}
+      {formMode === "edit" && <DesktopWindowIdentity id={`orders:edit:${order.id}`}><OrderFormDialog mode="edit" onOpenChange={(open) => { if (!open) setFormMode(null) }} onSaved={(saved) => { setFormMode(null); setNotice({ kind: "success", title: "Pedido actualizado", message: saved.number }); openOrder(saved) }} order={order} /></DesktopWindowIdentity>}
       {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><OrderPanelDialog onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} order={window.payload.order} panel={window.payload.panel} /></DesktopWindowIdentity>)}
       <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogMedia><HugeiconsIcon icon={Delete01Icon} /></AlertDialogMedia><AlertDialogTitle>¿Eliminar el pedido {order.number}?</AlertDialogTitle><AlertDialogDescription>Se eliminarán el encabezado y sus partidas si no existen facturas ni cantidades surtidas.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction disabled={deletion.isPending} onClick={() => deletion.mutate()} variant="destructive">{deletion.isPending && <Spinner />}Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </section>

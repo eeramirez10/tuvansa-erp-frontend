@@ -1,0 +1,17 @@
+# Pedidos: alta de la versión nueva
+
+Ruta `/pedidos/:orderId`. El botón **Nuevo pedido** (hoja) abre el modal **Captura de pedido**. Su primer paso permite elegir Almacén y después habilita el formulario dentro del mismo modal. La captura incluye cliente por código, agente visible, fechas, referencia, departamento e Inicial. Código de producto + Enter/Tab carga descripción, unidad y precio. Se captura cantidad, precio y Dto; **Agregar partida** o Tab desde Pzas. incorpora el renglón al borrador y vuelve al código. Permite múltiples partidas y quitar renglones antes de guardar.
+
+Columnas: Código, Descripción, Cantidad, UM, Precio, Dto, Importe, Sucursal, Pzas. Listado con scroll X/Y, totales de cantidad, volumen, peso, subtotal, descuento, IVA y Gran Total. Los importes se actualizan en pantalla; el servidor los recalcula.
+
+**OK** abre **Comentarios del pedido**. Se pueden modificar referencia, fechas, departamento, Inicial, plazo, tienda y Obs. (máximo 21 caracteres observado). Su OK guarda mediante POST `/sales/orders/capture`. El servidor asigna el folio; el mostrado en la captura es orientativo. Se muestra **¿Continuo?**: Sí inicia otro borrador y No navega al registro guardado. El resultado inicial es cotización, como en el ejercicio; **Cotiz** convierte a pedido mediante POST.
+
+El primer OK conserva un borrador local; no inserta un encabezado como OMNIS hasta el OK final. Cancelar Comentarios regresa a Captura. Cerrar un borrador pide confirmar descarte. Durante el guardado se deshabilitan controles; los errores conservan el contenido y no se reintenta automáticamente.
+
+Arquitectura: `capture-model.ts` contiene tipos/Zod/cálculo visual; `capture-logic.ts`, claves de consulta; `services/order-capture-service.ts`, Axios; `components/order-capture-dialog.tsx`, React Hook Form y la ventana compartida. La caché incluye código, almacén, tipo y cliente. Al guardar se invalidan pedidos, productos y clientes; al convertir se invalidan pedidos y productos. La selección se carga inmediatamente y las respuestas atrasadas no sustituyen otra selección.
+
+La evidencia de OMNIS vive en el backend: `docs/modules/sales/orders-create-sql-new-version.md`, `docs/modules/sales/orders-create-api.md` y `captures/sql/new-version/sales/orders-create-20260914-171356/ui/`. La tabla botón/API está en [endpoint-map.md](endpoint-map.md).
+
+Alcance validado: tipo P, productos por código exacto, precio de lista 1 en PESOS y sin IEPS ni reglas automáticas de FDESCTOS. Se admite descuento manual por partida. Los controles secundarios sin escritura confirmada se mantienen de sólo lectura (descuentos globales, flete, seguros, sucursal por partida, campos adicionales de entrega y transporte). No se promete equivalencia de todas las configuraciones del ERP ni del mantenimiento heredado.
+
+Validación en Chrome: lecturas reales con cliente/producto del ejercicio, dos renglones y total 205.49; error real 503 por falta de permisos de escritura manteniendo el borrador. Guardado exitoso/¿Continuo?/Cotiz comprobados con respuestas HTTP simuladas, no SQL nuevo de OMNIS ni un commit real. No se creó otro pedido. Capturas locales excluidas de Git en el backend: `captures/ui/new-version/orders-web/`. Lint, typecheck y build del frontend forman parte de la validación.

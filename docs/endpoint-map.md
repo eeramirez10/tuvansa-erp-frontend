@@ -4,6 +4,25 @@ Este documento es el contrato de trazabilidad entre la interfaz heredada de OMNI
 
 ## Estado inicial
 
+### Pedidos: alta de la versión nueva
+
+Actualización 2026-09-15: los endpoints de escritura de Pedidos ahora guardan en PostgreSQL/Neon. Los paths se conservan; la API asigna folios NP y combina versiones locales con MySQL. `Order.storage` identifica origen local, ID heredado y revisión; los paneles pueden devolver `source: postgres`. Sin `NEON_DATABASE_URL`, el guardado devuelve 503 sin intentar escribir en MySQL. Los errores por permisos MySQL mencionados abajo corresponden a las pruebas históricas anteriores a esta separación.
+
+Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas al prefijo `/api`. Evidencia SQL: `docs/modules/sales/orders-create-sql-new-version.md` del backend; marcadores `ORDERS_NEW_000001_*`.
+
+| Vista / control | Evento | Método y endpoint | Query key / mutation | Archivo |
+| --- | --- | --- | --- | --- |
+| Pedidos / Nuevo (hoja) | Abrir Captura de pedido en un modal; el primer paso selecciona Almacén | GET `/sales/orders/capture/options` | sales/orders/capture/options | order-capture-dialog.tsx |
+| Captura / Cliente | Enter o salir del campo | GET `/sales/orders/capture/customers/:code` | sales/orders/capture/customer/code | order-capture-service.ts |
+| Captura / Código | Enter o salir del campo | GET `/sales/orders/capture/products/:code?warehouse=...&typeCode=P&customerCode=...` | sales/orders/capture/product/code/warehouse/typeCode/customerCode | order-capture-service.ts |
+| Captura / Agregar partida, Tab desde Pzas. | Incorporar renglón | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
+| Captura / OK | Abrir Comentarios | Sin escritura HTTP | Borrador | order-capture-dialog.tsx |
+| Comentarios / OK | Guardar alta completa | POST `/sales/orders/capture` | saveCapturedOrder; invalida pedidos/productos/clientes | order-capture-service.ts |
+| ¿Continuo? / Sí, No | Nueva captura o abrir resultado | Sin escritura adicional | Reiniciar borrador / detalle del registro | order-capture-dialog.tsx |
+| Pedidos / Cotiz (desde cotización) | Convertir | POST `/sales/orders/:id/actions/quote-conversion` | convertQuoteToOrder; invalida pedidos/productos | order-catalog-page.tsx |
+
+La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difiere de OMNIS: la persistencia se aplaza al OK final para evitar altas parciales al cancelar. Los controles secundarios cuya escritura no fue validada permanecen de sólo lectura. La cuenta local actual no permite el bloqueo/escritura de FTIPMV: el guardado real devuelve 503; no se deben confundir las pruebas HTTP simuladas de éxito con una escritura real.
+
 ### Verifica fiscal: edición disponible, verificación pendiente
 
 Prefijo: `/api/accounts-receivable/clients/:clientId/actions/fiscal-verification`.

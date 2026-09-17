@@ -30,6 +30,9 @@ type ErpDataDialogProps = {
   onOpenChange: (open: boolean) => void
   children: ReactNode
   className?: string
+  defaultHeight?: number | "auto"
+  defaultWidth?: number
+  fillHeight?: boolean
   tone?: "inventory" | "receivable" | "payable" | "sales" | "banking"
   windowId?: string
 }
@@ -40,6 +43,9 @@ export function ErpDataDialog({
   onOpenChange,
   children,
   className,
+  defaultHeight = "auto",
+  defaultWidth = 736,
+  fillHeight = false,
   tone = "inventory",
   windowId: providedWindowId,
 }: ErpDataDialogProps) {
@@ -48,7 +54,7 @@ export function ErpDataDialog({
   const interfaceScale = interfaceSize === "large" ? 1.2 : 1
   const availableWidth = (window.innerWidth - 16) / interfaceScale
   const availableHeight = (window.innerHeight - 48) / interfaceScale
-  const defaultWindowWidth = Math.min(736, availableWidth)
+  const defaultWindowWidth = Math.min(defaultWidth, availableWidth)
   const windowId = useDesktopWindowId(
     providedWindowId ?? `erp-window-${generatedWindowId}`,
   )
@@ -120,7 +126,7 @@ export function ErpDataDialog({
         x: position.x,
         y: position.y,
         width: defaultWindowWidth,
-        height: "auto",
+        height: defaultHeight,
       }}
       disableDragging={maximized}
       dragHandleClassName="erp-window-drag-handle"
@@ -152,7 +158,7 @@ export function ErpDataDialog({
       <section
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
-        className="flex min-h-0 flex-1 flex-col overflow-auto"
+        className={cn("flex min-h-0 flex-1 flex-col overflow-auto", fillHeight && "h-full")}
         role="dialog"
       >
         <header
