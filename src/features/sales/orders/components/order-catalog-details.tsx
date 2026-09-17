@@ -21,6 +21,9 @@ function ReadonlyField({ label, fieldValue, className = "", stacked = false }: {
 }
 
 export function OrderCatalogDetails({ order }: { order: Order }) {
+  const assignedQuantity = order.lines.reduce((total,line) => total + line.assigned, 0)
+  const assignedAmount = order.lines.reduce((total,line) => total + line.assigned * line.price, 0)
+  const assignedPercentage = order.totals.ordered > 0 ? assignedQuantity / order.totals.ordered * 100 : 0
   return (
     <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">
@@ -87,7 +90,9 @@ export function OrderCatalogDetails({ order }: { order: Order }) {
         <Card size="sm">
           <CardHeader className="border-b bg-module-sales/10 py-1"><CardTitle>Totales</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-3 gap-1 py-1">
-            <ReadonlyField label="Cant." fieldValue={money.format(order.totals.quantity)} className="col-span-3" />
+            <ReadonlyField label="Asignado Cnt." fieldValue={money.format(assignedQuantity)} />
+            <ReadonlyField label="%" fieldValue={money.format(assignedPercentage)} />
+            <ReadonlyField label="Asignado $" fieldValue={money.format(assignedAmount)} />
             <ReadonlyField label="Pedido" fieldValue={money.format(order.totals.ordered)} />
             <ReadonlyField label="Surtido" fieldValue={money.format(order.totals.fulfilled)} />
             <ReadonlyField label="Resta" fieldValue={money.format(order.totals.remaining)} />

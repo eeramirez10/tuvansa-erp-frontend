@@ -10,8 +10,13 @@ export interface CaptureCustomer {
   termsDays: number; store: string; classification: string
   branches: Array<{ code: number; name: string }>
 }
+export interface CaptureCustomerMatch {
+  id: number; code: string; name: string; branch: string; taxId: string
+  ean: string; phone: string; mobile: string; email: string
+}
 export interface CaptureProduct {
   id: number; code: string; description: string; unit: string; price: number
+  cost: number
   taxPercentage: number; excisePercentage: number; currencyId: number
   stock: number; assigned: number; available: number; weight: number; volume: number
 }

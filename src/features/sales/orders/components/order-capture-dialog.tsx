@@ -3,12 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import type { Order } from "@/features/sales/orders/model"
-import { captureHeaderSchema, captureLineSchema, captureTotals, type CaptureCustomer, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct } from "@/features/sales/orders/capture-model"
-import { captureCustomerQuery, captureOptionsQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
+import { captureHeaderSchema, captureLineSchema, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct } from "@/features/sales/orders/capture-model"
+import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/shared/ui/alert-dialog"
 import { Button } from "@/shared/ui/button"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
@@ -28,12 +29,14 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
   const options = useQuery(captureOptionsQuery())
   const [stage, setStage] = useState<"warehouse" | "capture" | "comments" | "continue">("warehouse")
   const [customer, setCustomer] = useState<CaptureCustomer | null>(null)
+  const [customerMatches, setCustomerMatches] = useState<CaptureCustomerMatch[]>([])
   const [product, setProduct] = useState<CaptureProduct | null>(null)
   const [lines, setLines] = useState<CaptureDraftLine[]>([])
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState<Order | null>(null)
   const [discard, setDiscard] = useState(false)
+  const [priceWarning, setPriceWarning] = useState(false)
   const lookupVersion = useRef(0)
   const saving = useRef(false)
   const form = useForm<CaptureHeader>({ resolver: zodResolver(captureHeaderSchema), defaultValues: {
@@ -60,17 +63,27 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
     if (lines.length || headerDirty || lineDirty) { setDiscard(true); return }
     onOpenChange(false)
   }
-  const loadCustomer = async () => {
-    const code = form.getValues("customerCode").trim()
+  const applyCustomer = (value: CaptureCustomer) => {
+    setCustomer(value); form.setValue("customerCode", value.code); form.setValue("agentCode", value.agentCode)
+    form.setValue("termsDays", value.termsDays); form.setValue("store", value.store); setCustomerMatches([])
+  }
+  const loadCustomer = async (selectedCode?: string) => {
+    const code = selectedCode ?? form.getValues("customerCode").trim()
     if (!code || customer?.code === code) return
     const version = ++lookupVersion.current
     setCustomer(null); setLoading(true); setError("")
     try {
       const value = await queryClient.fetchQuery(captureCustomerQuery(code))
       if (version !== lookupVersion.current || form.getValues("customerCode").trim() !== code) return
-      setCustomer(value); form.setValue("customerCode", value.code); form.setValue("agentCode", value.agentCode)
-      form.setValue("termsDays", value.termsDays); form.setValue("store", value.store)
-    } catch (e) { if (version === lookupVersion.current) setError(getApiErrorMessage(e)) }
+      applyCustomer(value)
+    } catch (e) {
+      if (version !== lookupVersion.current) return
+      try {
+        const matches = await queryClient.fetchQuery(captureCustomerMatchesQuery(code))
+        if (matches.length) { setCustomerMatches(matches); setError("") }
+        else setError(getApiErrorMessage(e))
+      } catch { setError(getApiErrorMessage(e)) }
+    }
     finally { if (version === lookupVersion.current) setLoading(false) }
   }
   const loadProduct = async () => {
@@ -87,6 +100,7 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
   }
   const addLine = lineForm.handleSubmit(value => {
     if (!product || product.code !== value.productCode.trim()) { setError("Carga el producto antes de agregar la partida."); return }
+    if (value.price < product.cost) { setPriceWarning(true); return }
     setLines(current => [...current, { ...value, product }]); setProduct(null); setError("")
     lineForm.reset({ productCode: "", quantity: 0, price: 0, discount: 0 }); lineForm.setFocus("productCode")
   })
@@ -142,7 +156,7 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
                   <td><Input aria-label="Descripción del producto" className={inputClass} value={product?.description ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Cantidad" className={inputClass} type="number" step="0.001" {...lineForm.register("quantity", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly /></td>
-                  <td><Input aria-label="Precio" className={inputClass} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true })} /></td>
+                  <td><Input aria-label="Precio" className={inputClass} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && lineForm.getValues("price") < product.cost) setPriceWarning(true) } })} /></td>
                   <td><Input aria-label="Dto" className={inputClass} type="number" step="0.01" {...lineForm.register("discount", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="Importe" className={inputClass} readOnly value={money((draft.quantity || 0) * (draft.price || 0) * (1 - (draft.discount || 0)/100))} /></td>
                   <td><Input aria-label="Sucursal de la partida" className={inputClass} value="0" readOnly title="Asignación de sucursal pendiente de captura" /></td>
@@ -178,6 +192,8 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
           {loading && <div role="status" className="flex items-center gap-1"><Spinner />Cargando datos…</div>}
         </>}
       </div>
+      <AlertDialog open={customerMatches.length > 0} onOpenChange={open => { if (!open) setCustomerMatches([]) }}><AlertDialogContent className="max-w-[64rem]"><AlertDialogHeader><AlertDialogTitle>Encuentra cliente por código o nombre</AlertDialogTitle><AlertDialogDescription>Seleccione una coincidencia para cargar el cliente.</AlertDialogDescription></AlertDialogHeader><div className="max-h-80 overflow-auto border"><table className="min-w-[900px] text-[10px]"><thead className="sticky top-0 bg-muted"><tr>{["Código","Nombre","Sucursal","RFC","EAN","Tel.","Cel.","E-mail"].map(label => <th className="px-2 py-1 text-left" key={label}>{label}</th>)}</tr></thead><tbody>{customerMatches.map(match => <tr className="cursor-pointer border-t hover:bg-muted" key={match.id} onDoubleClick={() => void loadCustomer(match.code)}><td className="px-2 py-1"><button className="font-mono underline" onClick={() => void loadCustomer(match.code)}>{match.code}</button></td><td className="px-2 py-1">{match.name}</td><td className="px-2 py-1">{match.branch}</td><td className="px-2 py-1">{match.taxId}</td><td className="px-2 py-1">{match.ean}</td><td className="px-2 py-1">{match.phone}</td><td className="px-2 py-1">{match.mobile}</td><td className="px-2 py-1">{match.email}</td></tr>)}</tbody></table></div><AlertDialogFooter><AlertDialogAction onClick={() => setCustomerMatches([])}>Cancelar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <AlertDialog open={priceWarning} onOpenChange={setPriceWarning}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Advertencia</AlertDialogTitle><AlertDialogDescription>No se puede vender abajo del costo</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogAction onClick={() => { setPriceWarning(false); lineForm.setFocus("price") }}>OK</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </ErpDataDialogBody>
   </ErpDataDialog>
 }

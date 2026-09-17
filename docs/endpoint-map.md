@@ -19,7 +19,22 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 | Captura / OK | Abrir Comentarios | Sin escritura HTTP | Borrador | order-capture-dialog.tsx |
 | Comentarios / OK | Guardar alta completa | POST `/sales/orders/capture` | saveCapturedOrder; invalida pedidos/productos/clientes | order-capture-service.ts |
 | ¿Continuo? / Sí, No | Nueva captura o abrir resultado | Sin escritura adicional | Reiniciar borrador / detalle del registro | order-capture-dialog.tsx |
-| Pedidos / Cotiz (desde cotización) | Convertir | POST `/sales/orders/:id/actions/quote-conversion` | convertQuoteToOrder; invalida pedidos/productos | order-catalog-page.tsx |
+| Pedidos / Cotiz | Alternar Pedido/Cotización | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote; invalida pedidos/productos | order-catalog-page.tsx |
+
+### Pedidos: autorización, asignación y cambio de partidas
+
+Implementación 2026-09-17 basada en `ORDERS_*` del reporte `orders-behaviors-new-version.md` del backend.
+
+| Vista / control | Evento | Método y endpoint | Query key / mutation | Archivo |
+| --- | --- | --- | --- | --- |
+| Captura / Cliente | Tab con código parcial | GET `/sales/orders/capture/customers?query=...` | customer-matches | order-capture-dialog.tsx |
+| Captura / Precio | Blur o agregar partida | Validación local y validación del POST | `ORDER_PRICE_BELOW_COST` | order-capture-dialog.tsx |
+| Pedidos / Autorizar | Clic o Ctrl+A | POST `/sales/orders/:id/actions/authorization` | setOrderAuthorization | order-catalog-page.tsx |
+| Pedidos / Asignar todo | Clic o Ctrl+P | POST `/sales/orders/:id/actions/assignment` | setOrderAssignment | order-assignment-dialog.tsx |
+| Pedidos / Editar | Clic | PATCH `/sales/orders/:id` | updateOrder; sólo partidas | order-form-dialog.tsx |
+| Pedidos / Cotiz | Clic en Pedido o Cotización | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote | order-catalog-page.tsx |
+
+Las escrituras quedan en PostgreSQL/Neon. La lectura MySQL determina autorización con `PEPAR9='O.K.'`. La interfaz bloquea asignación sin autorización, edición autorizada y desautorización con cantidades asignadas; el servidor repite las validaciones.
 
 La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difiere de OMNIS: la persistencia se aplaza al OK final para evitar altas parciales al cancelar. Los controles secundarios cuya escritura no fue validada permanecen de sólo lectura. La cuenta local actual no permite el bloqueo/escritura de FTIPMV: el guardado real devuelve 503; no se deben confundir las pruebas HTTP simuladas de éxito con una escritura real.
 

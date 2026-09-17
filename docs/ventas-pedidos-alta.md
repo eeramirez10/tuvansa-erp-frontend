@@ -4,7 +4,9 @@ Ruta `/pedidos/:orderId`. El botón **Nuevo pedido** (hoja) abre el modal **Capt
 
 Columnas: Código, Descripción, Cantidad, UM, Precio, Dto, Importe, Sucursal, Pzas. Listado con scroll X/Y, totales de cantidad, volumen, peso, subtotal, descuento, IVA y Gran Total. Los importes se actualizan en pantalla; el servidor los recalcula.
 
-**OK** abre **Comentarios del pedido**. Se pueden modificar referencia, fechas, departamento, Inicial, plazo, tienda y Obs. (máximo 21 caracteres observado). Su OK guarda mediante POST `/sales/orders/capture`. El servidor asigna el folio; el mostrado en la captura es orientativo. Se muestra **¿Continuo?**: Sí inicia otro borrador y No navega al registro guardado. El resultado inicial es cotización, como en el ejercicio; **Cotiz** convierte a pedido mediante POST.
+**OK** abre **Comentarios del pedido**. Se pueden modificar referencia, fechas, departamento, Inicial, plazo, tienda y Obs. (máximo 21 caracteres observado). Su OK guarda mediante POST `/sales/orders/capture`. El servidor asigna el folio; el mostrado en la captura es orientativo. Se muestra **¿Continuo?**: Sí inicia otro borrador y No navega al registro guardado. El resultado inicial es cotización, como en el ejercicio; **Cotiz** alterna entre Pedido y Cotización mediante POST.
+
+La captura posterior de `P021066` agregó los comportamientos de mantenimiento: Tab sobre un cliente parcial abre coincidencias; un precio inferior al costo muestra `No se puede vender abajo del costo`; Ctrl+A autoriza o desautoriza; Ctrl+P abre `Asignación de Pedido`; y `Cambio de pedido` expone sólo las partidas. Asignar requiere autorización, desautorizar requiere desasignar y un pedido autorizado no puede editarse.
 
 El primer OK conserva un borrador local; no inserta un encabezado como OMNIS hasta el OK final. Cancelar Comentarios regresa a Captura. Cerrar un borrador pide confirmar descarte. Durante el guardado se deshabilitan controles; los errores conservan el contenido y no se reintenta automáticamente.
 
