@@ -7,10 +7,12 @@ import { captureHeaderSchema, captureLineSchema, captureTotals, type CaptureCust
 import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
+import { OrderCustomerMatchesDialog } from "@/features/sales/orders/components/order-customer-matches-dialog"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/shared/ui/alert-dialog"
 import { Button } from "@/shared/ui/button"
+import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
@@ -70,6 +72,7 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
   const loadCustomer = async (selectedCode?: string) => {
     const code = selectedCode ?? form.getValues("customerCode").trim()
     if (!code || customer?.code === code) return
+    if (selectedCode) form.setValue("customerCode", code)
     const version = ++lookupVersion.current
     setCustomer(null); setLoading(true); setError("")
     try {
@@ -192,7 +195,15 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
           {loading && <div role="status" className="flex items-center gap-1"><Spinner />Cargando datos…</div>}
         </>}
       </div>
-      <AlertDialog open={customerMatches.length > 0} onOpenChange={open => { if (!open) setCustomerMatches([]) }}><AlertDialogContent className="max-w-[64rem]"><AlertDialogHeader><AlertDialogTitle>Encuentra cliente por código o nombre</AlertDialogTitle><AlertDialogDescription>Seleccione una coincidencia para cargar el cliente.</AlertDialogDescription></AlertDialogHeader><div className="max-h-80 overflow-auto border"><table className="min-w-[900px] text-[10px]"><thead className="sticky top-0 bg-muted"><tr>{["Código","Nombre","Sucursal","RFC","EAN","Tel.","Cel.","E-mail"].map(label => <th className="px-2 py-1 text-left" key={label}>{label}</th>)}</tr></thead><tbody>{customerMatches.map(match => <tr className="cursor-pointer border-t hover:bg-muted" key={match.id} onDoubleClick={() => void loadCustomer(match.code)}><td className="px-2 py-1"><button className="font-mono underline" onClick={() => void loadCustomer(match.code)}>{match.code}</button></td><td className="px-2 py-1">{match.name}</td><td className="px-2 py-1">{match.branch}</td><td className="px-2 py-1">{match.taxId}</td><td className="px-2 py-1">{match.ean}</td><td className="px-2 py-1">{match.phone}</td><td className="px-2 py-1">{match.mobile}</td><td className="px-2 py-1">{match.email}</td></tr>)}</tbody></table></div><AlertDialogFooter><AlertDialogAction onClick={() => setCustomerMatches([])}>Cancelar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      {customerMatches.length > 0 && (
+        <DesktopWindowIdentity id="orders:capture:customer-matches">
+          <OrderCustomerMatchesDialog
+            matches={customerMatches}
+            onOpenChange={open => { if (!open) setCustomerMatches([]) }}
+            onSelect={match => { void loadCustomer(match.code) }}
+          />
+        </DesktopWindowIdentity>
+      )}
       <AlertDialog open={priceWarning} onOpenChange={setPriceWarning}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Advertencia</AlertDialogTitle><AlertDialogDescription>No se puede vender abajo del costo</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogAction onClick={() => { setPriceWarning(false); lineForm.setFocus("price") }}>OK</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </ErpDataDialogBody>
   </ErpDataDialog>
