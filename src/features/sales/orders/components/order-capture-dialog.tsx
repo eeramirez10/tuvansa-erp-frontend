@@ -7,12 +7,10 @@ import { captureHeaderSchema, captureLineSchema, captureTotals, type CaptureCust
 import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
-import { OrderCustomerMatchesDialog } from "@/features/sales/orders/components/order-customer-matches-dialog"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/shared/ui/alert-dialog"
 import { Button } from "@/shared/ui/button"
-import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
@@ -26,12 +24,15 @@ const lineColumns = [
   ["Importe", "9%"], ["Sucursal", "8%"], ["Pzas.", "10%"],
 ] as const
 
-export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (open: boolean) => void; onSaved: (order: Order) => void }) {
+export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: {
+  onCustomerSearch: (initialCode: string, onSelect: (match: CaptureCustomerMatch) => void) => void
+  onOpenChange: (open: boolean) => void
+  onSaved: (order: Order) => void
+}) {
   const queryClient = useQueryClient()
   const options = useQuery(captureOptionsQuery())
   const [stage, setStage] = useState<"warehouse" | "capture" | "comments" | "continue">("warehouse")
   const [customer, setCustomer] = useState<CaptureCustomer | null>(null)
-  const [customerMatches, setCustomerMatches] = useState<CaptureCustomerMatch[]>([])
   const [product, setProduct] = useState<CaptureProduct | null>(null)
   const [lines, setLines] = useState<CaptureDraftLine[]>([])
   const [error, setError] = useState("")
@@ -67,7 +68,7 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
   }
   const applyCustomer = (value: CaptureCustomer) => {
     setCustomer(value); form.setValue("customerCode", value.code); form.setValue("agentCode", value.agentCode)
-    form.setValue("termsDays", value.termsDays); form.setValue("store", value.store); setCustomerMatches([])
+    form.setValue("termsDays", value.termsDays); form.setValue("store", value.store)
   }
   const loadCustomer = async (selectedCode?: string) => {
     const code = selectedCode ?? form.getValues("customerCode").trim()
@@ -82,8 +83,11 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
     } catch (e) {
       if (version !== lookupVersion.current) return
       try {
-        const matches = await queryClient.fetchQuery(captureCustomerMatchesQuery(code))
-        if (matches.length) { setCustomerMatches(matches); setError("") }
+        const matches = await queryClient.fetchQuery(captureCustomerMatchesQuery({ code }))
+        if (matches.length) {
+          onCustomerSearch(code, match => { void loadCustomer(match.code) })
+          setError("")
+        }
         else setError(getApiErrorMessage(e))
       } catch { setError(getApiErrorMessage(e)) }
     }
@@ -195,15 +199,6 @@ export function OrderCaptureDialog({ onOpenChange, onSaved }: { onOpenChange: (o
           {loading && <div role="status" className="flex items-center gap-1"><Spinner />Cargando datos…</div>}
         </>}
       </div>
-      {customerMatches.length > 0 && (
-        <DesktopWindowIdentity id="orders:capture:customer-matches">
-          <OrderCustomerMatchesDialog
-            matches={customerMatches}
-            onOpenChange={open => { if (!open) setCustomerMatches([]) }}
-            onSelect={match => { void loadCustomer(match.code) }}
-          />
-        </DesktopWindowIdentity>
-      )}
       <AlertDialog open={priceWarning} onOpenChange={setPriceWarning}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Advertencia</AlertDialogTitle><AlertDialogDescription>No se puede vender abajo del costo</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogAction onClick={() => { setPriceWarning(false); lineForm.setFocus("price") }}>OK</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </ErpDataDialogBody>
   </ErpDataDialog>

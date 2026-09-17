@@ -14,6 +14,11 @@ export interface CaptureCustomerMatch {
   id: number; code: string; name: string; branch: string; taxId: string
   ean: string; phone: string; mobile: string; email: string
 }
+export interface CaptureCustomerSearchCriteria {
+  code?: string
+  name?: string
+  taxId?: string
+}
 export interface CaptureProduct {
   id: number; code: string; description: string; unit: string; price: number
   cost: number

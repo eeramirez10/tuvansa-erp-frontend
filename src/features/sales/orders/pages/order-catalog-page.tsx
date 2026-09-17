@@ -18,6 +18,8 @@ import { OrderToolbar } from "@/features/sales/orders/components/order-toolbar"
 import { orderActionPanels, orderSecondaryActionPanels } from "@/features/sales/orders/constants"
 import { orderKeys, orderQueryOptions } from "@/features/sales/orders/logic"
 import type { Order, OrderPanelDefinition } from "@/features/sales/orders/model"
+import type { CaptureCustomerMatch } from "@/features/sales/orders/capture-model"
+import { OrderCustomerMatchesDialog } from "@/features/sales/orders/components/order-customer-matches-dialog"
 import { deleteOrder, getAdjacentOrder } from "@/features/sales/orders/services/order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -27,6 +29,7 @@ import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/d
 
 type Notice = { kind: "success" | "error"; title: string; message: string }
 type OrderPanelWindow = { order: Order; panel: OrderPanelDefinition }
+type CustomerSearchWindow = { initialCode: string; onSelect: (match: CaptureCustomerMatch) => void }
 export function OrderCatalogPage() {
   const orderId = Number(useParams().orderId)
   const navigate = useNavigate(); const queryClient = useQueryClient()
@@ -35,6 +38,7 @@ export function OrderCatalogPage() {
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [assignmentOpen, setAssignmentOpen] = useState(false)
+  const [customerSearch, setCustomerSearch] = useState<CustomerSearchWindow | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
   const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<OrderPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -80,14 +84,15 @@ export function OrderCatalogPage() {
   }, [assignmentOpen, authorization, deleteOpen, formMode, order.authorization, panelWindows.length, searchOpen, warning])
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
-      <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorization.isPending || conversion.isPending} onCreate={() => setFormMode("create")} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
+      <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorization.isPending || conversion.isPending} onCreate={() => { setCustomerSearch(null); setFormMode("create") }} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
       {notice && <Alert variant={notice.kind === "error" ? "destructive" : "default"}><HugeiconsIcon icon={notice.kind === "error" ? AlertCircleIcon : InformationCircleIcon} /><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
         <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={selectPanel} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={selectPanel} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
         <OrderCatalogDetails order={order} />
       </div>
       {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); openOrder(selected) }} /></DesktopWindowIdentity>}
-      {formMode === "create" && <DesktopWindowIdentity id="orders:create:new"><OrderCaptureDialog onOpenChange={open => { if (!open) setFormMode(null) }} onSaved={saved => { setFormMode(null); setNotice({ kind: "success", title: "Alta guardada", message: saved.number }); openOrder(saved) }} /></DesktopWindowIdentity>}
+      {formMode === "create" && <DesktopWindowIdentity id="orders:create:new"><OrderCaptureDialog onCustomerSearch={(initialCode, onSelect) => setCustomerSearch({ initialCode, onSelect })} onOpenChange={open => { if (!open) { setCustomerSearch(null); setFormMode(null) } }} onSaved={saved => { setCustomerSearch(null); setFormMode(null); setNotice({ kind: "success", title: "Alta guardada", message: saved.number }); openOrder(saved) }} /></DesktopWindowIdentity>}
+      {formMode === "create" && customerSearch && <DesktopWindowIdentity id="orders:capture:customer-search"><OrderCustomerMatchesDialog initialCode={customerSearch.initialCode} onOpenChange={open => { if (!open) setCustomerSearch(null) }} onSelect={match => { const select = customerSearch.onSelect; setCustomerSearch(null); select(match) }} /></DesktopWindowIdentity>}
       {formMode === "edit" && <DesktopWindowIdentity id={`orders:edit:${order.id}`}><OrderFormDialog onOpenChange={(open) => { if (!open) setFormMode(null) }} onSaved={(saved) => { setFormMode(null); setNotice({ kind: "success", title: "Pedido actualizado", message: saved.number }); openOrder(saved) }} order={order} /></DesktopWindowIdentity>}
       {assignmentOpen && <DesktopWindowIdentity id={`orders:assignment:${order.id}`}><OrderAssignmentDialog onOpenChange={setAssignmentOpen} onSaved={saved => { setAssignmentOpen(false); setNotice({kind:"success",title:"Asignación de Pedido",message:saved.status || "Pedido sin asignación."}); openOrder(saved) }} order={order} /></DesktopWindowIdentity>}
       {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><OrderPanelDialog onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} order={window.payload.order} panel={window.payload.panel} /></DesktopWindowIdentity>)}

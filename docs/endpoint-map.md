@@ -27,7 +27,7 @@ Implementación 2026-09-17 basada en `ORDERS_*` del reporte `orders-behaviors-ne
 
 | Vista / control | Evento | Método y endpoint | Query key / mutation | Archivo |
 | --- | --- | --- | --- | --- |
-| Captura / Cliente | Tab con código parcial; abre una ventana ERP delante de Captura de pedido | GET `/sales/orders/capture/customers?query=...` | customer-matches | order-customer-matches-dialog.tsx |
+| Captura / Cliente | Tab con código parcial; abre una ventana ERP independiente delante de Captura de pedido, con filtros Código/Nombre/RFC | GET `/sales/orders/capture/customers?code=...&name=...&taxId=...` | customer-matches | order-customer-matches-dialog.tsx |
 | Captura / Precio | Blur o agregar partida | Validación local y validación del POST | `ORDER_PRICE_BELOW_COST` | order-capture-dialog.tsx |
 | Pedidos / Autorizar | Clic o Ctrl+A | POST `/sales/orders/:id/actions/authorization` | setOrderAuthorization | order-catalog-page.tsx |
 | Pedidos / Asignar todo | Clic o Ctrl+P | POST `/sales/orders/:id/actions/assignment` | setOrderAssignment | order-assignment-dialog.tsx |

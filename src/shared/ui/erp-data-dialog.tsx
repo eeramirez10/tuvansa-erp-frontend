@@ -85,8 +85,9 @@ export function ErpDataDialog({
 
   useEffect(() => {
     registerWindow(windowId, title)
+    focusWindow(windowId)
     return () => unregisterWindow(windowId)
-  }, [registerWindow, title, unregisterWindow, windowId])
+  }, [focusWindow, registerWindow, title, unregisterWindow, windowId])
 
   if (windowState?.minimized) return null
 
