@@ -18,3 +18,6 @@ export function getApiErrorMessage(error: unknown) {
     "No fue posible comunicarse con el servidor."
   )
 }
+
+export const isApiNotFound = (error: unknown) =>
+  axios.isAxiosError(error) && error.response?.status === 404

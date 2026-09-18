@@ -3,11 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import type { Order } from "@/features/sales/orders/model"
-import { captureHeaderSchema, captureLineSchema, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct } from "@/features/sales/orders/capture-model"
+import { captureHeaderSchema, captureLineSchema, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
 import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
-import { getApiErrorMessage } from "@/shared/api/api-error"
+import { getApiErrorMessage, isApiNotFound } from "@/shared/api/api-error"
 import { notifications } from "@/shared/notifications/notifications"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -24,8 +24,9 @@ const lineColumns = [
   ["Importe", "9%"], ["Sucursal", "8%"], ["Pzas.", "10%"],
 ] as const
 
-export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: {
+export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenChange, onSaved }: {
   onCustomerSearch: (initialCode: string, onSelect: (match: CaptureCustomerMatch) => void) => void
+  onProductSearch: (initialCode: string, warehouse: string, onSelect: (match: CaptureProductMatch) => void) => void
   onOpenChange: (open: boolean) => void
   onSaved: (order: Order) => void
 }) {
@@ -44,6 +45,8 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
   const form = useForm<CaptureHeader>({ resolver: zodResolver(captureHeaderSchema), defaultValues: {
     warehouse: "", typeCode: "P", customerCode: "", customerOrderNumber: "", orderedAt: localDate(), from: localDate(), dueAt: localDate(),
     department: "", initial: false, agentCode: "", termsDays: 0, store: "", observations: "",
+    exchangeRate: 1, boxes: 0, branch: 0, collectionCurrency: "PESOS", commission: 0,
+    noPartialDeliveries: false, transportation: "", deliveryAddress: ["", "", ""], contact: "", additionalComments: "",
   } })
   const lineForm = useForm<CaptureLine>({ resolver: zodResolver(captureLineSchema), defaultValues: { productCode: "", quantity: 0, price: 0, discount: 0 } })
   const totals = captureTotals(lines)
@@ -92,16 +95,26 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
     }
     finally { if (version === lookupVersion.current) setLoading(false) }
   }
-  const loadProduct = async () => {
-    const code = lineForm.getValues("productCode").trim()
+  const applyProduct = (value: CaptureProduct) => {
+    setProduct(value); lineForm.setValue("productCode", value.code); lineForm.setValue("price", value.price); lineForm.setValue("discount", 0)
+  }
+  const loadProduct = async (selectedCode?: string) => {
+    const code = selectedCode ?? lineForm.getValues("productCode").trim()
     if (!code || product?.code === code) return
+    if (selectedCode) lineForm.setValue("productCode", code)
     const version = ++lookupVersion.current
     setProduct(null); setLoading(true); setError("")
     try {
       const value = await queryClient.fetchQuery(captureProductQuery(code, form.getValues("warehouse"), "P", form.getValues("customerCode")))
       if (version !== lookupVersion.current || lineForm.getValues("productCode").trim() !== code) return
-      setProduct(value); lineForm.setValue("productCode", value.code); lineForm.setValue("price", value.price); lineForm.setValue("discount", 0)
-    } catch (e) { if (version === lookupVersion.current) setError(getApiErrorMessage(e)) }
+      applyProduct(value)
+    } catch (e) {
+      if (version !== lookupVersion.current) return
+      if (isApiNotFound(e)) {
+        onProductSearch(code, form.getValues("warehouse"), match => { void loadProduct(match.code) })
+        setError("")
+      } else setError(getApiErrorMessage(e))
+    }
     finally { if (version === lookupVersion.current) setLoading(false) }
   }
   const warnPriceBelowCost = () => {
@@ -192,12 +205,12 @@ export function OrderCaptureDialog({ onCustomerSearch, onOpenChange, onSaved }: 
               <div className="grid grid-cols-4 gap-1">
                 <label className="col-span-3">Pedido cliente<Input className={inputClass} {...form.register("customerOrderNumber")} maxLength={30} /></label><label className="flex items-center gap-1"><input type="checkbox" {...form.register("initial")} />Inicial</label>
                 {([["orderedAt","Fecha"],["from","Desde"],["dueAt","Hasta"]] as const).map(([name,label]) => <label key={name}>{label}<Input className={inputClass} type="date" {...form.register(name)} /></label>)}<label>Importe asignado<Input className={inputClass} value="0.00" readOnly /></label>
-                {["Descto 1","Descto 2","Descto 3","T.C."].map(label => <label key={label}>{label}<Input className={inputClass} value="0.00" readOnly /></label>)}
-                <label>Depto<Input className={inputClass} {...form.register("department")} /></label>{["Cajas","Volumen","Peso","Sucursal","Moneda de cobro"].map(label => <label key={label}>{label}<Input className={inputClass} value="0" readOnly /></label>)}
-                <label>Plazo<Input className={inputClass} type="number" {...form.register("termsDays", { valueAsNumber: true })} /></label><label>Comisión<Input className={inputClass} value="0.00" readOnly /></label><label className="col-span-2 flex items-center gap-1"><input type="checkbox" disabled />No acepta entregas parciales</label>
-                <label>Tda Vende<Input className={inputClass} {...form.register("store")} maxLength={4} /></label><label>Almacén<Input className={inputClass} value={form.getValues("warehouse")} readOnly /></label><label>Transporte<Input className={inputClass} value="" readOnly /></label>
+                {["Descto 1","Descto 2","Descto 3"].map(label => <label key={label}>{label}<Input className={inputClass} value="0.00" readOnly /></label>)}<label>T.C.<Input className={inputClass} type="number" step="0.0001" {...form.register("exchangeRate", { valueAsNumber: true })} /></label>
+                <label>Depto<Input className={inputClass} {...form.register("department")} /></label><label>Cajas<Input className={inputClass} type="number" {...form.register("boxes", { valueAsNumber: true })} /></label><label>Volumen<Input className={inputClass} value={money(totals.volume)} readOnly /></label><label>Peso<Input className={inputClass} value={money(totals.weight)} readOnly /></label><label>Sucursal<Input className={inputClass} type="number" {...form.register("branch", { valueAsNumber: true })} /></label><label>Moneda de cobro<Input className={inputClass} maxLength={20} {...form.register("collectionCurrency")} /></label>
+                <label>Plazo<Input className={inputClass} type="number" {...form.register("termsDays", { valueAsNumber: true })} /></label><label>Comisión<Input className={inputClass} type="number" step="0.01" {...form.register("commission", { valueAsNumber: true })} /></label><label className="col-span-2 flex items-center gap-1"><input type="checkbox" {...form.register("noPartialDeliveries")} />No acepta entregas parciales</label>
+                <label>Tda Vende<Input className={inputClass} {...form.register("store")} maxLength={4} /></label><label>Almacén<Input className={inputClass} value={form.getValues("warehouse")} readOnly /></label><label className="col-span-2">Transporte<Input className={inputClass} maxLength={100} {...form.register("transportation")} /></label>
               </div>
-              <fieldset className="grid gap-1"><legend>Comentarios:</legend>{["Pedido Cliente","Entregar en","Contacto"].map(label => <label key={label}>{label}<Input className={inputClass} readOnly value="" title="Este campo aún no tiene una escritura validada" /></label>)}<label>Obs.<Input className={inputClass} maxLength={21} {...form.register("observations")} /></label><textarea className="h-16 resize-none border bg-muted" readOnly aria-label="Comentarios adicionales" value="" /></fieldset>
+              <fieldset className="grid gap-1"><legend>Comentarios:</legend><label>Pedido Cliente<Input className={inputClass} {...form.register("customerOrderNumber")} maxLength={30} /></label>{([0,1,2] as const).map(index => <label key={index}>{index === 0 ? "Entregar en" : `Entregar en ${index + 1}`}<Input className={inputClass} maxLength={100} {...form.register(`deliveryAddress.${index}`)} /></label>)}<label>Contacto<Input className={inputClass} maxLength={100} {...form.register("contact")} /></label><label>Obs.<Input className={inputClass} maxLength={21} {...form.register("observations")} /></label><textarea className="h-16 resize-none border bg-background p-1" maxLength={2000} aria-label="Comentarios adicionales" {...form.register("additionalComments")} /></fieldset>
               <div className="flex justify-between"><span>Total {money(totals.total)} PESOS</span><span>Se guardará como Cotización; Cotiz la convierte en Pedido.</span></div>
               <div className="flex gap-2"><Button size="sm" onClick={() => void save()}>{mutation.isPending && <Spinner />}OK</Button><Button size="sm" variant="outline" onClick={() => setStage("capture")}>Cancelar</Button></div>
             </>}

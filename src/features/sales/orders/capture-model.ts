@@ -25,12 +25,27 @@ export interface CaptureProduct {
   taxPercentage: number; excisePercentage: number; currencyId: number
   stock: number; assigned: number; available: number; weight: number; volume: number
 }
+export interface CaptureProductMatch {
+  id: number; code: string; description: string; available: number; price: number
+  warehouse: string; family: string; secondaryFamily: string
+  nextReceipt: string | null; supplierCode: string
+}
+export interface CaptureProductSearchCriteria {
+  code?: string
+  description?: string
+  supplierCode?: string
+}
 export const captureHeaderSchema = z.object({
   warehouse: z.string().min(1, "Selecciona un almacén"), typeCode: z.literal("P"),
   customerCode: z.string().trim().min(1, "Captura el cliente").max(6),
   customerOrderNumber: z.string().max(30), orderedAt: z.iso.date(), from: z.iso.date(), dueAt: z.iso.date(),
   department: z.string().max(20), initial: z.boolean(), agentCode: z.string().min(1, "Captura el agente").max(5),
   termsDays: z.number().int().min(0).max(999), store: z.string().max(4), observations: z.string().max(21),
+  exchangeRate: z.number().positive().max(999999), boxes: z.number().int().nonnegative().max(999999),
+  branch: z.number().int().nonnegative().max(999999), collectionCurrency: z.string().trim().min(1).max(20),
+  commission: z.number().min(0).max(100).multipleOf(0.01), noPartialDeliveries: z.boolean(),
+  transportation: z.string().max(100), deliveryAddress: z.tuple([z.string().max(100), z.string().max(100), z.string().max(100)]),
+  contact: z.string().max(100), additionalComments: z.string().max(2000),
 }).refine(v => v.from <= v.dueAt, { message: "Desde no puede ser posterior a Vence", path: ["dueAt"] })
 export const captureLineSchema = z.object({
   productCode: z.string().trim().min(1, "Captura el código").max(13),
