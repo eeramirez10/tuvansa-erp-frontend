@@ -7,7 +7,7 @@ import { Label } from "@/shared/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 
 const money = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const currencyName = (currencyId: number) => currencyId === 1 ? "DOLARES" : currencyId === 2 ? "PESOS" : currencyId
+const currencyName = (currencyId: number) => currencyId === 0 ? "PESOS" : currencyId === 1 ? "DOLARES" : currencyId
 const value = (input: string | number | null) => input === null || input === "" ? "" : String(input)
 
 function ReadonlyField({ label, fieldValue, className = "", stacked = false }: { label: string; fieldValue: string | number | null; className?: string; stacked?: boolean }) {

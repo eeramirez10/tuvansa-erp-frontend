@@ -15,7 +15,8 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 | Pedidos / Nuevo (hoja) | Abrir Captura de pedido en un modal; el primer paso selecciona Almacén | GET `/sales/orders/capture/options` | sales/orders/capture/options | order-capture-dialog.tsx |
 | Captura / Cliente | Enter o salir del campo | GET `/sales/orders/capture/customers/:code` | sales/orders/capture/customer/code | order-capture-service.ts |
 | Captura / Código | Enter o salir del campo; acepta ICOD o IEAN y muestra el ICOD canónico | GET `/sales/orders/capture/products/:identifier?warehouse=...&typeCode=P&customerCode=...` | sales/orders/capture/product/identifier/warehouse/typeCode/customerCode | order-capture-service.ts |
-| Captura / Agregar partida, Tab desde Pzas. | Incorporar renglón | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
+| Captura / Agregar partida, Tab desde Pzas. | Incorporar renglón y devolver foco a Código | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
+| Captura / Renglón de partida | Seleccionar, cargar en la fila superior y actualizar en su posición | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
 | Captura / OK | Abrir Comentarios | Sin escritura HTTP | Borrador | order-capture-dialog.tsx |
 | Comentarios / OK | Guardar alta completa | POST `/sales/orders/capture` | saveCapturedOrder; invalida pedidos/productos/clientes | order-capture-service.ts |
 | Comentarios / T.C. y Moneda de cobro | Recalcular partidas y totales en PESOS o DOLARES | POST `/sales/orders/capture` | conversión local y validación final del backend | order-capture-dialog.tsx |
@@ -30,7 +31,7 @@ Implementación 2026-09-17 basada en `ORDERS_*` del reporte `orders-behaviors-ne
 | --- | --- | --- | --- | --- |
 | Captura / Cliente | Tab con código parcial; abre una ventana ERP independiente delante de Captura de pedido, con filtros Código/Nombre/RFC | GET `/sales/orders/capture/customers?code=...&name=...&taxId=...` | customer-matches | order-customer-matches-dialog.tsx |
 | Captura / Código de producto inexistente | Tab o Enter; abre Encuentra producto delante de Captura de pedido, con filtros Código/IEAN, Descripción y Cod Prv | GET `/sales/orders/capture/products?warehouse=01&code=...&description=...&supplierCode=...` | product-matches | order-product-matches-dialog.tsx |
-| Captura / Precio | Blur o agregar partida | Validación local y validación del POST | `ORDER_PRICE_BELOW_COST` | order-capture-dialog.tsx |
+| Captura / Precio | Blur o agregar partida; pesos contra lista 5, dólares contra lista 6 | Validación local y validación del POST | `ORDER_PRICE_BELOW_COST` | order-capture-dialog.tsx |
 | Pedidos / Autorizar | Clic o Ctrl+A | POST `/sales/orders/:id/actions/authorization` | setOrderAuthorization | order-catalog-page.tsx |
 | Pedidos / Asignar todo | Clic o Ctrl+P | POST `/sales/orders/:id/actions/assignment` | setOrderAssignment | order-assignment-dialog.tsx |
 | Pedidos / Editar | Clic | PATCH `/sales/orders/:id` | updateOrder; sólo partidas | order-form-dialog.tsx |

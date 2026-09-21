@@ -61,10 +61,10 @@ export type CaptureDraftLine = CaptureLine & { product: CaptureProduct }
 export type CaptureCurrencyId = 1 | 2
 export type CaptureCurrencyName = "DOLARES" | "PESOS"
 
-export const captureCurrencyId = (currency: CaptureCurrencyName): CaptureCurrencyId => currency === "DOLARES" ? 1 : 2
-export const captureCurrencyName = (currencyId: CaptureCurrencyId): CaptureCurrencyName => currencyId === 1 ? "DOLARES" : "PESOS"
+export const captureCurrencyId = (currency: CaptureCurrencyName): CaptureCurrencyId => currency === "PESOS" ? 1 : 2
+export const captureCurrencyName = (currencyId: CaptureCurrencyId): CaptureCurrencyName => currencyId === 1 ? "PESOS" : "DOLARES"
 export const convertCaptureAmount = (amount: number, from: CaptureCurrencyId, to: CaptureCurrencyId, exchangeRate: number) =>
-  from === to ? amount : from === 1 ? amount * exchangeRate : amount / exchangeRate
+  from === to ? amount : from === 2 ? amount * exchangeRate : amount / exchangeRate
 export const captureMinimumPrice = (product: CaptureProduct, priceCurrencyId: CaptureCurrencyId, exchangeRate: number) =>
   convertCaptureAmount(product.cost, product.costCurrencyId, priceCurrencyId, exchangeRate)
 

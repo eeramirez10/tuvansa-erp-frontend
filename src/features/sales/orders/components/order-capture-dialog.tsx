@@ -36,6 +36,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   const [customer, setCustomer] = useState<CaptureCustomer | null>(null)
   const [product, setProduct] = useState<CaptureProduct | null>(null)
   const [lines, setLines] = useState<CaptureDraftLine[]>([])
+  const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState<Order | null>(null)
@@ -128,12 +129,29 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
     })
     lineForm.setFocus("price")
   }
+  const clearLineCapture = () => {
+    setEditingLineIndex(null); setProduct(null)
+    lineForm.reset({ productCode: "", quantity: 0, price: 0, discount: 0 })
+    requestAnimationFrame(() => lineForm.setFocus("productCode"))
+  }
+  const editLine = (index: number) => {
+    const line = lines[index]
+    if (!line) return
+    setEditingLineIndex(index); setProduct(line.product); setError("")
+    lineForm.reset({ productCode: line.productCode, quantity: line.quantity, price: line.price, discount: line.discount, currencyId: line.currencyId })
+  }
+  const removeLine = (index: number) => {
+    if (editingLineIndex === index) clearLineCapture()
+    else if (editingLineIndex !== null && editingLineIndex > index) setEditingLineIndex(editingLineIndex - 1)
+    setLines(current => current.filter((_, lineIndex) => lineIndex !== index))
+  }
   const addLine = lineForm.handleSubmit(value => {
     if (!product || product.code !== value.productCode.trim()) { setError("Carga el producto antes de agregar la partida."); return }
     if (product.currencyId === product.costCurrencyId && value.price < product.cost) { warnPriceBelowCost(); return }
-    if (lines.length === 0) form.setValue("collectionCurrency", captureCurrencyName(product.currencyId))
-    setLines(current => [...current, { ...value, currencyId: product.currencyId, product }]); setProduct(null); setError("")
-    lineForm.reset({ productCode: "", quantity: 0, price: 0, discount: 0 }); lineForm.setFocus("productCode")
+    if (lines.length === 0 && editingLineIndex === null) form.setValue("collectionCurrency", captureCurrencyName(product.currencyId))
+    const nextLine = { ...value, currencyId: product.currencyId, product }
+    setLines(current => editingLineIndex === null ? [...current, nextLine] : current.map((line, index) => index === editingLineIndex ? nextLine : line))
+    setError(""); clearLineCapture()
   })
   const openComments = form.handleSubmit(() => {
     if (!customer || customer.code !== form.getValues("customerCode").trim()) { setError("Carga un cliente válido."); return }
@@ -199,9 +217,9 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
                   <td><Input aria-label="Sucursal de la partida" className={inputClass} value="0" readOnly title="Asignación de sucursal pendiente de captura" /></td>
                   <td><Input aria-label="Pzas." className={inputClass} value="" readOnly onKeyDown={e => { if (e.key === "Tab" && !e.shiftKey && product) { e.preventDefault(); void addLine() } }} /></td>
                 </tr></tbody></table></div>
-                <div className="flex items-center justify-end gap-2"><span>Disp</span><Input aria-label="Disponible" className={`${inputClass} w-16 text-right`} value={money(product?.available ?? 0)} readOnly /><Input aria-label="Asignado" className={`${inputClass} w-16 text-right`} value={money(product?.assigned ?? 0)} readOnly /><Button className="h-5 rounded-none px-2 text-[9px]" variant="outline" disabled={!product} onClick={() => void addLine()}>Agregar partida</Button></div>
+                <div className="flex items-center justify-end gap-2"><span>Disp</span><Input aria-label="Disponible" className={`${inputClass} w-16 text-right`} value={money(product?.available ?? 0)} readOnly /><Input aria-label="Asignado" className={`${inputClass} w-16 text-right`} value={money(product?.assigned ?? 0)} readOnly /><Button className="h-5 rounded-none px-2 text-[9px]" variant="outline" disabled={!product} onClick={() => void addLine()}>{editingLineIndex === null ? "Agregar partida" : "Actualizar partida"}</Button></div>
               </fieldset>
-              <div className="ml-[7.8125rem] mr-1.5 min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead><tr className="h-5 bg-muted">{lineColumns.map(([label],i) => <th className="border-r border-input px-1 text-right font-normal last:border-r-0" key={label}>{i === 2 ? totals.quantity.toFixed(3) : i === 4 ? totals.subtotal.toFixed(5) : i === 5 ? totals.discount.toFixed(2) : i === 6 ? totals.total.toFixed(2) : ""}</th>)}</tr></thead><tbody>{lines.map((line,index) => <tr className="h-5 border-t border-input" key={index}><td className="px-1">{line.productCode}</td><td className="truncate px-1" title={line.product.description}>{line.product.description}</td><td className="px-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-1 text-center">{line.product.unit}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{line.price.toFixed(5)}</td><td className="px-1 text-right">{line.discount.toFixed(2)}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{money(line.quantity*line.price*(1-line.discount/100))}</td><td className="px-1 text-right">0</td><td className="px-1 text-right"><Button className="h-4 w-4 rounded-none p-0 text-[9px]" variant="ghost" aria-label={`Quitar partida ${index+1}`} onClick={() => setLines(current => current.filter((_,lineIndex) => lineIndex !== index))}>×</Button></td></tr>)}</tbody></table></div>
+              <div className="ml-[7.8125rem] mr-1.5 min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead><tr className="h-5 bg-muted">{lineColumns.map(([label],i) => <th className="border-r border-input px-1 text-right font-normal last:border-r-0" key={label}>{i === 2 ? totals.quantity.toFixed(3) : i === 4 ? totals.subtotal.toFixed(5) : i === 5 ? totals.discount.toFixed(2) : i === 6 ? totals.total.toFixed(2) : ""}</th>)}</tr></thead><tbody>{lines.map((line,index) => <tr aria-selected={editingLineIndex === index} className={`h-5 cursor-pointer border-t border-input ${editingLineIndex === index ? "bg-module-sales/15" : "hover:bg-muted/60"}`} key={index} tabIndex={0} title="Seleccionar partida para editar" onClick={() => editLine(index)} onKeyDown={event => { if (event.key === "Enter") editLine(index) }}><td className="px-1">{line.productCode}</td><td className="truncate px-1" title={line.product.description}>{line.product.description}</td><td className="px-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-1 text-center">{line.product.unit}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{line.price.toFixed(5)}</td><td className="px-1 text-right">{line.discount.toFixed(2)}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{money(line.quantity*line.price*(1-line.discount/100))}</td><td className="px-1 text-right">0</td><td className="px-1 text-right"><Button className="h-4 w-4 rounded-none p-0 text-[9px]" variant="ghost" aria-label={`Quitar partida ${index+1}`} onClick={event => { event.stopPropagation(); removeLine(index) }}>×</Button></td></tr>)}</tbody></table></div>
               <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-7 pb-8 pl-2 pt-4">
                 <div className="flex flex-col gap-1"><Button className="h-8 justify-start rounded-none" disabled={!customer || lines.length === 0} onClick={() => void openComments()}>✓&nbsp;&nbsp; OK</Button><Button className="h-8 justify-start rounded-none" variant="outline" onClick={close}>×&nbsp;&nbsp; Cancelar</Button></div>
                 <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-x-5">
