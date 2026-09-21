@@ -46,6 +46,7 @@ export type Order = {
   captureDetails?: {
     boxes: number
     collectionCurrency: "DOLARES" | "PESOS"
+    orderDiscounts?: [number, number, number, number]
     commission: number
     noPartialDeliveries: boolean
     transportation: string

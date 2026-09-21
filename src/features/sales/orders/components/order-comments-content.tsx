@@ -53,6 +53,8 @@ export function OrderCommentsContent({ order, panel, exchangeRate, collectionCur
   const comment = panel.items[0] ?? {}
   const summary = panel.summary ?? {}
   const branches = Array.isArray(summary.deliveryBranches) ? summary.deliveryBranches as DeliveryBranch[] : []
+  const capturedDiscounts = Array.isArray(summary.orderDiscounts) ? summary.orderDiscounts : []
+  const orderDiscounts = [0,1,2,3].map(index => capturedDiscounts[index] ?? summary[`discount${index + 1}`] ?? 0)
   const deliveryOption = Number(comment.deliveryOption)
 
   return (
@@ -68,11 +70,9 @@ export function OrderCommentsContent({ order, panel, exchangeRate, collectionCur
         <CommentField className="col-span-3" label="Importe asignado" numeric value={decimal(summary.assignedAmount)} />
         <CommentField className="col-span-3" label="Saldo del cliente" numeric value={decimal(summary.customerBalance)} />
 
-        <CommentField className="col-span-2" label="Descto 1" numeric value={decimal(summary.discount1)} />
-        <CommentField className="col-span-2" label="Descto 2" numeric value={decimal(summary.discount2)} />
-        <CommentField className="col-span-2" label="Descto 3" numeric value={decimal(summary.discount3)} />
-        <CommentField className="col-span-3" label="Depto" value={summary.department} />
-        <label className="col-span-3 grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-center gap-1"><span className="whitespace-nowrap text-right">T.C.</span><Input className="h-5 min-w-0 px-1 text-right text-[9px] tabular-nums" min="0.000001" onChange={event => onExchangeRateChange(event.target.valueAsNumber)} step="0.0001" type="number" value={exchangeRate} /></label>
+        {orderDiscounts.map((discount, index) => <CommentField className="col-span-2" key={index} label={`Descto ${index + 1}`} numeric value={decimal(discount)} />)}
+        <CommentField className="col-span-2" label="Depto" value={summary.department} />
+        <label className="col-span-2 grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-center gap-1"><span className="whitespace-nowrap text-right">T.C.</span><Input className="h-5 min-w-0 px-1 text-right text-[9px] tabular-nums" min="0.000001" onChange={event => onExchangeRateChange(event.target.valueAsNumber)} step="0.0001" type="number" value={exchangeRate} /></label>
 
         <CommentField className="col-span-2" label="Volumen" numeric value={decimal(summary.volume)} />
         <CommentField className="col-span-2" label="Peso" numeric value={decimal(summary.weight)} />

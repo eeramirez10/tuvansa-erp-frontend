@@ -44,6 +44,10 @@ export const captureHeaderSchema = z.object({
   termsDays: z.number().int().min(0).max(999), store: z.string().max(4), observations: z.string().max(21),
   exchangeRate: z.number().positive().max(999999), boxes: z.number().int().nonnegative().max(999999),
   branch: z.number().int().nonnegative().max(999999), collectionCurrency: z.enum(["PESOS", "DOLARES"]),
+  orderDiscounts: z.tuple([
+    z.number().min(0).max(100).multipleOf(0.01), z.number().min(0).max(100).multipleOf(0.01),
+    z.number().min(0).max(100).multipleOf(0.01), z.number().min(0).max(100).multipleOf(0.01),
+  ]),
   commission: z.number().min(0).max(100).multipleOf(0.01), noPartialDeliveries: z.boolean(),
   transportation: z.string().max(100), deliveryAddress: z.tuple([z.string().max(100), z.string().max(100), z.string().max(100)]),
   contact: z.string().max(100), additionalComments: z.string().max(2000),
@@ -68,14 +72,21 @@ export const convertCaptureAmount = (amount: number, from: CaptureCurrencyId, to
 export const captureMinimumPrice = (product: CaptureProduct, priceCurrencyId: CaptureCurrencyId, exchangeRate: number) =>
   convertCaptureAmount(product.cost, product.costCurrencyId, priceCurrencyId, exchangeRate)
 
-export const captureTotals = (lines: CaptureDraftLine[], targetCurrency: CaptureCurrencyName = "PESOS", exchangeRate = 1) => {
+export const captureTotals = (
+  lines: CaptureDraftLine[],
+  targetCurrency: CaptureCurrencyName = "PESOS",
+  exchangeRate = 1,
+  orderDiscounts: [number, number, number, number] = [0, 0, 0, 0],
+) => {
   const targetCurrencyId = captureCurrencyId(targetCurrency)
   const result = lines.reduce((sum, l) => {
     const sourceCurrencyId = l.currencyId ?? l.product.currencyId
     const price = convertCaptureAmount(l.price, sourceCurrencyId, targetCurrencyId, exchangeRate)
-    const gross = l.quantity * price, discount = gross * l.discount / 100
-    return { quantity: sum.quantity + l.quantity, subtotal: sum.subtotal + gross, discount: sum.discount + discount,
-      tax: sum.tax + (gross - discount) * l.product.taxPercentage / 100,
+    const gross = l.quantity * price
+    let taxable = gross * (1 - l.discount / 100)
+    for (const percentage of orderDiscounts) taxable *= 1 - percentage / 100
+    return { quantity: sum.quantity + l.quantity, subtotal: sum.subtotal + gross, discount: sum.discount + gross - taxable,
+      tax: sum.tax + taxable * l.product.taxPercentage / 100,
       weight: sum.weight + l.quantity * l.product.weight, volume: sum.volume + l.quantity * l.product.volume }
   }, { quantity: 0, subtotal: 0, discount: 0, tax: 0, weight: 0, volume: 0 })
   const round = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100

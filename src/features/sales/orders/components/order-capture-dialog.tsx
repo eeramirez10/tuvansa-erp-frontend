@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import type { Order } from "@/features/sales/orders/model"
 import { captureCurrencyName, captureHeaderSchema, captureLineSchema, captureMinimumPrice, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
@@ -46,14 +46,15 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   const form = useForm<CaptureHeader>({ resolver: zodResolver(captureHeaderSchema), defaultValues: {
     warehouse: "", typeCode: "P", customerCode: "", customerOrderNumber: "", orderedAt: localDate(), from: localDate(), dueAt: localDate(),
     department: "", initial: false, agentCode: "", termsDays: 0, store: "", observations: "",
-    exchangeRate: 1, boxes: 0, branch: 0, collectionCurrency: "PESOS", commission: 0,
+    exchangeRate: 1, boxes: 0, branch: 0, collectionCurrency: "PESOS", orderDiscounts: [0, 0, 0, 0], commission: 0,
     noPartialDeliveries: false, transportation: "", deliveryAddress: ["", "", ""], contact: "", additionalComments: "",
   } })
   const lineForm = useForm<CaptureLine>({ resolver: zodResolver(captureLineSchema), defaultValues: { productCode: "", quantity: 0, price: 0, discount: 0 } })
   const collectionCurrency = useWatch({ control: form.control, name: "collectionCurrency" }) ?? "PESOS"
+  const orderDiscounts = useWatch({ control: form.control, name: "orderDiscounts" }) ?? [0, 0, 0, 0]
   const watchedExchangeRate = useWatch({ control: form.control, name: "exchangeRate" })
   const exchangeRate = Number.isFinite(watchedExchangeRate) && watchedExchangeRate > 0 ? watchedExchangeRate : 1
-  const totals = captureTotals(lines, collectionCurrency, exchangeRate)
+  const totals = captureTotals(lines, collectionCurrency, exchangeRate, orderDiscounts)
   const draft = useWatch({ control: lineForm.control })
   const belowCostLine = lines.find(line => line.price < captureMinimumPrice(line.product, line.currencyId ?? line.product.currencyId, exchangeRate))
   const headerDirty = form.formState.isDirty
@@ -153,12 +154,26 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
     setLines(current => editingLineIndex === null ? [...current, nextLine] : current.map((line, index) => index === editingLineIndex ? nextLine : line))
     setError(""); clearLineCapture()
   })
-  const openComments = form.handleSubmit(() => {
+  const draftIsReady = () => {
     if (!customer || customer.code !== form.getValues("customerCode").trim()) { setError("Carga un cliente válido."); return }
     if (!lines.length) { setError("Agrega al menos una partida."); return }
     if (lineForm.getValues("productCode")) { setError("Agrega la partida pendiente antes de continuar."); return }
-    setError(""); setStage("comments")
+    setError(""); return true
+  }
+  const focusOrderDiscounts = form.handleSubmit(() => {
+    if (!draftIsReady()) return
+    requestAnimationFrame(() => form.setFocus("orderDiscounts.0"))
   })
+  const openComments = form.handleSubmit(() => {
+    if (!draftIsReady()) return
+    setStage("comments")
+  })
+  const orderDiscountKeyDown = (index: 0 | 1 | 2 | 3) => (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return
+    event.preventDefault(); event.stopPropagation()
+    if (index < 3) form.setFocus(`orderDiscounts.${index + 1}` as "orderDiscounts.1" | "orderDiscounts.2" | "orderDiscounts.3")
+    else void openComments()
+  }
   const save = () => form.handleSubmit(async values => {
     if (saving.current) return
     const invalid = lines.find(line => line.price < captureMinimumPrice(line.product,line.currencyId ?? line.product.currencyId,values.exchangeRate))
@@ -221,11 +236,11 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
               </fieldset>
               <div className="ml-[7.8125rem] mr-1.5 min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead><tr className="h-5 bg-muted">{lineColumns.map(([label],i) => <th className="border-r border-input px-1 text-right font-normal last:border-r-0" key={label}>{i === 2 ? totals.quantity.toFixed(3) : i === 4 ? totals.subtotal.toFixed(5) : i === 5 ? totals.discount.toFixed(2) : i === 6 ? totals.total.toFixed(2) : ""}</th>)}</tr></thead><tbody>{lines.map((line,index) => <tr aria-selected={editingLineIndex === index} className={`h-5 cursor-pointer border-t border-input ${editingLineIndex === index ? "bg-module-sales/15" : "hover:bg-muted/60"}`} key={index} tabIndex={0} title="Seleccionar partida para editar" onClick={() => editLine(index)} onKeyDown={event => { if (event.key === "Enter") editLine(index) }}><td className="px-1">{line.productCode}</td><td className="truncate px-1" title={line.product.description}>{line.product.description}</td><td className="px-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-1 text-center">{line.product.unit}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{line.price.toFixed(5)}</td><td className="px-1 text-right">{line.discount.toFixed(2)}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{money(line.quantity*line.price*(1-line.discount/100))}</td><td className="px-1 text-right">0</td><td className="px-1 text-right"><Button className="h-4 w-4 rounded-none p-0 text-[9px]" variant="ghost" aria-label={`Quitar partida ${index+1}`} onClick={event => { event.stopPropagation(); removeLine(index) }}>×</Button></td></tr>)}</tbody></table></div>
               <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-7 pb-8 pl-2 pt-4">
-                <div className="flex flex-col gap-1"><Button className="h-8 justify-start rounded-none" disabled={!customer || lines.length === 0} onClick={() => void openComments()}>✓&nbsp;&nbsp; OK</Button><Button className="h-8 justify-start rounded-none" variant="outline" onClick={close}>×&nbsp;&nbsp; Cancelar</Button></div>
+                <div className="flex flex-col gap-1"><Button className="h-8 justify-start rounded-none" disabled={!customer || lines.length === 0} onClick={() => void focusOrderDiscounts()}>✓&nbsp;&nbsp; OK</Button><Button className="h-8 justify-start rounded-none" variant="outline" onClick={close}>×&nbsp;&nbsp; Cancelar</Button></div>
                 <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-x-5">
                   <div className="grid grid-cols-[4.5rem_1fr] items-center gap-x-1 gap-y-0.5"><span className="text-right">Tot Cant.</span><Input aria-label="Tot Cant." className={`${inputClass} text-right`} value={totals.quantity.toFixed(3)} readOnly /><span className="text-right">Volumen</span><Input aria-label="Volumen" className={`${inputClass} text-right`} value={money(totals.volume)} readOnly /><span className="text-right">Peso</span><Input aria-label="Peso" className={`${inputClass} text-right`} value={money(totals.weight)} readOnly /></div>
                   <div className="grid content-end gap-0.5">
-                    <div className="grid grid-cols-[10rem_4.5rem_12rem] items-end gap-2"><label className="grid gap-0.5 text-center">Descuentos<div className="grid grid-cols-3"><Input className={`${inputClass} text-right`} value="0.00" readOnly /><Input className={`${inputClass} text-right`} value="0.00" readOnly /><Input className={`${inputClass} text-right`} value="0.00" readOnly /></div></label><label>Flete<Input aria-label="Flete" className={`${inputClass} text-right`} value="0.00" readOnly /></label><label>Seguros<div className="grid grid-cols-2 gap-1"><Input aria-label="Seguros" className={`${inputClass} text-right`} value="0.00" readOnly /><Input aria-label="Total seguros" className={`${inputClass} text-right`} value="0.00" readOnly /></div></label></div>
+                    <div className="grid grid-cols-[12rem_4.5rem_12rem] items-end gap-2"><label className="grid gap-0.5 text-center">Descuentos<div className="grid grid-cols-4">{([0,1,2,3] as const).map(index => <Input aria-label={`Descto ${index + 1}`} className={`${inputClass} text-right`} key={index} min="0" max="100" step="0.01" type="number" {...form.register(`orderDiscounts.${index}`, { setValueAs: value => value === "" || Number.isNaN(Number(value)) ? 0 : Number(value) })} onKeyDown={orderDiscountKeyDown(index)} />)}</div></label><label>Flete<Input aria-label="Flete" className={`${inputClass} text-right`} value="0.00" readOnly /></label><label>Seguros<div className="grid grid-cols-2 gap-1"><Input aria-label="Seguros" className={`${inputClass} text-right`} value="0.00" readOnly /><Input aria-label="Total seguros" className={`${inputClass} text-right`} value="0.00" readOnly /></div></label></div>
                     <div className="grid grid-cols-7 gap-1">{[["Subtotal",money(totals.subtotal)],["Descuento",money(totals.discount)],["IEPS","0.00"],["% IVA",product?.taxPercentage.toFixed(2) ?? "16.00"],["IVA",money(totals.tax)],["Gran Total",money(totals.total)],["A cuenta","0.00"]].map(([label,value]) => <label className="text-right" key={label}>{label}<Input aria-label={label} className={`${inputClass} text-right`} readOnly value={value} /></label>)}</div>
                   </div>
                 </div>
@@ -234,7 +249,8 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
               <div className="grid grid-cols-4 gap-1">
                 <label className="col-span-3">Pedido cliente<Input className={inputClass} {...form.register("customerOrderNumber")} maxLength={30} /></label><label className="flex items-center gap-1"><input type="checkbox" {...form.register("initial")} />Inicial</label>
                 {([["orderedAt","Fecha"],["from","Desde"],["dueAt","Hasta"]] as const).map(([name,label]) => <label key={name}>{label}<Input className={inputClass} type="date" {...form.register(name)} /></label>)}<label>Importe asignado<Input className={inputClass} value="0.00" readOnly /></label>
-                {["Descto 1","Descto 2","Descto 3"].map(label => <label key={label}>{label}<Input className={inputClass} value="0.00" readOnly /></label>)}<label>T.C.<Input className={inputClass} type="number" step="0.0001" {...form.register("exchangeRate", { valueAsNumber: true })} /></label>
+                {([0,1,2,3] as const).map(index => <label key={index}>Descto {index + 1}<Input className={inputClass} value={orderDiscounts[index].toFixed(2)} readOnly /></label>)}
+                <label>T.C.<Input className={inputClass} type="number" step="0.0001" {...form.register("exchangeRate", { valueAsNumber: true })} /></label>
                 <label>Depto<Input className={inputClass} {...form.register("department")} /></label><label>Cajas<Input className={inputClass} type="number" {...form.register("boxes", { valueAsNumber: true })} /></label><label>Volumen<Input className={inputClass} value={money(totals.volume)} readOnly /></label><label>Peso<Input className={inputClass} value={money(totals.weight)} readOnly /></label><label>Sucursal<Input className={inputClass} type="number" {...form.register("branch", { valueAsNumber: true })} /></label><label>Moneda de cobro<select className="h-5 min-w-0 rounded-none border bg-background px-1 text-[10px]" {...form.register("collectionCurrency")}><option value="PESOS">PESOS</option><option value="DOLARES">DOLARES</option></select></label>
                 <label>Plazo<Input className={inputClass} type="number" {...form.register("termsDays", { valueAsNumber: true })} /></label><label>Comisión<Input className={inputClass} type="number" step="0.01" {...form.register("commission", { valueAsNumber: true })} /></label><label className="col-span-2 flex items-center gap-1"><input type="checkbox" {...form.register("noPartialDeliveries")} />No acepta entregas parciales</label>
                 <label>Tda Vende<Input className={inputClass} {...form.register("store")} maxLength={4} /></label><label>Almacén<Input className={inputClass} value={form.getValues("warehouse")} readOnly /></label><label className="col-span-2">Transporte<Input className={inputClass} maxLength={100} {...form.register("transportation")} /></label>
