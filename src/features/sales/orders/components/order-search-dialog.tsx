@@ -91,7 +91,7 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
   const pages = result.data?.pagination.pages ?? 0
 
   return (
-    <ErpDataDialog className="sm:max-w-[48rem]" description="Búsqueda de pedidos" onOpenChange={onOpenChange} title="Búsqueda">
+    <ErpDataDialog className="sm:max-w-[48rem]" description="Búsqueda de pedidos" onOpenChange={onOpenChange} title="Búsqueda" tone="sales">
       <ErpDataDialogBody className="grid gap-1.5">
         <form className="grid gap-1" onSubmit={(event) => { event.preventDefault(); search() }}>
           <div className="overflow-x-auto pb-0.5">

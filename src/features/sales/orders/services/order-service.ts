@@ -1,6 +1,6 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
-  Order, OrderMutationInput, OrderPanel, OrderPanelKey, OrderSearchResponse,
+  Order, OrderCommentsUpdateInput, OrderMutationInput, OrderPanel, OrderPanelKey, OrderSearchResponse,
 } from "@/features/sales/orders/model"
 
 type ItemResponse<T> = { data: T }
@@ -57,6 +57,10 @@ export async function createOrder(input: OrderMutationInput) {
 }
 export async function updateOrder(orderId: number, input: OrderMutationInput) {
   const response = await apiClient.patch<ItemResponse<Order>>(`/sales/orders/${orderId}`, input)
+  return response.data.data
+}
+export async function updateOrderComments(orderId: number, input: OrderCommentsUpdateInput) {
+  const response = await apiClient.patch<ItemResponse<Order>>(`/sales/orders/${orderId}/actions/comments`, input)
   return response.data.data
 }
 export async function deleteOrder(orderId: number) { await apiClient.delete(`/sales/orders/${orderId}`) }

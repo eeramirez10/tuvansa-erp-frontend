@@ -1,6 +1,7 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
   actionDialogTitles,
@@ -11,8 +12,10 @@ import {
 import { OrderActionDesignContent } from "@/features/sales/orders/components/order-action-design-content"
 import { OrderCommentsContent } from "@/features/sales/orders/components/order-comments-content"
 import { OrderSecondaryActionDesignContent } from "@/features/sales/orders/components/order-secondary-action-design-content"
-import { orderPanelQueryOptions } from "@/features/sales/orders/logic"
+import { orderKeys, orderPanelQueryOptions } from "@/features/sales/orders/logic"
 import type { Order, OrderPanelDefinition } from "@/features/sales/orders/model"
+import { updateOrderComments } from "@/features/sales/orders/services/order-service"
+import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import {
@@ -66,9 +69,22 @@ function QueryState({
 }
 
 function CommentsPanelDialog({ order, panel, onOpenChange }: PanelDialogProps) {
+  const queryClient = useQueryClient()
   const query = useQuery(orderPanelQueryOptions(order.id, panel.key))
   const data = query.data?.data
   const hasStatus = query.isPending || query.isError || data?.available === false
+  const [exchangeRate, setExchangeRate] = useState(order.exchangeRate > 0 ? order.exchangeRate : 1)
+  const [collectionCurrency, setCollectionCurrency] = useState<"DOLARES" | "PESOS">(
+    order.captureDetails?.collectionCurrency ?? (order.currencyId === 1 ? "DOLARES" : "PESOS"),
+  )
+  const mutation = useMutation({
+    mutationFn: () => updateOrderComments(order.id, { exchangeRate, collectionCurrency }),
+    onSuccess: async updated => {
+      queryClient.setQueryData(orderKeys.detail(updated.id), updated)
+      await queryClient.invalidateQueries({ queryKey: orderKeys.all })
+      onOpenChange(false)
+    },
+  })
 
   return (
     <ErpDataDialog
@@ -76,6 +92,7 @@ function CommentsPanelDialog({ order, panel, onOpenChange }: PanelDialogProps) {
       description={`Comentarios del pedido ${order.number}`}
       onOpenChange={onOpenChange}
       title="Comentarios del pedido"
+      tone="sales"
     >
       <ErpDataDialogBody className="grid gap-1.5">
         <QueryState
@@ -84,10 +101,11 @@ function CommentsPanelDialog({ order, panel, onOpenChange }: PanelDialogProps) {
           isPending={query.isPending}
           reason={data?.reason}
         />
-        {!hasStatus && data && <OrderCommentsContent order={order} panel={data} />}
+        {!hasStatus && data && <OrderCommentsContent collectionCurrency={collectionCurrency} exchangeRate={exchangeRate} onCollectionCurrencyChange={setCollectionCurrency} onExchangeRateChange={setExchangeRate} order={order} panel={data} />}
+        {mutation.isError && <Alert variant="destructive"><AlertTitle>No fue posible guardar los comentarios</AlertTitle><AlertDescription>{getApiErrorMessage(mutation.error)}</AlertDescription></Alert>}
         <footer className="flex justify-end gap-1">
-          <Button onClick={() => onOpenChange(false)} size="sm">Ok</Button>
-          <Button onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button>
+          <Button disabled={hasStatus || mutation.isPending || !Number.isFinite(exchangeRate) || exchangeRate <= 0} onClick={() => mutation.mutate()} size="sm">{mutation.isPending && <Spinner />}OK</Button>
+          <Button disabled={mutation.isPending} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button>
         </footer>
       </ErpDataDialogBody>
     </ErpDataDialog>
@@ -101,6 +119,7 @@ function ActionDesignDialog({ order, panel, onOpenChange }: PanelDialogProps) {
       description={`Diseño de ${panel.label} para el pedido ${order.number}`}
       onOpenChange={onOpenChange}
       title={actionDialogTitles[panel.key] ?? panel.label}
+      tone="sales"
     >
       <ErpDataDialogBody>
         <OrderActionDesignContent
@@ -120,6 +139,7 @@ function SecondaryActionDesignDialog({ order, panel, onOpenChange }: PanelDialog
       description={`Diseño de ${panel.label} para el pedido ${order.number}`}
       onOpenChange={onOpenChange}
       title={secondaryActionDialogTitles[panel.key] ?? panel.label}
+      tone="sales"
     >
       <ErpDataDialogBody>
         <OrderSecondaryActionDesignContent

@@ -10,6 +10,8 @@ export type OrderLine = {
   assigned: number
   branch: number
   price: number
+  sourcePrice?: number
+  sourceCurrencyId?: 1 | 2
   classCode: string
   currencyId: number
   piecesAssignment: string
@@ -117,4 +119,9 @@ export type OrderMutationInput = {
   status?: string
   classifications?: string[]
   lines?: Array<{ productId: number; quantity: number; price: number; discount?: number }>
+}
+
+export type OrderCommentsUpdateInput = {
+  exchangeRate: number
+  collectionCurrency: "DOLARES" | "PESOS"
 }

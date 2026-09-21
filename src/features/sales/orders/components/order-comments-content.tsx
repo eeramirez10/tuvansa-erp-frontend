@@ -3,7 +3,14 @@ import { Checkbox } from "@/shared/ui/checkbox"
 import { Input } from "@/shared/ui/input"
 import { cn } from "@/shared/utils/cn"
 
-type CommentsContentProps = { order: Order; panel: OrderPanel }
+type CommentsContentProps = {
+  order: Order
+  panel: OrderPanel
+  exchangeRate: number
+  collectionCurrency: "DOLARES" | "PESOS"
+  onExchangeRateChange: (value: number) => void
+  onCollectionCurrencyChange: (value: "DOLARES" | "PESOS") => void
+}
 type DeliveryBranch = {
   code?: unknown
   name?: unknown
@@ -42,7 +49,7 @@ function CommentField({ label, value, className, numeric = false }: {
   )
 }
 
-export function OrderCommentsContent({ order, panel }: CommentsContentProps) {
+export function OrderCommentsContent({ order, panel, exchangeRate, collectionCurrency, onExchangeRateChange, onCollectionCurrencyChange }: CommentsContentProps) {
   const comment = panel.items[0] ?? {}
   const summary = panel.summary ?? {}
   const branches = Array.isArray(summary.deliveryBranches) ? summary.deliveryBranches as DeliveryBranch[] : []
@@ -65,7 +72,7 @@ export function OrderCommentsContent({ order, panel }: CommentsContentProps) {
         <CommentField className="col-span-2" label="Descto 2" numeric value={decimal(summary.discount2)} />
         <CommentField className="col-span-2" label="Descto 3" numeric value={decimal(summary.discount3)} />
         <CommentField className="col-span-3" label="Depto" value={summary.department} />
-        <CommentField className="col-span-3" label="T.C." numeric value={decimal(summary.exchangeRate, 8)} />
+        <label className="col-span-3 grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-center gap-1"><span className="whitespace-nowrap text-right">T.C.</span><Input className="h-5 min-w-0 px-1 text-right text-[9px] tabular-nums" min="0.000001" onChange={event => onExchangeRateChange(event.target.valueAsNumber)} step="0.0001" type="number" value={exchangeRate} /></label>
 
         <CommentField className="col-span-2" label="Volumen" numeric value={decimal(summary.volume)} />
         <CommentField className="col-span-2" label="Peso" numeric value={decimal(summary.weight)} />
@@ -76,7 +83,7 @@ export function OrderCommentsContent({ order, panel }: CommentsContentProps) {
         <CommentField className="col-span-2" label="Plazo" value={summary.termsDays} />
         <CommentField className="col-span-2" label="Comisión" numeric value={decimal(summary.commission)} />
         <label className="col-span-4 flex items-center justify-center gap-1 whitespace-nowrap"><Checkbox checked={Boolean(summary.noPartialDeliveries)} disabled /><span>No acepta entregas parciales</span></label>
-        <CommentField className="col-span-4" label="Moneda de cobro" value={summary.collectionCurrencyId} />
+        <label className="col-span-4 grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-center gap-1"><span className="whitespace-nowrap text-right">Moneda de cobro</span><select className="h-5 min-w-0 border border-input bg-background px-1 text-[9px]" onChange={event => onCollectionCurrencyChange(event.target.value as "DOLARES" | "PESOS")} value={collectionCurrency}><option value="PESOS">PESOS</option><option value="DOLARES">DOLARES</option></select></label>
 
         <CommentField className="col-span-2" label="Transporte" value={summary.transportationCode} />
         <CommentField className="col-span-6" label="" value={summary.transportation} />

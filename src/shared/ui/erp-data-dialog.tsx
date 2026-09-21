@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type ComponentProps,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react"
 import { createPortal } from "react-dom"
@@ -111,6 +112,22 @@ export function ErpDataDialog({
           : tone === "sales"
             ? "border-module-sales/70"
             : "border-module-inventory/70"
+  const keyboardAction = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (tone !== "sales" || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return
+    const target = event.target as HTMLElement
+    const enabledButtons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"))
+    const label = (button: HTMLButtonElement) => (button.textContent ?? "").replace(/[✓✔×]/gu, "").trim().toUpperCase()
+    if (event.key === "Escape") {
+      event.preventDefault(); event.stopPropagation()
+      const cancel = enabledButtons.find(button => label(button) === "CANCELAR")
+      if (cancel) cancel.click()
+      else onOpenChange(false)
+      return
+    }
+    if (event.key !== "Enter" || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable || target instanceof HTMLButtonElement || target.closest("form")) return
+    const accept = enabledButtons.find(button => label(button) === "OK")
+    if (accept) { event.preventDefault(); event.stopPropagation(); accept.click() }
+  }
 
   return createPortal(
     <Rnd
@@ -160,6 +177,7 @@ export function ErpDataDialog({
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
         className={cn("flex min-h-0 flex-1 flex-col overflow-auto", fillHeight && "h-full")}
+        onKeyDown={keyboardAction}
         role="dialog"
       >
         <header
