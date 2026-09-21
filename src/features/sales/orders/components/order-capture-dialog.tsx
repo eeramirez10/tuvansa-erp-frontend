@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import type { Order } from "@/features/sales/orders/model"
-import { captureHeaderSchema, captureLineSchema, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
+import { captureCurrencyName, captureHeaderSchema, captureLineSchema, captureMinimumPrice, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
 import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
@@ -49,8 +49,12 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
     noPartialDeliveries: false, transportation: "", deliveryAddress: ["", "", ""], contact: "", additionalComments: "",
   } })
   const lineForm = useForm<CaptureLine>({ resolver: zodResolver(captureLineSchema), defaultValues: { productCode: "", quantity: 0, price: 0, discount: 0 } })
-  const totals = captureTotals(lines)
+  const collectionCurrency = useWatch({ control: form.control, name: "collectionCurrency" }) ?? "PESOS"
+  const watchedExchangeRate = useWatch({ control: form.control, name: "exchangeRate" })
+  const exchangeRate = Number.isFinite(watchedExchangeRate) && watchedExchangeRate > 0 ? watchedExchangeRate : 1
+  const totals = captureTotals(lines, collectionCurrency, exchangeRate)
   const draft = useWatch({ control: lineForm.control })
+  const belowCostLine = lines.find(line => line.price < captureMinimumPrice(line.product, line.currencyId ?? line.product.currencyId, exchangeRate))
   const headerDirty = form.formState.isDirty
   const lineDirty = lineForm.formState.isDirty
   useEffect(() => {
@@ -126,8 +130,9 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   }
   const addLine = lineForm.handleSubmit(value => {
     if (!product || product.code !== value.productCode.trim()) { setError("Carga el producto antes de agregar la partida."); return }
-    if (value.price < product.cost) { warnPriceBelowCost(); return }
-    setLines(current => [...current, { ...value, product }]); setProduct(null); setError("")
+    if (product.currencyId === product.costCurrencyId && value.price < product.cost) { warnPriceBelowCost(); return }
+    if (lines.length === 0) form.setValue("collectionCurrency", captureCurrencyName(product.currencyId))
+    setLines(current => [...current, { ...value, currencyId: product.currencyId, product }]); setProduct(null); setError("")
     lineForm.reset({ productCode: "", quantity: 0, price: 0, discount: 0 }); lineForm.setFocus("productCode")
   })
   const openComments = form.handleSubmit(() => {
@@ -138,8 +143,14 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   })
   const save = () => form.handleSubmit(async values => {
     if (saving.current) return
+    const invalid = lines.find(line => line.price < captureMinimumPrice(line.product,line.currencyId ?? line.product.currencyId,values.exchangeRate))
+    if (invalid) {
+      notifications.warning("Precio debajo del costo", { description: `${invalid.productCode}: no se puede vender abajo del costo`, id: "order-price-below-cost" })
+      setError(`El precio de ${invalid.productCode} está abajo del costo en su moneda.`)
+      return
+    }
     saving.current = true; setError("")
-    try { await mutation.mutateAsync({ ...values, documentKind: "quote", lines: lines.map(({productCode, quantity, price, discount}) => ({productCode, quantity, price, discount})) }) }
+    try { await mutation.mutateAsync({ ...values, documentKind: "quote", lines: lines.map(({productCode, quantity, price, discount, currencyId, product}) => ({productCode, quantity, price, discount, currencyId: currencyId ?? product.currencyId})) }) }
     catch (e) { setError(getApiErrorMessage(e)) }
     finally { saving.current = false }
   })()
@@ -153,7 +164,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
           {options.isPending ? <Spinner /> : <div className="max-h-72 overflow-auto border"><table className="w-full text-left"><thead><tr><th>Almacén</th><th>Descripción</th></tr></thead><tbody>{options.data?.warehouses.map(w => <tr key={w.code} className="border-t hover:bg-muted"><td colSpan={2}><button className="grid w-full grid-cols-[5rem_1fr] p-2 text-left" onClick={() => { form.setValue("warehouse", w.code); setStage("capture") }}><span>{w.code}</span><span>{w.description}</span></button></td></tr>)}</tbody></table>{options.data?.warehouses.length === 0 && <p className="p-2">No hay almacenes disponibles.</p>}</div>}
           <Button size="sm" variant="outline" onClick={close}>Cancelar</Button>
         </> : stage === "continue" ? <>
-          <p className="font-semibold">{saved?.number} guardado · Cotización · {money(saved?.totals.total ?? 0)} PESOS</p>
+          <p className="font-semibold">{saved?.number} guardado · Cotización · {money(saved?.totals.total ?? 0)} {saved?.currencyId === 1 ? "DOLARES" : "PESOS"}</p>
           <p>¿Continuo?</p><div className="flex gap-2"><Button size="sm" onClick={() => {
             setSaved(null); setCustomer(null); setProduct(null); setLines([]); form.reset(); lineForm.reset(); setStage("warehouse"); mutation.reset()
           }}>Sí</Button><Button size="sm" variant="outline" onClick={() => { if (saved) onSaved(saved) }}>No</Button></div>
@@ -182,7 +193,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
                   <td><Input aria-label="Descripción del producto" className={inputClass} value={product?.description ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Cantidad" className={inputClass} type="number" step="0.001" {...lineForm.register("quantity", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly /></td>
-                  <td><Input aria-label="Precio" className={inputClass} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && lineForm.getValues("price") < product.cost) warnPriceBelowCost() } })} /></td>
+                  <td><Input aria-label="Precio" className={inputClass} title={product ? `Precio en ${captureCurrencyName(product.currencyId)}` : ""} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && product.currencyId === product.costCurrencyId && lineForm.getValues("price") < product.cost) warnPriceBelowCost() } })} /></td>
                   <td><Input aria-label="Dto" className={inputClass} type="number" step="0.01" {...lineForm.register("discount", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="Importe" className={inputClass} readOnly value={money((draft.quantity || 0) * (draft.price || 0) * (1 - (draft.discount || 0)/100))} /></td>
                   <td><Input aria-label="Sucursal de la partida" className={inputClass} value="0" readOnly title="Asignación de sucursal pendiente de captura" /></td>
@@ -190,7 +201,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
                 </tr></tbody></table></div>
                 <div className="flex items-center justify-end gap-2"><span>Disp</span><Input aria-label="Disponible" className={`${inputClass} w-16 text-right`} value={money(product?.available ?? 0)} readOnly /><Input aria-label="Asignado" className={`${inputClass} w-16 text-right`} value={money(product?.assigned ?? 0)} readOnly /><Button className="h-5 rounded-none px-2 text-[9px]" variant="outline" disabled={!product} onClick={() => void addLine()}>Agregar partida</Button></div>
               </fieldset>
-              <div className="ml-[7.8125rem] mr-1.5 min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead><tr className="h-5 bg-muted">{lineColumns.map(([label],i) => <th className="border-r border-input px-1 text-right font-normal last:border-r-0" key={label}>{i === 2 ? totals.quantity.toFixed(3) : i === 4 ? totals.subtotal.toFixed(5) : i === 5 ? totals.discount.toFixed(2) : i === 6 ? totals.total.toFixed(2) : ""}</th>)}</tr></thead><tbody>{lines.map((line,index) => <tr className="h-5 border-t border-input" key={index}><td className="px-1">{line.productCode}</td><td className="truncate px-1" title={line.product.description}>{line.product.description}</td><td className="px-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-1 text-center">{line.product.unit}</td><td className="px-1 text-right">{line.price.toFixed(5)}</td><td className="px-1 text-right">{line.discount.toFixed(2)}</td><td className="px-1 text-right">{money(line.quantity*line.price*(1-line.discount/100))}</td><td className="px-1 text-right">0</td><td className="px-1 text-right"><Button className="h-4 w-4 rounded-none p-0 text-[9px]" variant="ghost" aria-label={`Quitar partida ${index+1}`} onClick={() => setLines(current => current.filter((_,lineIndex) => lineIndex !== index))}>×</Button></td></tr>)}</tbody></table></div>
+              <div className="ml-[7.8125rem] mr-1.5 min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead><tr className="h-5 bg-muted">{lineColumns.map(([label],i) => <th className="border-r border-input px-1 text-right font-normal last:border-r-0" key={label}>{i === 2 ? totals.quantity.toFixed(3) : i === 4 ? totals.subtotal.toFixed(5) : i === 5 ? totals.discount.toFixed(2) : i === 6 ? totals.total.toFixed(2) : ""}</th>)}</tr></thead><tbody>{lines.map((line,index) => <tr className="h-5 border-t border-input" key={index}><td className="px-1">{line.productCode}</td><td className="truncate px-1" title={line.product.description}>{line.product.description}</td><td className="px-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-1 text-center">{line.product.unit}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{line.price.toFixed(5)}</td><td className="px-1 text-right">{line.discount.toFixed(2)}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{money(line.quantity*line.price*(1-line.discount/100))}</td><td className="px-1 text-right">0</td><td className="px-1 text-right"><Button className="h-4 w-4 rounded-none p-0 text-[9px]" variant="ghost" aria-label={`Quitar partida ${index+1}`} onClick={() => setLines(current => current.filter((_,lineIndex) => lineIndex !== index))}>×</Button></td></tr>)}</tbody></table></div>
               <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-7 pb-8 pl-2 pt-4">
                 <div className="flex flex-col gap-1"><Button className="h-8 justify-start rounded-none" disabled={!customer || lines.length === 0} onClick={() => void openComments()}>✓&nbsp;&nbsp; OK</Button><Button className="h-8 justify-start rounded-none" variant="outline" onClick={close}>×&nbsp;&nbsp; Cancelar</Button></div>
                 <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-x-5">
@@ -206,12 +217,14 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
                 <label className="col-span-3">Pedido cliente<Input className={inputClass} {...form.register("customerOrderNumber")} maxLength={30} /></label><label className="flex items-center gap-1"><input type="checkbox" {...form.register("initial")} />Inicial</label>
                 {([["orderedAt","Fecha"],["from","Desde"],["dueAt","Hasta"]] as const).map(([name,label]) => <label key={name}>{label}<Input className={inputClass} type="date" {...form.register(name)} /></label>)}<label>Importe asignado<Input className={inputClass} value="0.00" readOnly /></label>
                 {["Descto 1","Descto 2","Descto 3"].map(label => <label key={label}>{label}<Input className={inputClass} value="0.00" readOnly /></label>)}<label>T.C.<Input className={inputClass} type="number" step="0.0001" {...form.register("exchangeRate", { valueAsNumber: true })} /></label>
-                <label>Depto<Input className={inputClass} {...form.register("department")} /></label><label>Cajas<Input className={inputClass} type="number" {...form.register("boxes", { valueAsNumber: true })} /></label><label>Volumen<Input className={inputClass} value={money(totals.volume)} readOnly /></label><label>Peso<Input className={inputClass} value={money(totals.weight)} readOnly /></label><label>Sucursal<Input className={inputClass} type="number" {...form.register("branch", { valueAsNumber: true })} /></label><label>Moneda de cobro<Input className={inputClass} maxLength={20} {...form.register("collectionCurrency")} /></label>
+                <label>Depto<Input className={inputClass} {...form.register("department")} /></label><label>Cajas<Input className={inputClass} type="number" {...form.register("boxes", { valueAsNumber: true })} /></label><label>Volumen<Input className={inputClass} value={money(totals.volume)} readOnly /></label><label>Peso<Input className={inputClass} value={money(totals.weight)} readOnly /></label><label>Sucursal<Input className={inputClass} type="number" {...form.register("branch", { valueAsNumber: true })} /></label><label>Moneda de cobro<select className="h-5 min-w-0 rounded-none border bg-background px-1 text-[10px]" {...form.register("collectionCurrency")}><option value="PESOS">PESOS</option><option value="DOLARES">DOLARES</option></select></label>
                 <label>Plazo<Input className={inputClass} type="number" {...form.register("termsDays", { valueAsNumber: true })} /></label><label>Comisión<Input className={inputClass} type="number" step="0.01" {...form.register("commission", { valueAsNumber: true })} /></label><label className="col-span-2 flex items-center gap-1"><input type="checkbox" {...form.register("noPartialDeliveries")} />No acepta entregas parciales</label>
                 <label>Tda Vende<Input className={inputClass} {...form.register("store")} maxLength={4} /></label><label>Almacén<Input className={inputClass} value={form.getValues("warehouse")} readOnly /></label><label className="col-span-2">Transporte<Input className={inputClass} maxLength={100} {...form.register("transportation")} /></label>
               </div>
               <fieldset className="grid gap-1"><legend>Comentarios:</legend><label>Pedido Cliente<Input className={inputClass} {...form.register("customerOrderNumber")} maxLength={30} /></label>{([0,1,2] as const).map(index => <label key={index}>{index === 0 ? "Entregar en" : `Entregar en ${index + 1}`}<Input className={inputClass} maxLength={100} {...form.register(`deliveryAddress.${index}`)} /></label>)}<label>Contacto<Input className={inputClass} maxLength={100} {...form.register("contact")} /></label><label>Obs.<Input className={inputClass} maxLength={21} {...form.register("observations")} /></label><textarea className="h-16 resize-none border bg-background p-1" maxLength={2000} aria-label="Comentarios adicionales" {...form.register("additionalComments")} /></fieldset>
-              <div className="flex justify-between"><span>Total {money(totals.total)} PESOS</span><span>Se guardará como Cotización; Cotiz la convierte en Pedido.</span></div>
+              {belowCostLine && <Alert variant="destructive"><AlertDescription>El precio de {belowCostLine.productCode} está abajo del costo convertido con T.C. {exchangeRate}.</AlertDescription></Alert>}
+              <div className="grid grid-cols-4 gap-1 border-t pt-1"><label>Subtotal<Input className={`${inputClass} text-right`} readOnly value={money(totals.subtotal)} /></label><label>Descuento<Input className={`${inputClass} text-right`} readOnly value={money(totals.discount)} /></label><label>IVA<Input className={`${inputClass} text-right`} readOnly value={money(totals.tax)} /></label><label>Gran Total ({collectionCurrency})<Input className={`${inputClass} text-right`} readOnly value={money(totals.total)} /></label></div>
+              <div className="flex justify-between"><span>Total {money(totals.total)} {collectionCurrency}</span><span>Se guardará como Cotización; Cotiz la convierte en Pedido.</span></div>
               <div className="flex gap-2"><Button size="sm" onClick={() => void save()}>{mutation.isPending && <Spinner />}OK</Button><Button size="sm" variant="outline" onClick={() => setStage("capture")}>Cancelar</Button></div>
             </>}
           </fieldset>

@@ -7,6 +7,7 @@ import { Label } from "@/shared/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 
 const money = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const currencyName = (currencyId: number) => currencyId === 1 ? "DOLARES" : currencyId === 2 ? "PESOS" : currencyId
 const value = (input: string | number | null) => input === null || input === "" ? "" : String(input)
 
 function ReadonlyField({ label, fieldValue, className = "", stacked = false }: { label: string; fieldValue: string | number | null; className?: string; stacked?: boolean }) {
@@ -92,7 +93,7 @@ export function OrderCatalogDetails({ order }: { order: Order }) {
                   <TableRow key={line.id}>
                     <TableCell className="px-1 py-0.5 font-mono">{line.productCode}</TableCell>
                     <TableCell className="max-w-[260px] truncate px-1 py-0.5">{line.description}</TableCell>
-                    {[line.ordered,line.fulfilled,line.remaining,line.unit,line.assigned,line.branch,money.format(line.price),line.classCode,line.currencyId,line.piecesAssignment,money.format(line.discount),money.format(line.publicPrice),line.sku,line.color,line.size].map((item, index) => (
+                    {[line.ordered,line.fulfilled,line.remaining,line.unit,line.assigned,line.branch,money.format(line.price),line.classCode,currencyName(line.currencyId),line.piecesAssignment,money.format(line.discount),money.format(line.publicPrice),line.sku,line.color,line.size].map((item, index) => (
                       <TableCell className="whitespace-nowrap px-1 py-0.5 text-right" key={index}>{item}</TableCell>
                     ))}
                   </TableRow>
@@ -116,7 +117,7 @@ export function OrderCatalogDetails({ order }: { order: Order }) {
           </CardContent>
         </Card>
         <Card size="sm">
-          <CardHeader className="border-b bg-module-sales/10 py-1"><CardTitle>Importes</CardTitle></CardHeader>
+          <CardHeader className="border-b bg-module-sales/10 py-1"><CardTitle>Importes · {currencyName(order.currencyId)}</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-4 gap-1 py-1 lg:grid-cols-7">
             <ReadonlyField stacked label="Importe" fieldValue={money.format(order.totals.subtotal)} />
             <ReadonlyField stacked label="Descuento" fieldValue={money.format(order.totals.discount)} />

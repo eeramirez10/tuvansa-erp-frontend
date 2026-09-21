@@ -21,12 +21,13 @@ export interface CaptureCustomerSearchCriteria {
 }
 export interface CaptureProduct {
   id: number; code: string; description: string; unit: string; price: number
-  cost: number
-  taxPercentage: number; excisePercentage: number; currencyId: number
+  cost: number; costCurrencyId: CaptureCurrencyId
+  taxPercentage: number; excisePercentage: number; currencyId: CaptureCurrencyId
   stock: number; assigned: number; available: number; weight: number; volume: number
 }
 export interface CaptureProductMatch {
   id: number; code: string; description: string; available: number; price: number
+  currencyId: CaptureCurrencyId
   warehouse: string; family: string; secondaryFamily: string
   nextReceipt: string | null; supplierCode: string
 }
@@ -42,7 +43,7 @@ export const captureHeaderSchema = z.object({
   department: z.string().max(20), initial: z.boolean(), agentCode: z.string().min(1, "Captura el agente").max(5),
   termsDays: z.number().int().min(0).max(999), store: z.string().max(4), observations: z.string().max(21),
   exchangeRate: z.number().positive().max(999999), boxes: z.number().int().nonnegative().max(999999),
-  branch: z.number().int().nonnegative().max(999999), collectionCurrency: z.string().trim().min(1).max(20),
+  branch: z.number().int().nonnegative().max(999999), collectionCurrency: z.enum(["PESOS", "DOLARES"]),
   commission: z.number().min(0).max(100).multipleOf(0.01), noPartialDeliveries: z.boolean(),
   transportation: z.string().max(100), deliveryAddress: z.tuple([z.string().max(100), z.string().max(100), z.string().max(100)]),
   contact: z.string().max(100), additionalComments: z.string().max(2000),
@@ -51,15 +52,28 @@ export const captureLineSchema = z.object({
   productCode: z.string().trim().min(1, "Captura el código").max(13),
   quantity: z.number().positive("La cantidad debe ser mayor que cero").max(999999).multipleOf(0.001),
   price: z.number().min(0).max(999999999).multipleOf(0.00001), discount: z.number().min(0).max(100).multipleOf(0.01),
+  currencyId: z.union([z.literal(1), z.literal(2)]).optional(),
 })
 export type CaptureHeader = z.infer<typeof captureHeaderSchema>
 export type CaptureLine = z.infer<typeof captureLineSchema>
 export type CaptureInput = CaptureHeader & { documentKind: "quote" | "order"; lines: CaptureLine[] }
 export type CaptureDraftLine = CaptureLine & { product: CaptureProduct }
+export type CaptureCurrencyId = 1 | 2
+export type CaptureCurrencyName = "DOLARES" | "PESOS"
 
-export const captureTotals = (lines: CaptureDraftLine[]) => {
+export const captureCurrencyId = (currency: CaptureCurrencyName): CaptureCurrencyId => currency === "DOLARES" ? 1 : 2
+export const captureCurrencyName = (currencyId: CaptureCurrencyId): CaptureCurrencyName => currencyId === 1 ? "DOLARES" : "PESOS"
+export const convertCaptureAmount = (amount: number, from: CaptureCurrencyId, to: CaptureCurrencyId, exchangeRate: number) =>
+  from === to ? amount : from === 1 ? amount * exchangeRate : amount / exchangeRate
+export const captureMinimumPrice = (product: CaptureProduct, priceCurrencyId: CaptureCurrencyId, exchangeRate: number) =>
+  convertCaptureAmount(product.cost, product.costCurrencyId, priceCurrencyId, exchangeRate)
+
+export const captureTotals = (lines: CaptureDraftLine[], targetCurrency: CaptureCurrencyName = "PESOS", exchangeRate = 1) => {
+  const targetCurrencyId = captureCurrencyId(targetCurrency)
   const result = lines.reduce((sum, l) => {
-    const gross = l.quantity * l.price, discount = gross * l.discount / 100
+    const sourceCurrencyId = l.currencyId ?? l.product.currencyId
+    const price = convertCaptureAmount(l.price, sourceCurrencyId, targetCurrencyId, exchangeRate)
+    const gross = l.quantity * price, discount = gross * l.discount / 100
     return { quantity: sum.quantity + l.quantity, subtotal: sum.subtotal + gross, discount: sum.discount + discount,
       tax: sum.tax + (gross - discount) * l.product.taxPercentage / 100,
       weight: sum.weight + l.quantity * l.product.weight, volume: sum.volume + l.quantity * l.product.volume }

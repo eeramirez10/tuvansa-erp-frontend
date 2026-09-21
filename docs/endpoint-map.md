@@ -18,6 +18,7 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 | Captura / Agregar partida, Tab desde Pzas. | Incorporar renglón | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
 | Captura / OK | Abrir Comentarios | Sin escritura HTTP | Borrador | order-capture-dialog.tsx |
 | Comentarios / OK | Guardar alta completa | POST `/sales/orders/capture` | saveCapturedOrder; invalida pedidos/productos/clientes | order-capture-service.ts |
+| Comentarios / T.C. y Moneda de cobro | Recalcular partidas y totales en PESOS o DOLARES | POST `/sales/orders/capture` | conversión local y validación final del backend | order-capture-dialog.tsx |
 | ¿Continuo? / Sí, No | Nueva captura o abrir resultado | Sin escritura adicional | Reiniciar borrador / detalle del registro | order-capture-dialog.tsx |
 | Pedidos / Cotiz | Alternar Pedido/Cotización | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote; invalida pedidos/productos | order-catalog-page.tsx |
 
