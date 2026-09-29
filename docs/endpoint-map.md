@@ -35,7 +35,7 @@ Implementación 2026-09-17 basada en `ORDERS_*` del reporte `orders-behaviors-ne
 | Captura / Precio | Blur o agregar partida; pesos contra lista 5, dólares contra lista 6 | Validación local y validación del POST | `ORDER_PRICE_BELOW_COST` | order-capture-dialog.tsx |
 | Pedidos / Autorizar | Clic o Ctrl+A | POST `/sales/orders/:id/actions/authorization` | setOrderAuthorization | order-catalog-page.tsx |
 | Pedidos / Asignar todo | Clic o Ctrl+P | POST `/sales/orders/:id/actions/assignment` | setOrderAssignment | order-assignment-dialog.tsx |
-| Pedidos / Editar | Clic; agrega, selecciona, actualiza o elimina renglones | PATCH `/sales/orders/:id` | updateOrder; reemplazo del detalle completo | order-form-dialog.tsx |
+| Pedidos / Editar | Clic; selecciona renglones. Tab desde Pzas. agrega/actualiza o elimina si el código quedó vacío y devuelve foco a Código/IEAN | PATCH `/sales/orders/:id` | updateOrder; reemplazo del detalle completo | order-form-dialog.tsx |
 | Pedidos / Cotiz | Clic en Pedido o Cotización | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote | order-catalog-page.tsx |
 
 Las escrituras quedan en PostgreSQL/Neon. La lectura MySQL determina autorización con `PEPAR9='O.K.'`. La interfaz bloquea asignación sin autorización, edición autorizada y desautorización con cantidades asignadas; el servidor repite las validaciones.

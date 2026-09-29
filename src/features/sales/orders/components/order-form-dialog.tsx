@@ -87,7 +87,11 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
 
   const loadProduct = async (selectedCode?: string) => {
     const code = (selectedCode ?? draft.productCode).trim()
-    if (!code) { setError("Captura el código o IEAN del producto."); codeRef.current?.focus(); return }
+    if (!code) {
+      if (editingIndex !== null) { quantityRef.current?.focus(); return }
+      setError("Captura el código o IEAN del producto."); codeRef.current?.focus(); return
+    }
+    if (!selectedCode && draft.productId) { quantityRef.current?.focus(); return }
     const version = ++lookupVersion.current
     setLoading(true); setError("")
     try {
@@ -105,11 +109,19 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
   }
 
   const clearDraft = () => {
+    lookupVersion.current += 1
+    setLoading(false)
     setDraft(emptyLine()); setEditingIndex(null); setLoadedProduct(null); setError("")
     requestAnimationFrame(() => codeRef.current?.focus())
   }
 
   const saveDraft = () => {
+    if (mutation.isPending || loading) return
+    if (!draft.productCode.trim()) {
+      if (editingIndex !== null) setLines(current => current.filter((_, index) => index !== editingIndex))
+      clearDraft()
+      return
+    }
     const parsed = lineSchema.safeParse(draft)
     if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Revisa la partida."); return }
     if (loadedProduct && draft.price < captureMinimumPrice(loadedProduct, documentCurrencyId, exchangeRate)) {
@@ -125,6 +137,7 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
   const editLine = (index: number) => {
     const line = lines[index]
     if (!line) return
+    lookupVersion.current += 1; setLoading(false)
     setDraft({...line}); setEditingIndex(index); setLoadedProduct(null); setError("")
     requestAnimationFrame(() => { codeRef.current?.focus(); codeRef.current?.select() })
   }
@@ -136,7 +149,7 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
   }
 
   const save = () => {
-    if (draft.productCode.trim()) { setError("Agrega o actualiza la partida pendiente antes de guardar."); codeRef.current?.focus(); return }
+    if (draft.productCode.trim() || editingIndex !== null) { setError("Agrega o actualiza la partida pendiente antes de guardar."); codeRef.current?.focus(); return }
     const parsed = z.array(lineSchema).min(1, "El pedido debe conservar al menos una partida.").safeParse(lines)
     if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Revisa las partidas."); return }
     setError(""); mutation.mutate(lines)
@@ -147,24 +160,38 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
     event.preventDefault(); event.stopPropagation(); next()
   }
 
+  const finishOnTab = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Tab" || event.shiftKey) return
+    event.preventDefault(); event.stopPropagation()
+    saveDraft()
+  }
+
+  const changeProductCode = (code: string) => {
+    lookupVersion.current += 1
+    setLoading(false); setLoadedProduct(null); setError("")
+    setDraft(current => code.trim()
+      ? {...current,productCode:code,productId:0,description:"",unit:""}
+      : {...emptyLine(),productCode:code})
+  }
+
   return <ErpDataDialog defaultHeight={560} defaultWidth={1000} fillHeight title="Cambio de pedido" description={`Detalle editable del pedido ${order.number}`} tone="sales" onOpenChange={onOpenChange}>
     <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-2 text-[10px]">
       {(error || mutation.isError) && <Alert variant="destructive"><AlertDescription>{error || getApiErrorMessage(mutation.error)}</AlertDescription></Alert>}
       <div className="grid grid-cols-[8rem_minmax(14rem,1fr)_6rem_4rem_7rem_5rem_5rem_6rem_4rem] border border-input bg-background">
         {["Código / IEAN","Descripción","Pedido","UM","Precio","Sucursal","Dto","Pzas.",""].map(label => <div className="border-b border-r border-input bg-muted px-1 py-1 text-center last:border-r-0" key={label}>{label}</div>)}
-        <Input ref={codeRef} aria-label="Código o IEAN del producto" className={inputClass} disabled={mutation.isPending || loading} value={draft.productCode} onChange={event => { setDraft(current => ({...current,productCode:event.target.value,productId:0,description:"",unit:""})); setLoadedProduct(null) }} onBlur={() => { if (draft.productCode && !draft.productId) void loadProduct() }} onKeyDown={event => moveOnEnter(event, () => void loadProduct())} />
+        <Input ref={codeRef} aria-label="Código o IEAN del producto" className={inputClass} disabled={mutation.isPending || loading} value={draft.productCode} onChange={event => changeProductCode(event.target.value)} onBlur={() => { if (draft.productCode && !draft.productId) void loadProduct() }} onKeyDown={event => moveOnEnter(event, () => void loadProduct())} />
         <Input aria-label="Descripción del producto" className={inputClass} readOnly value={draft.description} />
         <Input ref={quantityRef} aria-label="Cantidad" className={`${inputClass} text-right`} disabled={mutation.isPending || loading} min="0.001" step="0.001" type="number" value={draft.quantity || ""} onChange={event => setDraft(current => ({...current,quantity:event.target.valueAsNumber}))} onKeyDown={event => moveOnEnter(event, () => priceRef.current?.focus())} />
         <Input aria-label="Unidad" className={inputClass} readOnly value={draft.unit} />
         <Input ref={priceRef} aria-label="Precio" className={`${inputClass} text-right`} disabled={mutation.isPending || loading} min="0" step="0.00001" type="number" value={Number.isFinite(draft.price) ? draft.price : ""} onChange={event => setDraft(current => ({...current,price:event.target.valueAsNumber}))} onKeyDown={event => moveOnEnter(event, () => discountRef.current?.focus())} />
         <Input aria-label="Sucursal" className={`${inputClass} text-right`} readOnly value={draft.branch} />
         <Input ref={discountRef} aria-label="Descuento" className={`${inputClass} text-right`} disabled={mutation.isPending || loading} min="0" max="100" step="0.01" type="number" value={Number.isFinite(draft.discount) ? draft.discount : ""} onChange={event => setDraft(current => ({...current,discount:event.target.valueAsNumber}))} onKeyDown={event => moveOnEnter(event, saveDraft)} />
-        <Input aria-label="Piezas" className={inputClass} readOnly value={draft.piecesAssignment} />
-        <Button className="h-5 rounded-none px-1 text-[9px]" disabled={mutation.isPending || loading} onClick={saveDraft} size="sm" type="button">{editingIndex === null ? "Agregar" : "Actualizar"}</Button>
+        <Input aria-label="Piezas" className={inputClass} readOnly value={draft.piecesAssignment} onKeyDown={finishOnTab} />
+        <Button className="h-5 rounded-none px-1 text-[9px]" disabled={mutation.isPending || loading} onClick={saveDraft} onKeyDown={finishOnTab} size="sm" type="button">{editingIndex === null ? "Agregar" : "Actualizar"}</Button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[900px] table-fixed"><thead className="sticky top-0 bg-muted"><tr>{["Código","Descripción","Pedido","UM","Surtido","Precio","Sucursal","Dto","Fecha","Pzas.",""].map(label => <th className="px-2 py-1 text-left font-normal" key={label}>{label}</th>)}</tr></thead><tbody>{lines.map((line,index) =>
-        <tr aria-selected={editingIndex === index} className={`cursor-pointer border-t ${editingIndex === index ? "bg-module-sales/15" : "hover:bg-muted/60"}`} key={`${line.productId}-${index}`} onClick={() => editLine(index)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); editLine(index) } }} tabIndex={0}>
+        <tr aria-selected={editingIndex === index} className={`cursor-pointer border-t ${editingIndex === index ? "bg-module-sales/15" : "hover:bg-muted/60"}`} key={`${line.productId}-${index}`} onClick={() => editLine(index)} onKeyDown={event => { if (event.target === event.currentTarget && event.key === "Enter") { event.preventDefault(); event.stopPropagation(); editLine(index) } }} tabIndex={0}>
           <td className="px-2 py-1 font-mono">{line.productCode}</td><td className="truncate px-2 py-1" title={line.description}>{line.description}</td><td className="px-2 py-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-2 py-1">{line.unit}</td><td className="px-2 py-1 text-right">{line.fulfilled.toFixed(3)}</td><td className="px-2 py-1 text-right">{line.price.toFixed(5)}</td><td className="px-2 py-1 text-right">{line.branch}</td><td className="px-2 py-1 text-right">{line.discount.toFixed(2)}</td><td className="px-2 py-1">31/12/1900</td><td className="px-2 py-1">{line.piecesAssignment}</td><td className="px-1 py-0.5"><Button aria-label={`Eliminar partida ${index + 1}`} className="h-5 rounded-none px-2 text-[9px]" disabled={mutation.isPending} onClick={event => { event.stopPropagation(); removeLine(index) }} size="sm" type="button" variant="destructive">Eliminar</Button></td>
         </tr>)}</tbody></table></div>
 
