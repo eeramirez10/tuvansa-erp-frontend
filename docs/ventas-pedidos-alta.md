@@ -37,3 +37,15 @@ Validación en Chrome: lecturas reales con cliente/producto del ejercicio, dos r
 Algunos encabezados heredados usan 1, mientras el catálogo y las claves de inventario usan 01. Las consultas de captura y de Encuentra producto normalizan 1 a 01, incluidos sus keys de TanStack Query. El editor de detalle envía 01 a la ventana de búsqueda. No se asigna México como sustituto de almacenes desconocidos ni se elimina la validación de otros almacenes.
 
 El backend también normaliza las lecturas, el alta, las ediciones y las diferencias de inventario. No cambia ningún endpoint ni se modifica el flujo de captura.
+
+## Sugerencias y selección de productos (2026-09-30)
+
+Captura de pedido y Cambio de pedido usan el mismo campo de Código / IEAN con una lista de coincidencias por prefijo. Espera 200 ms para evitar una consulta por tecla, invalida las respuestas anteriores y muestra hasta diez sugerencias. Clic, flechas con Enter o Tab sobre una opción resaltada cargan el producto y enfocan Cantidad. No se elige automáticamente la primera coincidencia si el identificador tiene varias posibilidades.
+
+Enter/Tab con código no resuelto o ambiguo abre Encuentra producto; también puede abrirse con el botón de búsqueda del campo o F2. La ventana permite código / IEAN, descripción y código de proveedor. No consulta sin filtro y bloquea la selección de resultados atrasados mientras se actualiza la búsqueda. Doble clic u OK recargan el producto completo y agregan o sustituyen su partida en el borrador; se conserva la cantidad capturada o se usa 1 si aún estaba vacía. El OK final sigue siendo necesario para guardar. Una selección con error de conexión o validación comercial muestra el error y conserva el borrador.
+
+Las lecturas ya no reutilizan la restricción de alta exclusiva de México: respetan el almacén del pedido y normalizan 1/01. El alta nueva sigue ofreciendo solamente 01. No se fuerza un pedido de otro almacén a México. Código, IEAN y descripción se buscan sin distinguir mayúsculas. La regla de precio bajo costo sigue vigente tanto en el borrador como al guardar en el servidor.
+
+El campo está en components/order-product-code-input.tsx y las sugerencias usan el endpoint existente de coincidencias. Su lista se renderiza sobre las ventanas ERP y conserva las proporciones de los inputs. Las ventanas de búsqueda continúan siendo independientes, movibles y al frente.
+
+Verificación local en Chromium con datos y respuestas HTTP simuladas: sugerencias, teclado, desconocido que abre buscador, búsqueda por descripción/IEAN, doble clic que agrega, Tab y regreso a Código, bloqueo de precio bajo costo, almacén 01 y ausencia de solicitudes de escritura. No se generó un pedido real. Evidencia excluida de Git en el backend: captures/ui/new-version/order-product-suggestions/.

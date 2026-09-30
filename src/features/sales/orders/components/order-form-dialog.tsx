@@ -1,13 +1,14 @@
+import { OrderProductCodeInput } from "@/features/sales/orders/components/order-product-code-input"
 import { normalizeOrderWarehouse } from "@/features/sales/orders/order-warehouse"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { z } from "zod"
 
-import { captureProductQuery } from "@/features/sales/orders/capture-logic"
+import { captureProductMatchesQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { captureMinimumPrice, convertCaptureAmount, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
 import type { Order } from "@/features/sales/orders/model"
 import { updateOrder } from "@/features/sales/orders/services/order-service"
-import { getApiErrorMessage, isApiNotFound } from "@/shared/api/api-error"
+import { getApiErrorMessage } from "@/shared/api/api-error"
 import { notifications } from "@/shared/notifications/notifications"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -86,7 +87,7 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
     requestAnimationFrame(() => quantityRef.current?.focus())
   }
 
-  const loadProduct = async (selectedCode?: string) => {
+  const loadProduct = async (selectedCode?: string, addToOrder = false) => {
     const code = (selectedCode ?? draft.productCode).trim()
     if (!code) {
       if (editingIndex !== null) { quantityRef.current?.focus(); return }
@@ -96,17 +97,29 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
     const version = ++lookupVersion.current
     setLoading(true); setError("")
     try {
+      if (!selectedCode) {
+        const matches = await queryClient.fetchQuery(captureProductMatchesQuery({code}, normalizeOrderWarehouse(order.warehouse))).catch(() => [])
+        if (version !== lookupVersion.current) return
+        if (matches.length > 1) { openProductSearch(code); return }
+      }
       const product = await queryClient.fetchQuery(captureProductQuery(code, normalizeOrderWarehouse(order.warehouse), "P", order.customer.code))
       if (version !== lookupVersion.current) return
-      applyProduct(product)
+      if (addToOrder) {
+        commitDraft({...draft, productId:product.id, productCode:product.code, description:product.description, unit:product.unit,
+          price:convertCaptureAmount(product.price,product.currencyId,documentCurrencyId,exchangeRate), quantity:draft.quantity > 0 ? draft.quantity : 1, branch:0}, product)
+      } else applyProduct(product)
     } catch (cause) {
       if (version !== lookupVersion.current) return
-      if (isApiNotFound(cause)) {
-        onProductSearch(code, normalizeOrderWarehouse(order.warehouse), match => { void loadProduct(match.code) })
-      } else setError(getApiErrorMessage(cause))
+      if (!selectedCode) openProductSearch(code)
+      else setError(getApiErrorMessage(cause))
     } finally {
       if (version === lookupVersion.current) setLoading(false)
     }
+  }
+
+  const openProductSearch = (code = draft.productCode.trim()) => {
+    setError("")
+    onProductSearch(code, normalizeOrderWarehouse(order.warehouse), match => { void loadProduct(match.code, true) })
   }
 
   const clearDraft = () => {
@@ -116,24 +129,26 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
     requestAnimationFrame(() => codeRef.current?.focus())
   }
 
-  const saveDraft = () => {
-    if (mutation.isPending || loading) return
-    if (!draft.productCode.trim()) {
+  const commitDraft = (nextDraft: EditableLine, verifiedProduct: CaptureProduct | null) => {
+    if (mutation.isPending) return
+    if (!nextDraft.productCode.trim()) {
       if (editingIndex !== null) setLines(current => current.filter((_, index) => index !== editingIndex))
       clearDraft()
       return
     }
-    const parsed = lineSchema.safeParse(draft)
+    const parsed = lineSchema.safeParse(nextDraft)
     if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Revisa la partida."); return }
-    if (loadedProduct && draft.price < captureMinimumPrice(loadedProduct, documentCurrencyId, exchangeRate)) {
+    if (verifiedProduct && nextDraft.price < captureMinimumPrice(verifiedProduct, documentCurrencyId, exchangeRate)) {
       notifications.warning("Precio debajo del costo", { description: "No se puede vender abajo del costo", id: "order-edit-price-below-cost" })
       priceRef.current?.focus(); return
     }
     setLines(current => editingIndex === null
-      ? [...current, draft]
-      : current.map((line, index) => index === editingIndex ? draft : line))
+      ? [...current, nextDraft]
+      : current.map((line, index) => index === editingIndex ? nextDraft : line))
     clearDraft()
   }
+
+  const saveDraft = () => { if (!loading) commitDraft(draft, loadedProduct) }
 
   const editLine = (index: number) => {
     const line = lines[index]
@@ -180,7 +195,7 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
       {(error || mutation.isError) && <Alert variant="destructive"><AlertDescription>{error || getApiErrorMessage(mutation.error)}</AlertDescription></Alert>}
       <div className="grid grid-cols-[8rem_minmax(14rem,1fr)_6rem_4rem_7rem_5rem_5rem_6rem_4rem] border border-input bg-background">
         {["Código / IEAN","Descripción","Pedido","UM","Precio","Sucursal","Dto","Pzas.",""].map(label => <div className="border-b border-r border-input bg-muted px-1 py-1 text-center last:border-r-0" key={label}>{label}</div>)}
-        <Input ref={codeRef} aria-label="Código o IEAN del producto" className={inputClass} disabled={mutation.isPending || loading} value={draft.productCode} onChange={event => changeProductCode(event.target.value)} onBlur={() => { if (draft.productCode && !draft.productId) void loadProduct() }} onKeyDown={event => moveOnEnter(event, () => void loadProduct())} />
+        <OrderProductCodeInput ref={codeRef} aria-label="Código o IEAN del producto" className={inputClass} disabled={mutation.isPending || loading} value={draft.productCode} warehouse={normalizeOrderWarehouse(order.warehouse)} resolved={Boolean(draft.productId)} onChangeCode={changeProductCode} onResolve={code => { void loadProduct(code) }} onSearch={() => openProductSearch()} />
         <Input aria-label="Descripción del producto" className={inputClass} readOnly value={draft.description} />
         <Input ref={quantityRef} aria-label="Cantidad" className={`${inputClass} text-right`} disabled={mutation.isPending || loading} min="0.001" step="0.001" type="number" value={draft.quantity || ""} onChange={event => setDraft(current => ({...current,quantity:event.target.valueAsNumber}))} onKeyDown={event => moveOnEnter(event, () => priceRef.current?.focus())} />
         <Input aria-label="Unidad" className={inputClass} readOnly value={draft.unit} />

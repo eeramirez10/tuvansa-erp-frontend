@@ -30,12 +30,12 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
   const [fields, setFields] = useState<SearchFields>(initialFields)
   const [criteria, setCriteria] = useState<CaptureProductSearchCriteria>(() => toCriteria(initialFields))
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const result = useQuery(captureProductMatchesQuery(criteria, warehouse))
+  const result = useQuery({ ...captureProductMatchesQuery(criteria, warehouse), enabled: Boolean(criteria.code || criteria.description || criteria.supplierCode), retry:false })
   const matches = result.data ?? []
   const selected = matches.find(match => match.id === selectedId) ?? matches[0] ?? null
   const hasFilter = Boolean(fields.code.trim() || fields.description.trim() || fields.supplierCode.trim())
   const search = () => { if (hasFilter) { setSelectedId(null); setCriteria(toCriteria(fields)) } }
-  const accept = (match = selected) => { if (match) onSelect(match) }
+  const accept = (match = selected) => { if (match && !result.isFetching) onSelect(match) }
 
   return <ErpDataDialog defaultHeight={490} defaultWidth={985} description="Buscar y seleccionar un producto del almacén activo" fillHeight onOpenChange={onOpenChange} title="Encuentra producto" tone="sales">
     <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-1">
@@ -58,7 +58,7 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
       <footer className="flex items-center justify-between gap-2">
         <div className="flex gap-1"><Button disabled size="sm" title="Pendiente de captura" variant="outline">Alternos</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Foto</Button></div>
         <span className="text-muted-foreground">Almacén {warehouse} · {matches.length} coincidencia{matches.length === 1 ? "" : "s"}</span>
-        <div className="flex gap-1"><Button disabled={!selected} onClick={() => accept()} size="sm">✓ OK</Button><Button onClick={() => onOpenChange(false)} size="sm" variant="outline">× Cancelar</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Matriz de fotos</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Familias</Button></div>
+        <div className="flex gap-1"><Button disabled={!selected || result.isFetching} onClick={() => accept()} size="sm">✓ OK</Button><Button onClick={() => onOpenChange(false)} size="sm" variant="outline">× Cancelar</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Matriz de fotos</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Familias</Button></div>
       </footer>
     </ErpDataDialogBody>
   </ErpDataDialog>

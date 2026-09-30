@@ -1,13 +1,14 @@
+import { OrderProductCodeInput } from "@/features/sales/orders/components/order-product-code-input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import type { Order } from "@/features/sales/orders/model"
 import { captureCurrencyName, captureHeaderSchema, captureLineSchema, captureMinimumPrice, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
-import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
+import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductMatchesQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
-import { getApiErrorMessage, isApiNotFound } from "@/shared/api/api-error"
+import { getApiErrorMessage } from "@/shared/api/api-error"
 import { notifications } from "@/shared/notifications/notifications"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -104,24 +105,34 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   const applyProduct = (value: CaptureProduct) => {
     setProduct(value); lineForm.setValue("productCode", value.code); lineForm.setValue("price", value.price); lineForm.setValue("discount", 0)
   }
-  const loadProduct = async (selectedCode?: string) => {
+  const loadProduct = async (selectedCode?: string, addToOrder = false) => {
     const code = selectedCode ?? lineForm.getValues("productCode").trim()
-    if (!code || product?.code === code) return
+    if (!code || (!selectedCode && product?.code === code)) return
     if (selectedCode) lineForm.setValue("productCode", code)
     const version = ++lookupVersion.current
     setProduct(null); setLoading(true); setError("")
     try {
+      if (!selectedCode) {
+        const matches = await queryClient.fetchQuery(captureProductMatchesQuery({code}, form.getValues("warehouse"))).catch(() => [])
+        if (version !== lookupVersion.current) return
+        if (matches.length > 1) { openProductSearch(code); return }
+      }
       const value = await queryClient.fetchQuery(captureProductQuery(code, form.getValues("warehouse"), "P", form.getValues("customerCode")))
       if (version !== lookupVersion.current || lineForm.getValues("productCode").trim() !== code) return
-      applyProduct(value)
+      if (addToOrder) {
+        const current = lineForm.getValues()
+        commitLine({...current, productCode:value.code, price:value.price, quantity:current.quantity > 0 ? current.quantity : 1}, value)
+      } else applyProduct(value)
     } catch (e) {
       if (version !== lookupVersion.current) return
-      if (isApiNotFound(e)) {
-        onProductSearch(code, form.getValues("warehouse"), match => { void loadProduct(match.code) })
-        setError("")
-      } else setError(getApiErrorMessage(e))
+      if (!selectedCode) openProductSearch(code)
+      else setError(getApiErrorMessage(e))
     }
     finally { if (version === lookupVersion.current) setLoading(false) }
+  }
+  const openProductSearch = (code = lineForm.getValues("productCode").trim()) => {
+    setError("")
+    onProductSearch(code, form.getValues("warehouse"), match => { void loadProduct(match.code, true) })
   }
   const warnPriceBelowCost = () => {
     notifications.warning("Precio debajo del costo", {
@@ -146,14 +157,17 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
     else if (editingLineIndex !== null && editingLineIndex > index) setEditingLineIndex(editingLineIndex - 1)
     setLines(current => current.filter((_, lineIndex) => lineIndex !== index))
   }
-  const addLine = lineForm.handleSubmit(value => {
-    if (!product || product.code !== value.productCode.trim()) { setError("Carga el producto antes de agregar la partida."); return }
-    if (product.currencyId === product.costCurrencyId && value.price < product.cost) { warnPriceBelowCost(); return }
-    if (lines.length === 0 && editingLineIndex === null) form.setValue("collectionCurrency", captureCurrencyName(product.currencyId))
-    const nextLine = { ...value, currencyId: product.currencyId, product }
+  const commitLine = (value: CaptureLine, selectedProduct: CaptureProduct | null) => {
+    if (!selectedProduct || selectedProduct.code !== value.productCode.trim()) { setError("Carga el producto antes de agregar la partida."); return }
+    if (selectedProduct.currencyId === selectedProduct.costCurrencyId && value.price < selectedProduct.cost) { warnPriceBelowCost(); return }
+    if (lines.length === 0 && editingLineIndex === null) form.setValue("collectionCurrency", captureCurrencyName(selectedProduct.currencyId))
+    const parsed = captureLineSchema.safeParse(value)
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Revisa la partida."); return }
+    const nextLine = { ...parsed.data, currencyId: selectedProduct.currencyId, product:selectedProduct }
     setLines(current => editingLineIndex === null ? [...current, nextLine] : current.map((line, index) => index === editingLineIndex ? nextLine : line))
     setError(""); clearLineCapture()
-  })
+  }
+  const addLine = lineForm.handleSubmit(value => commitLine(value, product))
   const draftIsReady = () => {
     if (!customer || customer.code !== form.getValues("customerCode").trim()) { setError("Carga un cliente válido."); return }
     if (!lines.length) { setError("Agrega al menos una partida."); return }
@@ -222,7 +236,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
               </div>
               <fieldset disabled={!customer} className="ml-[7.9375rem] mr-5 grid min-w-0 gap-1 pt-4">
                 <div className="overflow-x-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead className="bg-muted"><tr>{lineColumns.map(([label]) => <th className="h-6 border-r border-input px-1 font-normal last:border-r-0" key={label}>{label}</th>)}</tr></thead><tbody><tr>
-                  <td><Input aria-label="Código o IEAN del producto" className={inputClass} title="Código o IEAN" {...lineForm.register("productCode", { onChange: () => setProduct(null) })} onBlur={e => { void lineForm.register("productCode").onBlur(e); void loadProduct() }} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void loadProduct() } }} /></td>
+                  <td><OrderProductCodeInput aria-label="Código o IEAN del producto" className={inputClass} title="Código o IEAN" ref={element => lineForm.register("productCode").ref(element)} value={draft.productCode ?? ""} warehouse={form.getValues("warehouse")} resolved={Boolean(product)} onChangeCode={code => { lookupVersion.current += 1; setLoading(false); setProduct(null); lineForm.setValue("productCode", code, {shouldDirty:true}) }} onResolve={code => { void loadProduct(code) }} onSearch={() => openProductSearch()} /></td>
                   <td><Input aria-label="Descripción del producto" className={inputClass} value={product?.description ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Cantidad" className={inputClass} type="number" step="0.001" {...lineForm.register("quantity", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly /></td>

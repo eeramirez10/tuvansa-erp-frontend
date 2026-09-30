@@ -79,3 +79,13 @@ El detalle equivalente de Cuentas por cobrar está en [Catálogo de clientes](cu
 | Ejemplo | Catálogo | Barra inferior | Buscar | Botón | Clic | `GET` | `/recurso` | `search`, `limit`, `offset` | `['recurso', filtros]` | `src/features/...` | Pendiente |
 
 Si el nombre interno heredado no coincide con el texto visible —por ejemplo, una función llamada “auxiliares” presentada como botón “Movimientos”— se documenta siempre primero el nombre que ve el usuario y después la referencia interna en una nota técnica.
+
+### Coincidencias de producto en Captura y Cambio de pedido (2026-09-30)
+
+| Vista / control | Evento | Endpoint | Query key | Archivo |
+| --- | --- | --- | --- | --- |
+| Captura / Cambio de pedido: Código / IEAN | Escribir prefijo; sugerencias, flechas y Enter/Tab o clic para cargar | GET /sales/orders/capture/products?warehouse=...&code=... | product-matches, almacén canónico, código, descripción, proveedor | order-product-code-input.tsx |
+| Captura / Cambio de pedido: Buscar producto | Código sin resolver, ambiguo, botón del campo o F2 | GET /sales/orders/capture/products | product-matches | order-product-matches-dialog.tsx |
+| Encuentra producto: fila / OK | Doble clic o OK; validar referencia y agregar al borrador | GET /sales/orders/capture/products/:code | capture/product, código, almacén, tipo y cliente | order-capture-dialog.tsx, order-form-dialog.tsx |
+
+El SQL del buscador es derivado. No se efectuó una nueva captura OMNIS. El almacén procede del pedido (1 equivale a 01) y las lecturas no aplican la restricción de alta. La escritura final continúa por POST /sales/orders/capture o PATCH /sales/orders/:id; conserva el bloqueo de precio bajo costo.
