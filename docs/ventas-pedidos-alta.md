@@ -31,3 +31,9 @@ La evidencia de OMNIS vive en el backend: `docs/modules/sales/orders-create-sql-
 Alcance validado: tipo P, productos por código o IEAN, precio de lista 1 en PESOS o DOLARES y sin IEPS ni reglas automáticas de FDESCTOS. Se admite descuento manual por partida y cuatro descuentos globales en cascada. La regla de cascada procede de la indicación funcional del usuario y es derivada; no se presenta como SQL observado de OMNIS. La conversión entre monedas también es derivada porque no se capturó el algoritmo interno de OMNIS. Flete, seguros y sucursal por partida permanecen de sólo lectura. No se promete equivalencia de todas las configuraciones del ERP ni del mantenimiento heredado.
 
 Validación en Chrome: lecturas reales con cliente/producto del ejercicio, dos renglones y total 205.49; error real 503 por falta de permisos de escritura manteniendo el borrador. Guardado exitoso/¿Continuo?/Cotiz comprobados con respuestas HTTP simuladas, no SQL nuevo de OMNIS ni un commit real. No se creó otro pedido. Capturas locales excluidas de Git en el backend: `captures/ui/new-version/orders-web/`. Lint, typecheck y build del frontend forman parte de la validación.
+
+## Almacén México en pedidos heredados (2026-09-30)
+
+Algunos encabezados heredados usan 1, mientras el catálogo y las claves de inventario usan 01. Las consultas de captura y de Encuentra producto normalizan 1 a 01, incluidos sus keys de TanStack Query. El editor de detalle envía 01 a la ventana de búsqueda. No se asigna México como sustituto de almacenes desconocidos ni se elimina la validación de otros almacenes.
+
+El backend también normaliza las lecturas, el alta, las ediciones y las diferencias de inventario. No cambia ningún endpoint ni se modifica el flujo de captura.

@@ -1,3 +1,4 @@
+import { normalizeOrderWarehouse } from "@/features/sales/orders/order-warehouse"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { z } from "zod"
@@ -95,13 +96,13 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
     const version = ++lookupVersion.current
     setLoading(true); setError("")
     try {
-      const product = await queryClient.fetchQuery(captureProductQuery(code, order.warehouse, "P", order.customer.code))
+      const product = await queryClient.fetchQuery(captureProductQuery(code, normalizeOrderWarehouse(order.warehouse), "P", order.customer.code))
       if (version !== lookupVersion.current) return
       applyProduct(product)
     } catch (cause) {
       if (version !== lookupVersion.current) return
       if (isApiNotFound(cause)) {
-        onProductSearch(code, order.warehouse, match => { void loadProduct(match.code) })
+        onProductSearch(code, normalizeOrderWarehouse(order.warehouse), match => { void loadProduct(match.code) })
       } else setError(getApiErrorMessage(cause))
     } finally {
       if (version === lookupVersion.current) setLoading(false)
