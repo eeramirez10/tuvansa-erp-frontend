@@ -128,3 +128,17 @@ Esta entrada sustituye el acceso predeterminado Gerencial (Excel) descrito arrib
 | Imprimir / Guardar PDF | Imprimir el formato seleccionado | Sin HTTP adicional | Respuesta mostrada | financial-income-statement-document.tsx |
 
 México usa la compañía asociada a almacén 01 mediante CATMULTICIA, centro consolidado -1 y meses 1..12 del ejercicio CIAPERIODO. Sólo se publica México; parámetros de otra sucursal son rechazados. Provisiones vacías del Excel se toman como cero con nota explícita. La descripción completa y las 54 comparaciones de importes están en [Estado de resultados](contabilidad-estado-resultados.md).
+
+
+### Estado de resultados: siete sucursales, consolidado y Excel
+
+La modalidad predeterminada ahora es Todas las sucursales (Excel); se conservan México y PROSCAI.
+
+| Vista / control | Evento | Endpoint relativo a /api | Query key | Archivo |
+| --- | --- | --- | --- | --- |
+| Todas las sucursales / parámetros | Abrir mes/ejercicio | GET /accounting/reports/income-statement/branches/options | accounting, reports, income-statement, branches, options | branch-income-statements-page.tsx |
+| Todas las sucursales / OK | Generar siete reportes y consolidado | GET /accounting/reports/income-statement/branches?year=2026&month=8 | accounting, reports, income-statement, branches, {year, month} | income-statement-service.ts |
+| Descargar Excel | Descargar archivo con nueve hojas | Sin HTTP adicional | Respuesta actual; ExcelJS diferido | download-income-statement-excel.ts, income-statement-workbook.ts |
+| Imprimir / Guardar PDF | Imprimir ocho páginas | Sin HTTP adicional | Misma respuesta mostrada | financial-income-statement.css |
+
+La lectura de saldos por lote es derivada de la proyección histórica y conserva BCCCENCOS=-1 por compañía; las siete compañías proceden de CATMULTICIA para almacenes 01..07. El consolidado suma MES y ACUMULADO y recalcula sus porcentajes. No hay nueva captura literal OMNIS. Véase [Estado de resultados](contabilidad-estado-resultados.md) y docs/modules/accounting/income-statement-branches.md del backend.

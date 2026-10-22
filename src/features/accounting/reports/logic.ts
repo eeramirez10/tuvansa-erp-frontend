@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import type { IncomeStatementCriteria, MexicoIncomeStatementCriteria } from "@/features/accounting/reports/model"
-import { getIncomeStatement, getIncomeStatementOptions, getMexicoIncomeStatement, getMexicoIncomeStatementOptions } from "@/features/accounting/reports/services/income-statement-service"
+import { getIncomeStatement, getIncomeStatementOptions, getMexicoIncomeStatement, getMexicoIncomeStatementOptions, getBranchIncomeStatementOptions, getBranchIncomeStatements } from "@/features/accounting/reports/services/income-statement-service"
 
 export const incomeStatementOptionsQuery = () => queryOptions({
   queryKey:["accounting","reports","income-statement","options"], queryFn:({signal})=>getIncomeStatementOptions(signal),staleTime:0,
@@ -14,4 +14,11 @@ export const mexicoIncomeStatementOptionsQuery = () => queryOptions({
 })
 export const mexicoIncomeStatementQuery = (criteria: MexicoIncomeStatementCriteria) => queryOptions({
   queryKey:["accounting","reports","income-statement","mexico",criteria], queryFn:({signal})=>getMexicoIncomeStatement(criteria,signal),staleTime:0,retry:false,
+})
+
+export const branchIncomeStatementOptionsQuery=()=>queryOptions({
+  queryKey:["accounting","reports","income-statement","branches","options"],queryFn:({signal})=>getBranchIncomeStatementOptions(signal),staleTime:0,
+})
+export const branchIncomeStatementsQuery=(criteria:MexicoIncomeStatementCriteria)=>queryOptions({
+  queryKey:["accounting","reports","income-statement","branches",criteria],queryFn:({signal})=>getBranchIncomeStatements(criteria,signal),staleTime:0,retry:false,
 })

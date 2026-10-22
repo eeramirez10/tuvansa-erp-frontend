@@ -46,3 +46,9 @@
   .financial-statement-table thead { display: table-header-group; }
   .financial-statement-document { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
+
+.financial-statement-report-set { display:grid; gap:1.5rem; }
+@media print {
+  .financial-statement-report-set { display:block; }
+  .financial-statement-report-set > .financial-statement-document:not(:last-child) { break-after:page; }
+}

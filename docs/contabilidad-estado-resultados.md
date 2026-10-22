@@ -1,6 +1,6 @@
 # Contabilidad: Estado de resultados
 
-Estado actual al 2026-10-22: formato México (Excel), exclusivo de sucursal 01, y formato PROSCAI histórico. Ruta /contabilidad/reportes/estado-de-resultados; entrada desde Contabilidad → Reportes → Estado de resultados. El formato predeterminado es México (Excel). Las demás sucursales quedan pendientes.
+Estado actual al 2026-10-22: Todas las sucursales (Excel), México (Excel) y PROSCAI histórico. Ruta /contabilidad/reportes/estado-de-resultados; entrada desde Contabilidad → Reportes → Estado de resultados. El formato predeterminado es Todas las sucursales (Excel): México, Monterrey, Veracruz, Mexicali, Querétaro, Cancún y Cabos, más el consolidado final.
 
 ## Flujo de México
 
@@ -46,3 +46,23 @@ Feature src/features/accounting/reports. mexico-income-statement-page.tsx gestio
 Validaciones aprobadas: pnpm lint, pnpm typecheck y pnpm build. Navegador con respuesta real de MySQL: ruta directa, menú, comparación de importes, cambio de mes, mes sin ingresos, regreso al formato histórico, impresión, error/reintento y vacío. Los estados de error/vacío se simularon; los importes principales usan el servicio real.
 
 Evidencia local en captures/ui/new-version/income-statement-mexico/ del backend, excluida de Git. No se cambiaron Firebase ni variables de entorno. No requiere migraciones ni escrituras en la base heredada.
+
+
+## Archivo completo: siete sucursales y consolidado
+
+La ventana Estado de resultados — Todas las sucursales permite elegir el mes del ejercicio configurado. Genera siete reportes con el diseño aprobado y el consolidado final. MES del consolidado suma el mes de las siete sucursales; ACUMULADO suma sus acumulados hasta el mes elegido. Los porcentajes se recalculan contra ingresos consolidados. Los datos se consultan en una sola lectura por lote, según las compañías del catálogo 01..07.
+
+| Control | Endpoint relativo a /api | Query key |
+| --- | --- | --- |
+| Todas las sucursales / parámetros | GET /accounting/reports/income-statement/branches/options | [accounting, reports, income-statement, branches, options] |
+| Todas las sucursales / OK | GET /accounting/reports/income-statement/branches?year=2026&month=8 | [accounting, reports, income-statement, branches, {year, month}] |
+| Descargar Excel | Sin petición adicional | Usa la respuesta mostrada |
+| Imprimir / Guardar PDF | Sin petición adicional | Ocho páginas carta |
+
+Descargar Excel genera estado-resultados-sucursales-AAAA-MM.xlsx con ExcelJS 4.4.0 (https://github.com/exceljs/exceljs#readme), cargado al exportar. Contiene Reporte completo con los siete bloques y consolidado lado a lado, siete hojas individuales y la hoja Consolidado al final. Las hojas individuales usan referencias a la principal, y la principal conserva fórmulas de subtotales, utilidades, porcentajes y sumas generales. Se guarda resultado inicial de cada fórmula y recálculo al abrir. ROUND(...,2) mantiene cálculos monetarios a centavos; IFERROR evita divisiones inválidas. Los renglones opcionales se alinean por clave, para conservar ajustes de costos de una sucursal sin desplazar las demás.
+
+El botón queda deshabilitado durante carga, error, vacío y exportación. Fallos de exportación usan el servicio global de notificaciones. La descarga utiliza un helper compartido de Blob y libera su URL temporal. Cambiar un dato en el Excel no modifica el ERP.
+
+Archivos nuevos: branch-income-statements-page.tsx, income-statement-workbook.ts y download-income-statement-excel.ts. Helper genérico: src/shared/utils/download-file.ts. La vista y PDF reutilizan financial-income-statement-document.tsx; cada sucursal imprime una página, seguida del consolidado.
+
+Se validaron descarga real, estructura de nueve hojas y 1,616 fórmulas, resultados y recálculo en Excel de Windows, propagación de ajustes, PDF de ocho páginas, navegación, error/reintento y vacío. Evidencia privada en captures/ui/new-version/income-statement-all-branches/ del backend. Contrato y SQL derivado: docs/modules/accounting/income-statement-branches.md del backend. No requiere migraciones ni cambios de Firebase.

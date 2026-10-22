@@ -1,3 +1,4 @@
+import { BranchIncomeStatementsPage } from "@/features/accounting/reports/pages/branch-income-statements-page"
 import { useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
@@ -11,7 +12,7 @@ import { IncomeStatementToolbar } from "@/features/accounting/reports/components
 import { MexicoIncomeStatementPage } from "@/features/accounting/reports/pages/mexico-income-statement-page"
 import { IncomeStatementDocument } from "@/features/accounting/reports/components/income-statement-document"
 import { incomeStatementOptionsQuery, incomeStatementQuery } from "@/features/accounting/reports/logic"
-import type { IncomeStatementCriteria, IncomeStatementOptions } from "@/features/accounting/reports/model"
+import type { IncomeStatementCriteria, IncomeStatementOptions, IncomeStatementFormat } from "@/features/accounting/reports/model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -40,7 +41,7 @@ function Parameters({ options, initial, onClose, onSubmit }: {
     </ErpDataDialogBody>
   </ErpDataDialog></DesktopWindowIdentity>
 }
-function Workspace({ options, onFormatChange }: {options:IncomeStatementOptions; onFormatChange:(format:"financial"|"proscai")=>void}) {
+function Workspace({ options, onFormatChange }: {options:IncomeStatementOptions; onFormatChange:(format:IncomeStatementFormat)=>void}) {
   const defaults:IncomeStatementCriteria={accounts:"8",month:options.defaultMonth,level:options.defaultLevel}
   const [parametersOpen,setParametersOpen]=useState(true)
   const [criteria,setCriteria]=useState<IncomeStatementCriteria|null>(null)
@@ -64,7 +65,7 @@ function Workspace({ options, onFormatChange }: {options:IncomeStatementOptions;
     {parametersOpen && <Parameters options={options} initial={criteria??defaults} onClose={()=>setParametersOpen(false)} onSubmit={generate}/>}
   </>
 }
-function ProscaiIncomeStatementPage({onFormatChange}:{onFormatChange:(format:"financial"|"proscai")=>void}) {
+function ProscaiIncomeStatementPage({onFormatChange}:{onFormatChange:(format:IncomeStatementFormat)=>void}) {
   const options=useQuery(incomeStatementOptionsQuery())
   if (options.isPending) return <p className="flex items-center gap-2" role="status"><Spinner/>Cargando ejercicio contable…</p>
   if (options.isError) return <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(options.error)}</AlertDescription><Button size="sm" onClick={()=>void options.refetch()}>Reintentar</Button></Alert>
@@ -73,6 +74,6 @@ function ProscaiIncomeStatementPage({onFormatChange}:{onFormatChange:(format:"fi
 
 
 export function IncomeStatementPage() {
-  const [format,setFormat]=useState<"financial"|"proscai">("financial")
-  return format==="financial" ? <MexicoIncomeStatementPage onFormatChange={setFormat}/> : <ProscaiIncomeStatementPage onFormatChange={setFormat}/>
+  const [format,setFormat]=useState<IncomeStatementFormat>("branches")
+  return format==="branches" ? <BranchIncomeStatementsPage onFormatChange={setFormat}/> : format==="financial" ? <MexicoIncomeStatementPage onFormatChange={setFormat}/> : <ProscaiIncomeStatementPage onFormatChange={setFormat}/>
 }

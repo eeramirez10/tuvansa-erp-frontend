@@ -9,7 +9,7 @@ import { paths } from "@/app/router/paths"
 import { IncomeStatementToolbar } from "@/features/accounting/reports/components/income-statement-toolbar"
 import { FinancialIncomeStatementDocument } from "@/features/accounting/reports/components/financial-income-statement-document"
 import { mexicoIncomeStatementOptionsQuery, mexicoIncomeStatementQuery } from "@/features/accounting/reports/logic"
-import type { MexicoIncomeStatementCriteria, MexicoIncomeStatementOptions } from "@/features/accounting/reports/model"
+import type { MexicoIncomeStatementCriteria, MexicoIncomeStatementOptions, IncomeStatementFormat } from "@/features/accounting/reports/model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -18,7 +18,7 @@ import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
 
-type Props={onFormatChange:(format:"financial"|"proscai")=>void}
+type Props={onFormatChange:(format:IncomeStatementFormat)=>void}
 const schema=z.object({month:z.number().int().min(1).max(12),year:z.number().int().min(2000).max(2100)})
 function MexicoParameters({options,initial,onClose,onSubmit}:{options:MexicoIncomeStatementOptions;initial:MexicoIncomeStatementCriteria;onClose:()=>void;onSubmit:(criteria:MexicoIncomeStatementCriteria)=>void}) {
   const form=useForm<MexicoIncomeStatementCriteria>({resolver:zodResolver(schema),defaultValues:initial})
