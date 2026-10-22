@@ -1,54 +1,48 @@
 # Contabilidad: Estado de resultados
 
-Implementación 2026-10-22. Ruta: /contabilidad/reportes/estado-de-resultados. Acceso desde Contabilidad → Reportes → Estado de resultados. Reproduce la estructura observada en OMNIS y el PDF local proporcionado por el usuario: encabezados de compañía, fecha, cuentas, columnas MES/ACUMULADO, jerarquías, subtotales, totales y resultado del ejercicio.
+Estado actual al 2026-10-22: formato México (Excel), exclusivo de sucursal 01, y formato PROSCAI histórico. Ruta /contabilidad/reportes/estado-de-resultados; entrada desde Contabilidad → Reportes → Estado de resultados. El formato predeterminado es México (Excel). Las demás sucursales quedan pendientes.
 
-## Flujo
+## Flujo de México
 
-1. El menú Reportes está disponible en Pólizas y en el propio reporte.
-2. Al entrar se abre la ventana ERP Estado de resultados. Cuentas muestra 8 ('8' Solo result). Mes ofrece número y mes/año del ejercicio; Nivel ofrece los niveles configurados en la API. Se conserva Pantalla como salida.
-3. OK genera la vista previa. Parámetros permite cambiar mes/nivel y regenerar, incluso sin cambiar los parámetros.
-4. Imprimir / Guardar PDF abre la impresión del navegador con el documento limpio, sin encabezado ni controles de la aplicación. Elegir Guardar como PDF, papel Carta, escala 100% y desactivar los encabezados/pies propios del navegador. El documento ya contiene número de página.
-5. Volver a Pólizas conserva la navegación del módulo.
+1. Abrir Estado de resultados. La ventana Estado de resultados — México muestra Sucursal 01 — México y Ejercicio de sólo lectura.
+2. Elegir Mes entre enero y diciembre; el ejercicio procede de la configuración de la API. OK genera el reporte.
+3. La vista presenta concepto, importe mensual, porcentaje mensual, acumulado y porcentaje acumulado, con totales, utilidades y conciliación. Conserva el formato del Excel, negativos en rojo, bordes y subtotales.
+4. Parámetros permite cambiar el mes y regenerar. No hay selector de otra sucursal ni de otro ejercicio.
+5. Imprimir / Guardar PDF abre la impresión limpia del navegador: Carta, escala 100%, sin encabezados/pies del navegador. El documento incluye su propia numeración.
+6. Formato PROSCAI abre los parámetros históricos Cuentas/Mes/Nivel, con el calendario anterior de 24 periodos. Cada formato tiene su propia consulta y parámetros; no se reutiliza un resultado entre calendarios diferentes.
 
-La vista previa tiene scroll para pantallas pequeñas. El botón de impresión está deshabilitado durante la carga, ante error o sin datos. Hay reintento para fallos de conexión y un mensaje explícito para el reporte vacío. La impresión usa exactamente la misma respuesta mostrada, sin volver a consultar mientras se imprime.
+Se reutilizan ventanas ERP movibles y el administrador compartido. La vista previa tiene scroll. Carga, error con reintento y vacío son explícitos; impresión permanece deshabilitada mientras no hay un reporte válido. Volver a Pólizas mantiene la navegación del módulo.
 
-## Integración y trazabilidad
+## Trazabilidad
 
-| Vista / control | Evento | Método / endpoint relativo a /api | Query key | Fuente |
-| --- | --- | --- | --- | --- |
-| Reportes / Estado de resultados | Abrir ventana | GET /accounting/reports/income-statement/options | [accounting, reports, income-statement, options] | Calendario/niveles de FCIA y compañía de FALMCAT; derivada |
-| Parámetros / OK | Generar o regenerar | GET /accounting/reports/income-statement?accounts=8&month=22&level=3 | [accounting, reports, income-statement, {accounts, month, level}] | FCCBENC LEFT JOIN FBENC; adaptada |
-| Vista previa / Imprimir / Guardar PDF | Imprimir | Sin HTTP adicional | Mismo resultado | Presentación derivada verificada contra PDF |
+| Vista / control | Endpoint relativo a /api | Query key | Procedencia |
+| --- | --- | --- | --- |
+| México / parámetros | GET /accounting/reports/income-statement/mexico/options | [accounting, reports, income-statement, mexico, options] | Derivada: configuración FCIA/FALMCAT |
+| México / OK | GET /accounting/reports/income-statement/mexico?year=2026&month=8 | [accounting, reports, income-statement, mexico, {year, month}] | Adaptada: FCCBENC + FBENC; calendario/agrupación derivados |
+| PROSCAI / parámetros | GET /accounting/reports/income-statement/options | [accounting, reports, income-statement, options] | Configuración histórica |
+| PROSCAI / OK | GET /accounting/reports/income-statement?accounts=8&month=22&level=3 | [accounting, reports, income-statement, {accounts, month, level}] | Lectura adaptada de captura histórica |
+| Imprimir / Guardar PDF | Sin petición adicional | Documento actual | Presentación del formato seleccionado |
 
-La clave exacta del reporte se define en src/features/accounting/reports/logic.ts. Todos los parámetros del resultado forman parte de la clave; no se guardan datos del reporte en Zustand.
+El contrato de México conserva IncomeStatement e incluye financial, branch y accountingYear. El frontend calcula únicamente formato de importes/fechas; las fórmulas contables se ejecutan en el backend. No se duplican datos remotos en Zustand.
 
-Evidencia SQL del backend: docs/modules/accounting/income-statement.md. Marcadores ACCOUNTING_INCOME_STATEMENT_OPEN y ACCOUNTING_INCOME_STATEMENT_ACCOUNTS8_MONTH22_LEVEL3_SCREEN. La lectura mantiene compañía 1 y centro de costos -1; otros rangos de cuentas no están habilitados.
+Evidencia SQL, alcance y reglas: docs/modules/accounting/income-statement-mexico.md del backend. Referencia histórica ACCOUNTING_INCOME_STATEMENT_ACCOUNTS8_MONTH22_LEVEL3_SCREEN; no se efectuó una captura OMNIS nueva para esta adaptación.
 
-Las fórmulas se ejecutan en el backend. Los saldos de padres incluyen descendientes; no se suman dos veces. Naturaleza de cada cuenta determina el signo. Los importes cero se dejan vacíos, y las pérdidas conservan su signo. El PDF de mes 22/nivel 3 se contrastó con la base local y muestra resultado -56,023,777.84. No hay importes de ejemplo incorporados al frontend.
+## Correspondencia con el Excel actualizado
 
-La API actual puede utilizar un respaldo distinto al PDF/OMNIS local. Los datos se muestran desde la conexión configurada, sin cambiar variables ni exigir coincidencia de importes entre respaldos.
+Referencia: Estado de resultados agosto 2026.xlsx, columnas B–E. La compañía de México procede de FALMCAT.CATMULTICIA para CATALM=01; en el origen verificado es compañía 1 con BCCCENCOS=-1. El rótulo México está respaldado por ese catálogo y la comparación de importes, no por sustituir el filtro con centro de costos 1.
+
+El año viene de FCIA.CIAPERIODO (2026 al verificar). Agosto usa mes 8 y no periodo 20. La fecha y el encabezado corresponden a agosto de 2026. Este calendario es independiente del formato PROSCAI histórico.
+
+Porcentajes mensuales sobre B14 y acumulados sobre D14: ingresos de México. Se corrigen las referencias que aún apuntan a D20 vacío o G14 de Monterrey. Cuando los ingresos son cero, los porcentajes se dejan vacíos.
+
+ISR, PTU y gastos centralizados adicionales se toman como cero porque las celdas correspondientes están vacías en el archivo. No se calculan tasas ni se inventan provisiones fiscales. Una nota impresa declara esa condición. La utilidad neta se calcula con esos ceros y los gastos centralizados de operación se descuentan una sola vez.
+
+Los importes se calculan con centavos y se muestran sin decimales; porcentajes con dos decimales. La comparación aprobó 54 importes del libro: utilidad neta del mes -2,414,700.26 y acumulada 32,628,575.03. El PDF verificado ocupa una página carta y no incluye Monterrey. Los valores no están incrustados en el frontend: proceden de la API configurada; otro respaldo puede producir otros importes.
 
 ## Archivos y validación
 
-Feature: src/features/accounting/reports/ (model, services, logic, components y pages). La ventana de parámetros reutiliza ErpDataDialog y el administrador de ventanas. La impresión está limitada al documento mediante estilos propios y no cambia la impresión de otras pantallas.
+Feature src/features/accounting/reports. mexico-income-statement-page.tsx gestiona parámetros y consulta de México; income-statement-page.tsx conserva el formato PROSCAI. income-statement-toolbar.tsx comparte el selector y acciones. financial-income-statement-document.tsx y su CSS generan la vista previa/PDF.
 
-Validaciones: pnpm lint, pnpm typecheck y pnpm build; navegador con respuesta real del backend local, acceso directo, menú, cambio de mes y nivel, errores/reintento, vacío y PDF. El archivo generado tiene una página carta (612 × 792 puntos) para el ejemplo; niveles más detallados pueden ocupar varias páginas con encabezados de columnas repetidos.
+Validaciones aprobadas: pnpm lint, pnpm typecheck y pnpm build. Navegador con respuesta real de MySQL: ruta directa, menú, comparación de importes, cambio de mes, mes sin ingresos, regreso al formato histórico, impresión, error/reintento y vacío. Los estados de error/vacío se simularon; los importes principales usan el servicio real.
 
-Los logs, capturas y PDF de prueba están bajo captures/ en el backend y no se versionan. No se cambiaron configuraciones de Firebase ni se desplegaron servicios.
-
-
-## Formato Gerencial (Excel)
-
-Se agregó un selector Formato con Gerencial (Excel), predeterminado, y PROSCAI. El nuevo formato sigue el ejemplo Estado de resultados agosto 2026.xlsx: concepto, importe mensual, porcentaje mensual, acumulado y porcentaje acumulado. Conserva agrupaciones, utilidad bruta, gastos, depreciaciones/amortizaciones, financiamiento y utilidad antes de impuestos. Incluye conciliación contra el resultado ERP. Los importes negativos aparecen en rojo entre paréntesis y las líneas de totales usan bordes y negritas.
-
-La misma respuesta incorpora financial; la composición y las fórmulas se calculan en el backend. Cambiar Formato no consulta otra vez ni modifica parámetros. El mes aparece por nombre/año y cambia con Parámetros; agosto no está fijo. Nivel sigue controlando el desglose del formato PROSCAI; el gerencial conserva las agrupaciones necesarias incluso al elegir un nivel menor.
-
-El encabezado refleja compañía 1 y todos los centros de costos, alcance de la consulta existente. No se etiqueta MEXICO solamente porque el ejemplo lo diga: aún no hay filtro por sucursal confirmado para este reporte.
-
-Los porcentajes se calculan respecto a Total de ingresos de cada columna, dejando vacío cuando ese total es cero. Se corrigieron las referencias inválidas del ejemplo. El reporte mantiene centavos al calcular y sólo redondea a enteros en la presentación gerencial.
-
-ISR, PTU y gastos centralizados adicionales carecen de una asignación contable confirmada; aparecen N/D. La Utilidad Neta permanece N/D hasta definir esas provisiones. Los gastos centralizados de la cuenta 6001 ya se incluyen una vez en Total gastos. Las notas se muestran también en PDF. No se implementaron importes ni ajustes manuales del Excel como datos reales del ERP.
-
-Archivos: components/financial-income-statement-document.tsx y financial-income-statement.css. El PDF gerencial usa carta con márgenes propios; se conserva el estilo de impresión original al elegir PROSCAI. Ambas versiones tienen el botón Imprimir / Guardar PDF. Si se despliega el frontend antes del backend actualizado, Gerencial muestra una indicación explícita y no permite imprimir datos incompletos; PROSCAI continúa funcionando.
-
-Validación: totales conciliados con el servicio real local, mes/nivel, cambio de formato sin petición adicional, acceso directo y menú, error/reintento, vacío y PDF carta de una página. Evidencia en captures/ui/new-version/income-statement-spreadsheet/ del backend, excluida de Git.
+Evidencia local en captures/ui/new-version/income-statement-mexico/ del backend, excluida de Git. No se cambiaron Firebase ni variables de entorno. No requiere migraciones ni escrituras en la base heredada.

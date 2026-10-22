@@ -39,3 +39,13 @@ export interface FinancialIncomeStatement {
     differenceAccumulated: number
   }
 }
+
+
+export interface MexicoIncomeStatementCriteria { month: number; year: number }
+export interface MexicoIncomeStatementOptions {
+  companyName: string
+  year: number
+  branch: { warehouseCode: "01"; name: string; companyId: number; costCenter: number }
+  months: Array<{ value: number; label: string }>
+  defaultMonth: number
+}

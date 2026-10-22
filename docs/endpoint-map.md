@@ -114,3 +114,17 @@ Lectura de saldos adaptada de FCCBENC + FBENC; calendario y composición del rep
 | Imprimir / Guardar PDF | Imprimir el formato seleccionado | Sin petición | Mismo documento, sin controles de aplicación | financial-income-statement.css / income-statement.css |
 
 El contrato se amplía con financial; no cambia la clave ni el endpoint. El mapeo y los porcentajes son derivados, documentados en el backend. Fuente: FCCBENC + FBENC de la lectura adaptada existente; no hay nueva captura OMNIS. El Excel se utiliza como plantilla visual, sin copiar errores de fórmula ni ajustes manuales. Detalle y límites fiscales: [Estado de resultados](contabilidad-estado-resultados.md).
+
+
+### Estado de resultados: sólo México, archivo actualizado
+
+Esta entrada sustituye el acceso predeterminado Gerencial (Excel) descrito arriba por México (Excel). El reporte histórico PROSCAI conserva su contrato.
+
+| Vista / control | Evento | Endpoint relativo a /api | Query key | Archivo |
+| --- | --- | --- | --- | --- |
+| México / parámetros | Abrir ventana con sucursal/ejercicio fijos | GET /accounting/reports/income-statement/mexico/options | accounting, reports, income-statement, mexico, options | mexico-income-statement-page.tsx |
+| México / Mes / OK | Generar | GET /accounting/reports/income-statement/mexico?year=2026&month=8 | accounting, reports, income-statement, mexico, {year, month} | income-statement-service.ts |
+| Formato / México (Excel) o PROSCAI | Cambiar modalidad y abrir sus propios parámetros | Opciones y reporte de cada modalidad | Claves separadas; calendarios independientes | income-statement-toolbar.tsx, income-statement-page.tsx |
+| Imprimir / Guardar PDF | Imprimir el formato seleccionado | Sin HTTP adicional | Respuesta mostrada | financial-income-statement-document.tsx |
+
+México usa la compañía asociada a almacén 01 mediante CATMULTICIA, centro consolidado -1 y meses 1..12 del ejercicio CIAPERIODO. Sólo se publica México; parámetros de otra sucursal son rechazados. Provisiones vacías del Excel se toman como cero con nota explícita. La descripción completa y las 54 comparaciones de importes están en [Estado de resultados](contabilidad-estado-resultados.md).
