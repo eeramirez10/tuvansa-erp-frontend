@@ -35,3 +35,20 @@ Feature: src/features/accounting/reports/ (model, services, logic, components y 
 Validaciones: pnpm lint, pnpm typecheck y pnpm build; navegador con respuesta real del backend local, acceso directo, menú, cambio de mes y nivel, errores/reintento, vacío y PDF. El archivo generado tiene una página carta (612 × 792 puntos) para el ejemplo; niveles más detallados pueden ocupar varias páginas con encabezados de columnas repetidos.
 
 Los logs, capturas y PDF de prueba están bajo captures/ en el backend y no se versionan. No se cambiaron configuraciones de Firebase ni se desplegaron servicios.
+
+
+## Formato Gerencial (Excel)
+
+Se agregó un selector Formato con Gerencial (Excel), predeterminado, y PROSCAI. El nuevo formato sigue el ejemplo Estado de resultados agosto 2026.xlsx: concepto, importe mensual, porcentaje mensual, acumulado y porcentaje acumulado. Conserva agrupaciones, utilidad bruta, gastos, depreciaciones/amortizaciones, financiamiento y utilidad antes de impuestos. Incluye conciliación contra el resultado ERP. Los importes negativos aparecen en rojo entre paréntesis y las líneas de totales usan bordes y negritas.
+
+La misma respuesta incorpora financial; la composición y las fórmulas se calculan en el backend. Cambiar Formato no consulta otra vez ni modifica parámetros. El mes aparece por nombre/año y cambia con Parámetros; agosto no está fijo. Nivel sigue controlando el desglose del formato PROSCAI; el gerencial conserva las agrupaciones necesarias incluso al elegir un nivel menor.
+
+El encabezado refleja compañía 1 y todos los centros de costos, alcance de la consulta existente. No se etiqueta MEXICO solamente porque el ejemplo lo diga: aún no hay filtro por sucursal confirmado para este reporte.
+
+Los porcentajes se calculan respecto a Total de ingresos de cada columna, dejando vacío cuando ese total es cero. Se corrigieron las referencias inválidas del ejemplo. El reporte mantiene centavos al calcular y sólo redondea a enteros en la presentación gerencial.
+
+ISR, PTU y gastos centralizados adicionales carecen de una asignación contable confirmada; aparecen N/D. La Utilidad Neta permanece N/D hasta definir esas provisiones. Los gastos centralizados de la cuenta 6001 ya se incluyen una vez en Total gastos. Las notas se muestran también en PDF. No se implementaron importes ni ajustes manuales del Excel como datos reales del ERP.
+
+Archivos: components/financial-income-statement-document.tsx y financial-income-statement.css. El PDF gerencial usa carta con márgenes propios; se conserva el estilo de impresión original al elegir PROSCAI. Ambas versiones tienen el botón Imprimir / Guardar PDF. Si se despliega el frontend antes del backend actualizado, Gerencial muestra una indicación explícita y no permite imprimir datos incompletos; PROSCAI continúa funcionando.
+
+Validación: totales conciliados con el servicio real local, mes/nivel, cambio de formato sin petición adicional, acceso directo y menú, error/reintento, vacío y PDF carta de una página. Evidencia en captures/ui/new-version/income-statement-spreadsheet/ del backend, excluida de Git.

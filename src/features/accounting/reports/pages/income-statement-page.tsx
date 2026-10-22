@@ -8,6 +8,7 @@ import { z } from "zod"
 
 import { paths } from "@/app/router/paths"
 import { AccountingReportsMenu } from "@/features/accounting/reports/components/accounting-reports-menu"
+import { FinancialIncomeStatementDocument } from "@/features/accounting/reports/components/financial-income-statement-document"
 import { IncomeStatementDocument } from "@/features/accounting/reports/components/income-statement-document"
 import { incomeStatementOptionsQuery, incomeStatementQuery } from "@/features/accounting/reports/logic"
 import type { IncomeStatementCriteria, IncomeStatementOptions } from "@/features/accounting/reports/model"
@@ -43,9 +44,12 @@ function Parameters({ options, initial, onClose, onSubmit }: {
 function Workspace({ options }: {options:IncomeStatementOptions}) {
   const defaults:IncomeStatementCriteria={accounts:"8",month:options.defaultMonth,level:options.defaultLevel}
   const [parametersOpen,setParametersOpen]=useState(true)
+  const [format,setFormat]=useState<"financial"|"proscai">("financial")
   const [criteria,setCriteria]=useState<IncomeStatementCriteria|null>(null)
   const report=useQuery({...incomeStatementQuery(criteria??defaults),enabled:criteria!==null})
-  const printable=report.data && !report.data.empty && !report.isFetching && !report.isError
+  const loaded=report.data && !report.data.empty && !report.isFetching && !report.isError
+  const printable=loaded && (format==="proscai" || Boolean(report.data?.financial))
+  const ReportDocument=format==="financial" ? FinancialIncomeStatementDocument : IncomeStatementDocument
   const generate=(next:IncomeStatementCriteria)=>{
     if (JSON.stringify(next)===JSON.stringify(criteria)) void report.refetch()
     else setCriteria(next)
@@ -54,6 +58,8 @@ function Workspace({ options }: {options:IncomeStatementOptions}) {
   return <>
     <ErpModuleToolbarPortal><div className="flex items-center gap-1">
       <AccountingReportsMenu/>
+      <label htmlFor="income-format" className="ml-1 text-xs">Formato</label>
+      <select id="income-format" className="h-7 rounded-sm border bg-background px-1 text-xs" value={format} onChange={event=>setFormat(event.target.value as "financial"|"proscai")}><option value="financial">Gerencial (Excel)</option><option value="proscai">PROSCAI</option></select>
       <Button size="sm" variant="outline" onClick={()=>setParametersOpen(true)}>Parámetros</Button>
       <Button disabled={!printable} size="sm" onClick={()=>window.print()}>Imprimir / Guardar PDF</Button>
     </div></ErpModuleToolbarPortal>
@@ -62,8 +68,9 @@ function Workspace({ options }: {options:IncomeStatementOptions}) {
     {report.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(report.error)}</AlertDescription><Button size="sm" onClick={()=>void report.refetch()}>Reintentar</Button></Alert>}
     {!criteria && <p className="py-4 text-xs">Selecciona el mes y nivel en Parámetros para generar el estado de resultados.</p>}
     {report.data?.empty && !report.isFetching && !report.isError && <p className="py-4 text-xs" role="status">No hay saldos ni movimientos para los parámetros seleccionados.</p>}
-    {printable && <div className="income-statement-preview mt-2"><IncomeStatementDocument report={report.data}/></div>}
-    {printable && createPortal(<div className="income-statement-print-root"><IncomeStatementDocument report={report.data}/></div>,document.body)}
+    {loaded && format==="financial" && !report.data?.financial && <p role="alert" className="py-4 text-xs">Actualiza el backend para generar el formato Gerencial (Excel).</p>}
+    {printable && <div className="income-statement-preview mt-2"><ReportDocument report={report.data!}/></div>}
+    {printable && createPortal(<div className="income-statement-print-root"><ReportDocument report={report.data!}/></div>,document.body)}
     {parametersOpen && <Parameters options={options} initial={criteria??defaults} onClose={()=>setParametersOpen(false)} onSubmit={generate}/>}
   </>
 }

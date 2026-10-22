@@ -103,3 +103,14 @@ Detalle: [Estado de resultados y PDF](contabilidad-estado-resultados.md). Eviden
 | Vista previa / Imprimir / Guardar PDF | Abrir impresión del navegador | Sin petición adicional | Documento carta de la respuesta actual | income-statement-document.tsx, income-statement.css |
 
 Lectura de saldos adaptada de FCCBENC + FBENC; calendario y composición del reporte derivados y contrastados con PDF. No genera escrituras ni requiere migraciones. Ruta directa /contabilidad/reportes/estado-de-resultados.
+
+
+### Estado de resultados: formato gerencial del Excel
+
+| Vista / control | Evento | Método y endpoint | Caché / estado | Archivo |
+| --- | --- | --- | --- | --- |
+| Formato / Gerencial (Excel) | Seleccionar presentación | Sin petición; usa financial de GET /accounting/reports/income-statement | Misma clave del reporte; formato local React | financial-income-statement-document.tsx |
+| Formato / PROSCAI | Seleccionar presentación anterior | Sin petición | Misma respuesta rows/totals | income-statement-document.tsx |
+| Imprimir / Guardar PDF | Imprimir el formato seleccionado | Sin petición | Mismo documento, sin controles de aplicación | financial-income-statement.css / income-statement.css |
+
+El contrato se amplía con financial; no cambia la clave ni el endpoint. El mapeo y los porcentajes son derivados, documentados en el backend. Fuente: FCCBENC + FBENC de la lectura adaptada existente; no hay nueva captura OMNIS. El Excel se utiliza como plantilla visual, sin copiar errores de fórmula ni ajustes manuales. Detalle y límites fiscales: [Estado de resultados](contabilidad-estado-resultados.md).
