@@ -89,3 +89,17 @@ Si el nombre interno heredado no coincide con el texto visible —por ejemplo, u
 | Encuentra producto: fila / OK | Doble clic o OK; validar referencia y agregar al borrador | GET /sales/orders/capture/products/:code | capture/product, código, almacén, tipo y cliente | order-capture-dialog.tsx, order-form-dialog.tsx |
 
 El SQL del buscador es derivado. No se efectuó una nueva captura OMNIS. El almacén procede del pedido (1 equivale a 01) y las lecturas no aplican la restricción de alta. La escritura final continúa por POST /sales/orders/capture o PATCH /sales/orders/:id; conserva el bloqueo de precio bajo costo.
+
+
+### Contabilidad: Estado de resultados (2026-10-22)
+
+Detalle: [Estado de resultados y PDF](contabilidad-estado-resultados.md). Evidencia del backend: docs/modules/accounting/income-statement.md; captura ACCOUNTING_INCOME_STATEMENT_ACCOUNTS8_MONTH22_LEVEL3_SCREEN.
+
+| Vista / control | Evento | Método y endpoint | Query key / estado | Archivo |
+| --- | --- | --- | --- | --- |
+| Contabilidad / Reportes / Estado de resultados | Abrir parámetros | GET /accounting/reports/income-statement/options | [accounting, reports, income-statement, options] | income-statement-page.tsx |
+| Estado de resultados / OK | Generar vista previa | GET /accounting/reports/income-statement?accounts=8&month=22&level=3 | [accounting, reports, income-statement, {accounts, month, level}] | income-statement-service.ts |
+| Vista previa / Parámetros | Cambiar mes o nivel | La misma consulta al confirmar OK | Clave dependiente de todos los parámetros | income-statement-page.tsx |
+| Vista previa / Imprimir / Guardar PDF | Abrir impresión del navegador | Sin petición adicional | Documento carta de la respuesta actual | income-statement-document.tsx, income-statement.css |
+
+Lectura de saldos adaptada de FCCBENC + FBENC; calendario y composición del reporte derivados y contrastados con PDF. No genera escrituras ni requiere migraciones. Ruta directa /contabilidad/reportes/estado-de-resultados.

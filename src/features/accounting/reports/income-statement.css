@@ -1,0 +1,30 @@
+.income-statement-preview { overflow: auto; padding: 1rem; background: #eee; }
+.income-statement-document { box-sizing: border-box; width: 794px; min-height: 1000px; margin: 0 auto; padding: 32px 26px; background: white; color: black; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.17; }
+.income-statement-company { display: grid; grid-template-columns: 1fr 1fr auto; align-items: start; gap: 9px; margin-bottom: 48pt; font-family: "Arial Narrow",Arial,sans-serif; font-size: 9pt; }
+.income-statement-company small { font-size: 6pt; white-space: nowrap; }
+.income-statement-caption { display: flex; align-items: baseline; gap: 55pt; font-size: 8pt; }
+.income-statement-range { margin-bottom: 10pt; font-size: 7pt; }
+.income-statement-table { width: 510pt; max-width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: inherit; }
+.income-statement-table th { padding-bottom: 6pt; text-align: right; font-weight: bold; }
+.income-statement-table td { vertical-align: top; }
+.income-amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.income-row-section td { padding-top: 12pt; font-weight: bold; }
+.income-row-section:first-child td { padding-top: 0; }
+.income-row-subtotal .income-amount { border-top: 0.7pt solid black; font-weight: bold; }
+.income-row-section-total td { padding-top: 12pt; padding-bottom: 5pt; }
+.income-row-section-total .income-amount { border-top: 0.7pt solid black; font-weight: bold; }
+.income-row-result td { padding-top: 12pt; font-weight: bold; font-size: 11pt; }
+.income-row { break-inside: avoid; }
+.income-row-section, .income-row-group { break-after: avoid; }
+.income-statement-print-root { display: none; }
+@page income-statement {
+  size: letter;
+  margin: 3mm 4mm 12mm;
+  @bottom-right { content: "Página " counter(page); font-family: Arial,sans-serif; font-size: 7pt; }
+}
+@media print {
+  body:has(> .income-statement-print-root) > *:not(.income-statement-print-root) { display: none !important; }
+  .income-statement-print-root { display: block !important; page: income-statement; }
+  .income-statement-print-root .income-statement-document { width: 100%; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+  .income-statement-table thead { display: table-header-group; }
+}

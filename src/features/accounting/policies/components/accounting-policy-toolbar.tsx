@@ -1,3 +1,4 @@
+import { AccountingReportsMenu } from "@/features/accounting/reports/components/accounting-reports-menu"
 import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon"
 import ArrowRight01Icon from "@hugeicons/core-free-icons/ArrowRight01Icon"
 import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon"
@@ -26,6 +27,7 @@ export function AccountingPolicyToolbar({ disabled, onPrevious, onSearch, onNext
 }) {
   return (
     <ErpModuleToolbarPortal><div aria-label="Navegación de pólizas" className="flex items-center gap-1" role="toolbar">
+      <AccountingReportsMenu />
       <Tool disabled={disabled} icon={ArrowLeft01Icon} label="Póliza anterior" onClick={onPrevious} />
       <Tool disabled={disabled} icon={Search01Icon} label="Buscar póliza" onClick={onSearch} />
       <Tool disabled={disabled} icon={ArrowRight01Icon} label="Póliza siguiente" onClick={onNext} />

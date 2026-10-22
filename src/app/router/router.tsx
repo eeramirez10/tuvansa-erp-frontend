@@ -48,6 +48,10 @@ export const router = createBrowserRouter([
         lazy: () => import("@/features/sales/invoicing/sales-invoicing-route"),
       },
       {
+        path: "contabilidad/reportes/estado-de-resultados",
+        lazy: () => import("@/features/accounting/reports/income-statement-route"),
+      },
+      {
         path: "contabilidad/polizas/:policyId?",
         lazy: () => import("@/features/accounting/policies/accounting-policies-route"),
       },

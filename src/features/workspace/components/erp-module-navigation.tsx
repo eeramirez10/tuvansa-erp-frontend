@@ -129,7 +129,7 @@ function SplitModuleButton({ left, right }: SplitModuleButtonProps) {
       "w-1/2 shrink px-1 uppercase disabled:opacity-100",
       side === "left" ? "rounded-r-none border-r-0" : "rounded-l-none",
       module.tone,
-      module.path && location.pathname.startsWith(module.path) && "ring-2 ring-ring ring-offset-1",
+      module.path && (module.path === paths.accountingPolicies ? location.pathname.startsWith("/contabilidad/") : location.pathname.startsWith(module.path)) && "ring-2 ring-ring ring-offset-1",
     )
     return module.path ? (
       <Button className={classes} nativeButton={false} render={<NavLink to={module.path} />} size="sm" variant="outline">{module.label}</Button>
@@ -148,7 +148,7 @@ function SplitModuleButton({ left, right }: SplitModuleButtonProps) {
 export function ErpModuleNavigation() {
   const location = useLocation()
   const isActive = (module: ErpModuleNavigationItem) =>
-    module.path !== undefined && location.pathname.startsWith(module.path)
+    module.path !== undefined && (module.path === paths.accountingPolicies ? location.pathname.startsWith("/contabilidad/") : location.pathname.startsWith(module.path))
 
   return (
     <nav aria-label="Módulos del ERP" className="overflow-x-auto border-b bg-card">

@@ -20,6 +20,7 @@ export const paths = {
   salesInvoice: (invoiceId: number) => `/facturacion/${invoiceId}`,
   bankAccounts: "/bancos",
   bankAccount: (bankAccountId: number) => `/bancos/${bankAccountId}`,
+  incomeStatement: "/contabilidad/reportes/estado-de-resultados",
   accountingPolicies: "/contabilidad/polizas",
   accountingPolicy: (policyId: number) => `/contabilidad/polizas/${policyId}`,
 } as const
