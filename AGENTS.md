@@ -24,7 +24,9 @@
 - Usa Zustand sólo para estado global de interfaz; no dupliques datos remotos allí.
 - Usa Axios mediante el cliente compartido para HTTP.
 - Usa React Hook Form + Zod para formularios.
-- Reutiliza primitives shadcn con Base UI, preset Mira, Tailwind y Hugeicons.
+- Toda interfaz debe utilizar componentes de shadcn con Base UI, respetando el estilo del proyecto: preset Mira, Tailwind y Hugeicons.
+- Reutiliza los componentes compartidos. Si falta un componente, incorpora el equivalente de shadcn.
+- No implementes controles alternativos cuando exista un equivalente en shadcn.
 - Evita barrels; importa desde el archivo propietario.
 
 ## Fidelidad funcional y visual
