@@ -53,12 +53,14 @@ export interface MexicoIncomeStatementOptions {
 
 export type IncomeStatementFormat = "branches" | "financial" | "proscai"
 export interface IncomeStatementBranch { warehouseCode:string; name:string; companyId:number; costCenter:number }
+export type IncomeStatementBranchSelection = "all" | "01" | "02" | "03" | "04" | "05" | "06" | "07"
+export interface BranchIncomeStatementCriteria extends MexicoIncomeStatementCriteria { branch: IncomeStatementBranchSelection }
 export interface BranchIncomeStatementsOptions {
-  companyName:string; year:number; branches:IncomeStatementBranch[];
+  companyName:string; year:number; years:number[]; defaultYear:number; defaultBranch:"all"; branches:IncomeStatementBranch[];
   months:Array<{value:number;label:string}>; defaultMonth:number
 }
 export interface BranchIncomeStatements {
-  year:number; month:number; generatedAt:string;
+  year:number; month:number; generatedAt:string; branch: IncomeStatementBranchSelection;
   branches:Array<{branch:IncomeStatementBranch;report:IncomeStatement}>;
-  consolidated:IncomeStatement; empty:boolean
+  consolidated:IncomeStatement | null; empty:boolean
 }

@@ -86,18 +86,20 @@ function footer(sheet:Worksheet,firstRow:number,notices:string[],lastColumn:numb
 }
 
 export async function createIncomeStatementWorkbook(data:BranchIncomeStatements){
-  if(data.branches.length!==7||data.branches.some(item=>!item.report.financial)||!data.consolidated.financial)throw new Error("El reporte de las siete sucursales está incompleto.")
+  const individual=data.branches.length===1&&data.consolidated===null
+  if((!individual&&(data.branches.length!==7||!data.consolidated?.financial))||data.branches.some(item=>!item.report.financial))throw new Error("El reporte está incompleto.")
   const ExcelJS=await import("exceljs")
   const workbook=new ExcelJS.default.Workbook()
   workbook.creator="Tuvansa ERP";workbook.created=new Date(data.generatedAt);workbook.calcProperties.fullCalcOnLoad=true
-  const reports=[...data.branches.map(item=>item.report),data.consolidated]
+  const reports=[...data.branches.map(item=>item.report),...(data.consolidated?[data.consolidated]:[])]
+  const referenceReport=data.consolidated??data.branches[0]!.report
   const rows=orderedRows(reports),positions=new Map(rows.map((row,index)=>[row.key,index+7]))
-  const period=new Date(data.consolidated.asOf+"T00:00:00Z").toLocaleDateString("es-MX",{month:"long",year:"numeric",timeZone:"UTC"}).replace(" de "," ").toUpperCase()
+  const period=new Date(referenceReport.asOf+"T00:00:00Z").toLocaleDateString("es-MX",{month:"long",year:"numeric",timeZone:"UTC"}).replace(" de "," ").toUpperCase()
   const title="ESTADO DE RESULTADOS AL MES DE "+period
-  const main=workbook.addWorksheet(mainSheetName)
+  const main=workbook.addWorksheet(individual?(data.branches[0]!.branch.warehouseCode+" "+referenceReport.financial!.scopeLabel).replace(/[[\]:*?/\\]/g," ").slice(0,31):mainSheetName)
   const lastColumn=2+(reports.length-1)*5+3
-  header(main,data.consolidated.companyName,title,lastColumn)
-  main.pageSetup.orientation="landscape"
+  header(main,referenceReport.companyName,title,lastColumn)
+  main.pageSetup.orientation=individual?"portrait":"landscape"
   main.pageSetup.printTitlesColumn="A:A"
   rows.forEach((row,index)=>{const cell=main.getCell(index+7,1);cell.value=row.label;styleCell(cell,row,false);main.getRow(index+7).height=row.kind==="spacer"?8:17})
   reports.forEach((report,block)=>{
@@ -109,7 +111,7 @@ export async function createIncomeStatementWorkbook(data:BranchIncomeStatements)
       for(const [offset,field] of [[0,"month"],[2,"accumulated"]] as const){
         const cell=main.getCell(number,start+offset),column=main.getColumn(start+offset).letter
         const value=row[field]
-        const expression=block===7 ? "SUM("+data.branches.map((_,i)=>main.getColumn(2+i*5+offset).letter+number).join(",")+")" : formula(row.key,column,positions)
+        const expression=!individual&&block===7 ? "SUM("+data.branches.map((_,i)=>main.getColumn(2+i*5+offset).letter+number).join(",")+")" : formula(row.key,column,positions)
         cell.value=expression?{formula:"ROUND("+expression+",2)",result:value??0}:value
         styleCell(cell,row,true)
         cell.border={...cell.border,...(offset===0?{left:{style:"thin" as const}}:{})}
@@ -120,9 +122,9 @@ export async function createIncomeStatementWorkbook(data:BranchIncomeStatements)
       }
     })
   })
-  const notices=[...data.consolidated.financial.notices,"Los acumulados consolidados suman los acumulados de las siete sucursales. Importes calculados con centavos."]
+  const notices=[...referenceReport.financial!.notices,...(individual?[]:["Los acumulados consolidados suman los acumulados de las siete sucursales. Importes calculados con centavos."])]
   footer(main,rows.length+9,notices,lastColumn)
-  reports.forEach((report,index)=>{
+  if(!individual)reports.forEach((report,index)=>{
     const sheetName=index===7?"Consolidado":(data.branches[index]!.branch.warehouseCode+" "+report.financial!.scopeLabel).replace(/[[\]:*?/\\]/g," ").slice(0,31)
     const sheet=workbook.addWorksheet(sheetName);header(sheet,report.companyName,title,5);blockHeader(sheet,2,report.financial!.scopeLabel,period)
     const ownRows=report.financial!.rows

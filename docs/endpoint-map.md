@@ -142,3 +142,16 @@ La modalidad predeterminada ahora es Todas las sucursales (Excel); se conservan 
 | Imprimir / Guardar PDF | Imprimir ocho páginas | Sin HTTP adicional | Misma respuesta mostrada | financial-income-statement.css |
 
 La lectura de saldos por lote es derivada de la proyección histórica y conserva BCCCENCOS=-1 por compañía; las siete compañías proceden de CATMULTICIA para almacenes 01..07. El consolidado suma MES y ACUMULADO y recalcula sus porcentajes. No hay nueva captura literal OMNIS. Véase [Estado de resultados](contabilidad-estado-resultados.md) y docs/modules/accounting/income-statement-branches.md del backend.
+
+
+### Estado de resultados: menú shadcn y filtros unificados (2026-10-23)
+
+| Vista / control | Evento | Endpoint relativo a /api | Estado / archivo |
+| --- | --- | --- | --- |
+| Encabezado de Contabilidad / Reportes / Estado de resultados | Abrir desde Dropdown Menu | Navega a /contabilidad/reportes/estado-de-resultados | accounting-reports-menu.tsx; sin SQL |
+| Año / Mes / Sucursal | Cargar opciones | GET /accounting/reports/income-statement/branches/options | years/defaultYear/defaultBranch y catálogo; branchIncomeStatementOptionsQuery |
+| Vista previa | Generar una sucursal o todas | GET /accounting/reports/income-statement/branches?year=2026&month=8&branch=03 | Clave branches,{year,month,branch}; branch-income-statements-page.tsx |
+| Salida Excel / Descargar Excel | Exportar respuesta actual | Sin HTTP adicional | Una hoja individual o nueve completas; ExcelJS |
+| Salida PDF / Imprimir / Guardar PDF | Imprimir vista previa vigente | Sin HTTP adicional | Una página individual u ocho completas |
+
+branch=all u omitido conserva el reporte completo. Una sucursal devuelve branches de longitud uno y consolidated:null. companyId no se recibe del cliente. Cambiar filtros bloquea exportación hasta regenerar; cambiar salida no cambia la caché contable. El selector Año usa sólo ejercicios soportados; actualmente 2026. Esta entrada sustituye los filtros fijos del modo gerencial anterior, conservando las modalidades México y PROSCAI.

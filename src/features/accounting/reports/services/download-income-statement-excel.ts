@@ -6,5 +6,5 @@ export async function downloadIncomeStatementExcel(data:BranchIncomeStatements) 
   const workbook=await createIncomeStatementWorkbook(data)
   const buffer=await workbook.xlsx.writeBuffer()
   const blob=new Blob([new Uint8Array(buffer).buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
-  downloadFile(blob,"estado-resultados-sucursales-"+data.year+"-"+String(data.month).padStart(2,"0")+".xlsx")
+  downloadFile(blob,"estado-resultados-"+(data.branches.length===1?"sucursal-"+data.branches[0]!.branch.warehouseCode:"sucursales")+"-"+data.year+"-"+String(data.month).padStart(2,"0")+".xlsx")
 }

@@ -1,6 +1,22 @@
 # Contabilidad: Estado de resultados
 
-Estado actual al 2026-10-22: Todas las sucursales (Excel), México (Excel) y PROSCAI histórico. Ruta /contabilidad/reportes/estado-de-resultados; entrada desde Contabilidad → Reportes → Estado de resultados. El formato predeterminado es Todas las sucursales (Excel): México, Monterrey, Veracruz, Mexicali, Querétaro, Cancún y Cabos, más el consolidado final.
+Referencia previa al 2026-10-22: Todas las sucursales (Excel), México (Excel) y PROSCAI histórico. Ruta /contabilidad/reportes/estado-de-resultados; entrada desde Contabilidad → Reportes → Estado de resultados. El formato predeterminado es Todas las sucursales (Excel): México, Monterrey, Veracruz, Mexicali, Querétaro, Cancún y Cabos, más el consolidado final.
+
+## Ventana unificada (2026-10-23)
+
+Entrada actual: Contabilidad → Reportes → Estado de resultados. Reportes usa Dropdown Menu de shadcn en una franja superior del encabezado, antes del selector de módulos, únicamente en Contabilidad. Sigue disponible durante carga/error. La lista de reportes contiene sólo Estado de resultados y permite agregar rutas futuras. Se retiraron duplicados de las barras de Pólizas y reporte.
+
+La modalidad predeterminada es Gerencial (Excel/PDF). Una sola ventana ERP reúne Año, Mes, Sucursal, Vista previa, el documento con scroll y Salida Excel/PDF. Año y mes predeterminados proceden de la API; Sucursal inicia en Todas y Salida en PDF. Año/Mes/Sucursal y Formato usan Select de shadcn con Base UI; Salida usa RadioGroup. Los desplegables se posicionan por encima de las ventanas ERP. Se conserva el sistema compartido para mover, redimensionar, minimizar y restaurar.
+
+El selector Año admite sólo los ejercicios publicados por options.years; la base actual ofrece 2026. No se habilitan históricos por el mero rango CIAFI/CIAFF. Antes de agregar otro ejercicio debe verificarse su correspondencia real de saldos en el backend. Esto evita cambiar sólo el encabezado sobre importes de otro año.
+
+Sucursal admite Todas y los siete códigos 01..07. Una sucursal genera un documento, PDF de una página o Excel de una hoja; Todas genera siete documentos y consolidado, PDF de ocho páginas y Excel de nueve hojas. El menú abre esta ventana también desde Pólizas, y vuelve a abrirla si se cerró en la misma ruta. Los formatos previos México (Excel) y PROSCAI se conservan en Formato.
+
+Vista previa consulta los filtros elegidos y mantiene abierta la ventana. La salida se obtiene después, dentro de la misma ventana, con Descargar Excel o Imprimir / Guardar PDF. PDF abre la impresión del navegador para guardar el archivo. Cambiar filtros oculta la vista anterior y deshabilita exportación hasta regenerar. Cambiar sólo Excel/PDF no consulta nuevamente. El formulario y exportación se bloquean durante tareas en curso; error/reintento y vacío no permiten exportar.
+
+Options mantiene year y agrega years, defaultYear y defaultBranch. El reporte admite branch=all|01..07; omitir branch conserva el comportamiento completo. Una sucursal devuelve un solo elemento branches y consolidated:null. Las query keys incluyen año, mes y sucursal. El formato de salida es estado local, no forma parte de la consulta contable. No se copian datos remotos a Zustand ni se modifica la base. Se conserva ExcelJS diferido, redondeo a centavos y fórmulas; el libro individual no crea una hoja de consolidado duplicada.
+
+Validación de esta ampliación: lint/typecheck/build, navegador con datos reales para una/todas, comparación de las siete respuestas individuales, acceso directo y desde Pólizas, teclado, foco, clic exterior, interfaz ampliada, minimizar/restaurar, carga/error/vacío, impresión y descarga. Se comprobaron PDF de 1/8 páginas y Excel de 1/9 hojas, con recálculo en Excel nativo. Evidencia excluida de Git: captures/ui/new-version/income-statement-filters/ en backend. La documentación de abajo conserva las etapas anteriores.
 
 ## Flujo de México
 

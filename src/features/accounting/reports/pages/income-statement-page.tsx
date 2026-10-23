@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { createPortal } from "react-dom"
 import { useForm } from "react-hook-form"
-import { Link } from "react-router"
+import { Link, useLocation } from "react-router"
 import { z } from "zod"
 
 import { paths } from "@/app/router/paths"
@@ -73,7 +73,12 @@ function ProscaiIncomeStatementPage({onFormatChange}:{onFormatChange:(format:Inc
 }
 
 
-export function IncomeStatementPage() {
+function IncomeStatementWorkspace() {
   const [format,setFormat]=useState<IncomeStatementFormat>("branches")
   return format==="branches" ? <BranchIncomeStatementsPage onFormatChange={setFormat}/> : format==="financial" ? <MexicoIncomeStatementPage onFormatChange={setFormat}/> : <ProscaiIncomeStatementPage onFormatChange={setFormat}/>
+}
+
+export function IncomeStatementPage() {
+  const location = useLocation()
+  return <IncomeStatementWorkspace key={location.key} />
 }
