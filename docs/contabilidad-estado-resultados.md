@@ -8,7 +8,7 @@ Entrada actual: Contabilidad → Reportes → Estado de resultados. Reportes usa
 
 La modalidad predeterminada es Gerencial (Excel/PDF). Una sola ventana ERP reúne Año, Mes, Sucursal, Vista previa, el documento con scroll y Salida Excel/PDF. Año y mes predeterminados proceden de la API; Sucursal inicia en Todas y Salida en PDF. Año/Mes/Sucursal y Formato usan Select de shadcn con Base UI; Salida usa RadioGroup. Los desplegables se posicionan por encima de las ventanas ERP. Se conserva el sistema compartido para mover, redimensionar, minimizar y restaurar.
 
-El selector Año admite sólo los ejercicios publicados por options.years; la base actual ofrece 2026. No se habilitan históricos por el mero rango CIAFI/CIAFF. Antes de agregar otro ejercicio debe verificarse su correspondencia real de saldos en el backend. Esto evita cambiar sólo el encabezado sobre importes de otro año.
+El selector Año admite sólo los ejercicios publicados por options.years; desde 2026-10-26 ofrece 2026, 2025 y 2024 en el servidor verificado, cada uno con su origen anual. No se habilitan históricos por el mero rango CIAFI/CIAFF. Antes de agregar otro ejercicio debe verificarse su correspondencia real de saldos en el backend. Esto evita cambiar sólo el encabezado sobre importes de otro año.
 
 Sucursal admite Todas y los siete códigos 01..07. Una sucursal genera un documento, PDF de una página o Excel de una hoja; Todas genera siete documentos y consolidado, PDF de ocho páginas y Excel de nueve hojas. El menú abre esta ventana también desde Pólizas, y vuelve a abrirla si se cerró en la misma ruta. Los formatos previos México (Excel) y PROSCAI se conservan en Formato.
 
@@ -82,3 +82,10 @@ El botón queda deshabilitado durante carga, error, vacío y exportación. Fallo
 Archivos nuevos: branch-income-statements-page.tsx, income-statement-workbook.ts y download-income-statement-excel.ts. Helper genérico: src/shared/utils/download-file.ts. La vista y PDF reutilizan financial-income-statement-document.tsx; cada sucursal imprime una página, seguida del consolidado.
 
 Se validaron descarga real, estructura de nueve hojas y 1,616 fórmulas, resultados y recálculo en Excel de Windows, propagación de ajustes, PDF de ocho páginas, navegación, error/reintento y vacío. Evidencia privada en captures/ui/new-version/income-statement-all-branches/ del backend. Contrato y SQL derivado: docs/modules/accounting/income-statement-branches.md del backend. No requiere migraciones ni cambios de Firebase.
+
+
+## Archivos anuales (2026-10-26)
+
+El selector Año existente ya recibe 2026/2025/2024 desde la API. El backend resuelve 2026 en tuvansa y los archivos históricos en tuvansa2025/tuvansa2024; no reconstruye el año pasado desde pólizas desaplicadas de producción. No se modifica la conexión global, las credenciales ni la UI. Se mantiene el año seleccionado en la clave de consulta, los encabezados, el nombre de archivo y la exportación; cambiar año requiere regenerar la vista previa.
+
+Se verificó agosto 2025 para Todas (Excel nueve hojas/PDF ocho páginas) y México (Excel una hoja/PDF una página), alternancia posterior a 2026 sin cambiar sus importes y recálculo en Excel nativo. Los demás meses usan el mismo contrato year/month/branch. La modalidad PROSCAI histórica y el acceso previo México conservan su contrato; el selector por archivo pertenece a la ventana Gerencial (Excel/PDF). No requiere nuevos endpoints ni variables frontend. Las limitaciones al único ejercicio 2026 de secciones previas corresponden a la etapa anterior a identificar las bases anuales.

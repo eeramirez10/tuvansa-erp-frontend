@@ -155,3 +155,8 @@ La lectura de saldos por lote es derivada de la proyección histórica y conserv
 | Salida PDF / Imprimir / Guardar PDF | Imprimir vista previa vigente | Sin HTTP adicional | Una página individual u ocho completas |
 
 branch=all u omitido conserva el reporte completo. Una sucursal devuelve branches de longitud uno y consolidated:null. companyId no se recibe del cliente. Cambiar filtros bloquea exportación hasta regenerar; cambiar salida no cambia la caché contable. El selector Año usa sólo ejercicios soportados; actualmente 2026. Esta entrada sustituye los filtros fijos del modo gerencial anterior, conservando las modalidades México y PROSCAI.
+
+
+### Estado de resultados: origen anual (2026-10-26)
+
+Los endpoints y query keys year/month/branch no cambian. GET /accounting/reports/income-statement/branches/options ofrece years=[2026,2025,2024] y defaultYear=2026 en el servidor verificado. GET /accounting/reports/income-statement/branches?year=2025&month=8&branch=all lee tuvansa2025; 2026 conserva tuvansa. El navegador nunca recibe credenciales ni selecciona nombres SQL. El selector shadcn existente consume esa lista. Archivos ausentes/incompatibles no se ofrecen y el servidor rechaza un año ajeno sin usar saldos del vigente.
