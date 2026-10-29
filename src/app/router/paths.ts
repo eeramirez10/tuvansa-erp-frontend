@@ -21,6 +21,7 @@ export const paths = {
   bankAccounts: "/bancos",
   bankAccount: (bankAccountId: number) => `/bancos/${bankAccountId}`,
   incomeStatement: "/contabilidad/reportes/estado-de-resultados",
+  inventoryByFamily: "/inventarios/reportes/inventario-por-familia",
   accountingPolicies: "/contabilidad/polizas",
   accountingPolicy: (policyId: number) => `/contabilidad/polizas/${policyId}`,
 } as const

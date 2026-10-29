@@ -60,7 +60,7 @@ const routeCards = [
       "border-module-receivable/70 bg-module-receivable text-module-receivable-foreground",
   },
   {
-    matches: (pathname: string) => pathname.startsWith(paths.inventoryProducts),
+    matches: (pathname: string) => pathname.startsWith("/inventarios/"),
     title: "Inventarios",
     abbreviation: "P.T.",
     icon: PackageIcon,

@@ -148,7 +148,7 @@ function SplitModuleButton({ left, right }: SplitModuleButtonProps) {
 export function ErpModuleNavigation() {
   const location = useLocation()
   const isActive = (module: ErpModuleNavigationItem) =>
-    module.path !== undefined && (module.path === paths.accountingPolicies ? location.pathname.startsWith("/contabilidad/") : location.pathname.startsWith(module.path))
+    module.path !== undefined && (module.path === paths.accountingPolicies ? location.pathname.startsWith("/contabilidad/") : module.path === paths.inventoryProducts ? location.pathname.startsWith("/inventarios/") : location.pathname.startsWith(module.path))
 
   return (
     <nav aria-label="Módulos del ERP" className="overflow-x-auto border-b bg-card">

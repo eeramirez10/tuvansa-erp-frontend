@@ -4,7 +4,7 @@ Referencia previa al 2026-10-22: Todas las sucursales (Excel), México (Excel) y
 
 ## Ventana unificada (2026-10-23)
 
-Entrada actual: Contabilidad → Reportes → Estado de resultados. Reportes usa Dropdown Menu de shadcn en una franja superior del encabezado, antes del selector de módulos, únicamente en Contabilidad. Sigue disponible durante carga/error. La lista de reportes contiene sólo Estado de resultados y permite agregar rutas futuras. Se retiraron duplicados de las barras de Pólizas y reporte.
+Entrada actual (2026-10-29): **Reportes → Reportes Financieros → Estado de resultados**. Reportes usa Dropdown Menu y Submenu de shadcn en una franja superior del encabezado, antes del selector de módulos, disponible desde todos los módulos. Sigue disponible durante carga/error. El catálogo está en `src/features/reports/components/reports-menu.tsx`; también contiene Inventario por familia y Ventas por familia (pendiente de definir, deshabilitado). Se retiraron duplicados de las barras de Pólizas y reporte.
 
 La modalidad predeterminada es Gerencial (Excel/PDF). Una sola ventana ERP reúne Año, Mes, Sucursal, Vista previa, el documento con scroll y Salida Excel/PDF. Año y mes predeterminados proceden de la API; Sucursal inicia en Todas y Salida en PDF. Año/Mes/Sucursal y Formato usan Select de shadcn con Base UI; Salida usa RadioGroup. Los desplegables se posicionan por encima de las ventanas ERP. Se conserva el sistema compartido para mover, redimensionar, minimizar y restaurar.
 

@@ -148,7 +148,7 @@ La lectura de saldos por lote es derivada de la proyección histórica y conserv
 
 | Vista / control | Evento | Endpoint relativo a /api | Estado / archivo |
 | --- | --- | --- | --- |
-| Encabezado de Contabilidad / Reportes / Estado de resultados | Abrir desde Dropdown Menu | Navega a /contabilidad/reportes/estado-de-resultados | accounting-reports-menu.tsx; sin SQL |
+| Encabezado global / Reportes / Reportes Financieros / Estado de resultados | Abrir desde Dropdown Menu + Submenu | Navega a /contabilidad/reportes/estado-de-resultados | features/reports/components/reports-menu.tsx; sin SQL |
 | Año / Mes / Sucursal | Cargar opciones | GET /accounting/reports/income-statement/branches/options | years/defaultYear/defaultBranch y catálogo; branchIncomeStatementOptionsQuery |
 | Vista previa | Generar una sucursal o todas | GET /accounting/reports/income-statement/branches?year=2026&month=8&branch=03 | Clave branches,{year,month,branch}; branch-income-statements-page.tsx |
 | Salida Excel / Descargar Excel | Exportar respuesta actual | Sin HTTP adicional | Una hoja individual o nueve completas; ExcelJS |
@@ -160,3 +160,21 @@ branch=all u omitido conserva el reporte completo. Una sucursal devuelve branche
 ### Estado de resultados: origen anual (2026-10-26)
 
 Los endpoints y query keys year/month/branch no cambian. GET /accounting/reports/income-statement/branches/options ofrece years=[2026,2025,2024] y defaultYear=2026 en el servidor verificado. GET /accounting/reports/income-statement/branches?year=2025&month=8&branch=all lee tuvansa2025; 2026 conserva tuvansa. El navegador nunca recibe credenciales ni selecciona nombres SQL. El selector shadcn existente consume esa lista. Archivos ausentes/incompatibles no se ofrecen y el servidor rechaza un año ajeno sin usar saldos del vigente.
+
+### Inventario por familia a una fecha (2026-10-29)
+
+Entrada global: Reportes → Reportes Financieros → Inventario por familia.
+Ventas por familia permanece deshabilitado, pendiente de definición.
+Detalle: [Inventario por familia](inventario-por-familia.md).
+
+| Vista / control | Evento | Endpoint relativo a /api | Query key / archivo |
+| --- | --- | --- | --- |
+| Inventario por familia | Abrir parámetros | GET /inventories/reports/by-family/options | inventories,reports,by-family,options |
+| Inventario al / Almacén / Familia IFAMB / Vista previa | Reconstruir cantidades al corte | GET /inventories/reports/by-family?asOf=2026-09-30&warehouse=01&family=all | inventories,reports,by-family,{asOf,warehouse,family} |
+| Detalle por producto | Cambiar presentación / paginar | Sin HTTP adicional | inventory-by-family-document.tsx |
+| Excel / PDF | Exportar respuesta vigente | Sin HTTP adicional | inventory-by-family-workbook.ts / impresión |
+
+SQL derivado en backend sobre FAXINV/FDOC/FINV/FFAM/FUNIDAD. AICANT firmado,
+historia completa de la base configurada, fecha inclusiva y totales por UM.
+Movimientos sin fecha se señalan como provisionales y no se añaden al saldo fechado.
+La primera versión expresa cantidades; no elige automáticamente una lista de costos.
