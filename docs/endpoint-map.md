@@ -177,4 +177,8 @@ Detalle: [Inventario por familia](inventario-por-familia.md).
 SQL derivado en backend sobre FAXINV/FDOC/FINV/FFAM/FUNIDAD. AICANT firmado,
 historia completa de la base configurada, fecha inclusiva y totales por UM.
 Movimientos sin fecha se señalan como provisionales y no se añaden al saldo fechado.
-La primera versión expresa cantidades; no elige automáticamente una lista de costos.
+El resumen expresa metros estimados: TR/PZ × 6.40, M × 1 y FT × 0.3048. La API
+agrega meters/meterColumns/meterTotals/unconverted y conversiones por producto y
+familia, sin cambiar parámetros ni SQL. Matriz de una fila por familia con
+porcentajes y total general del corte elegido. El detalle conserva las UM
+originales; no se elige una lista de costos ni se mezclan unidades sin equivalencia.

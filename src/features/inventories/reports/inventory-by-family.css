@@ -1,10 +1,17 @@
 .inventory-family-document { font-family: Arial, Helvetica, sans-serif; line-height: 1.25; }
+.inventory-family-matrix { border-collapse: collapse; }
+.inventory-family-matrix th, .inventory-family-matrix td { border: 1px solid #a3a3a3; }
+.inventory-family-matrix thead { background: #e2f0d9; }
+.inventory-family-matrix tbody td:nth-child(even):not(:nth-child(2)) { background: #f0f7eb; }
+.inventory-family-matrix tbody tr:last-child { color: #b91c1c; font-weight: bold; }
 .inventory-family-print-root { display: none; }
 @page inventory-family { size: letter landscape; margin: 10mm; }
 @media print {
   body:has(> .inventory-family-print-root) > *:not(.inventory-family-print-root) { display: none !important; }
   .inventory-family-print-root { display: block !important; page: inventory-family; }
   .inventory-family-document { padding: 0; }
+  .inventory-family-document + .inventory-family-document { break-before: page; }
+  .inventory-family-matrix th { white-space: normal; }
   .inventory-family-document [data-slot="table-container"] { display: contents; position: static; overflow: visible; }
   .inventory-family-document table { min-width: 0; width: 100%; font-size: 7pt; }
   .inventory-family-document thead { display: table-header-group; }

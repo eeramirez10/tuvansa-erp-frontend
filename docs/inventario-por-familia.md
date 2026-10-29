@@ -19,25 +19,33 @@ inicio del historial hasta el corte inclusive. No hay valuación monetaria.
 La familia viene de FINV.IFAMB; FFAM.FAMTNUM aporta su descripción. Las cantidades
 se calculan en el backend con AICANT firmado, AIMES=1 y documentos vigentes.
 No se añade stock actual ni se suman respaldos anuales. Las UM se mantienen
-separadas. Se incluyen productos con movimiento aunque el saldo neto sea cero.
+separadas en el detalle. El resumen las convierte a metros estimados y reúne
+una sola cantidad por familia. Se incluyen productos con movimiento aunque el
+saldo neto sea cero.
 La familia/unidad son las actuales, no un historial de clasificaciones.
 
 Cuando faltan documentos o sus fechas, el resultado es **PROVISIONAL**. Vista,
 Excel y PDF muestran el aviso y la cantidad sin fecha separada de la existencia
 fechada. No se distribuyen movimientos sin fecha entre periodos inventados.
 
-Resumen: Familia, Descripción, UM, Entradas, Salidas, Existencia fechada,
-Sin fecha (±). Incluye totales por unidad. La casilla Detalle por producto
-agrega Código, Descripción, Alm., primera/última fecha; la pantalla pagina 100
+Resumen: N.º, Producto / Familia, metros estimados y porcentaje por almacén,
+total de inventario y porcentaje general, siguiendo el Excel del usuario.
+TR/PZ × 6.40 m según indicación del usuario; M/MT/MTR × 1; FT × 0.3048 m.
+Son equivalencias aproximadas, no longitudes medidas de cada artículo. Unidades
+sin equivalencia se informan aparte. La casilla Detalle por producto conserva
+UM/cantidades originales y agrega m/UM y metros estimados, además de Código,
+Descripción, Alm., primera/última fecha; la pantalla pagina 100
 renglones y conserva scroll X/Y. La impresión incluye todos los renglones del
 detalle seleccionado, no sólo la página visible. El DOM completo de impresión
 se materializa durante beforeprint para mantener ligera la navegación.
 
-Excel siempre incluye Familias, Totales por unidad, Productos y Criterios con
+Excel incluye Familias, Unidades originales, Totales por unidad, Productos y Criterios con
 todos los datos de la respuesta. Conserva códigos con ceros, cantidades numéricas
 con tres decimales, filtros, encabezados congelados y advertencia provisional.
-ExcelJS existente se importa de forma diferida. PDF usa impresión del navegador
-en carta horizontal, sin encabezado de navegación del ERP.
+ExcelJS se importa de forma diferida. El resumen conserva fórmulas de porcentajes
+y totales, encabezados verdes y total en rojo como el ejemplo. PDF usa impresión
+en carta horizontal, sin navegación del ERP; las matrices anchas se dividen en
+bloques de tres almacenes con total general explícito.
 
 Cambiar fecha/almacén/familia oculta la vista anterior y bloquea exportación
 hasta regenerar. Carga, error/reintento y vacío son explícitos. No hay escritura,
@@ -54,3 +62,10 @@ Evidencia local privada en el backend:
 `captures/ui/new-version/inventory-by-family/`. Se verifican navegación global y
 directa, filtros reales, detalle/paginación, bloqueo de exportación vieja, libro
 Excel y PDF. No se publica esa carpeta en Git.
+
+La actualización de metros estimados tiene evidencia en
+`captures/ui/new-version/inventory-family-meters/`. Se validaron conversiones con
+Decimal, una fila por familia, fórmulas en Excel nativo, conservación de UM/códigos,
+México/todos y PDF con columnas completas. La matriz corresponde a una fecha de
+corte; el ejemplo también contiene 2025/2024, cuyo comparativo simultáneo quedó
+pendiente de definir. No se copian cifras de ventas del archivo de referencia.

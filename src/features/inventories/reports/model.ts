@@ -12,8 +12,12 @@ export type InventoryProductBalance = {
 export type InventoryTotals = {
   unitId: number; unit: string; incoming: number; outgoing: number; quantity: number; undatedMovements: number; undatedQuantity: number
 }
+export type InventoryMeters = { incoming: number; outgoing: number; quantity: number; undatedQuantity: number }
+export type ConvertedInventoryProduct = InventoryProductBalance & { metersPerUnit: number | null; meters: InventoryMeters | null }
+export type InventoryMeterCell = InventoryMeters & { warehouse: string; percentage: number | null }
 export type InventoryByFamily = {
   title: string; company: string; criteria: InventoryCriteria; warehouseName: string; generatedAt: string
-  groups: Array<{ code: string; name: string; products: InventoryProductBalance[]; totals: InventoryTotals[] }>
+  groups: Array<{ code: string; name: string; products: ConvertedInventoryProduct[]; totals: InventoryTotals[]; meters: InventoryMeters; byWarehouse: InventoryMeterCell[]; percentage: number | null; unconverted: InventoryTotals[] }>
   totals: InventoryTotals[]; empty: boolean; provisional: boolean; undatedMovements: number; notes: string[]; source: "derivada"
+  meters: InventoryMeters; meterColumns: Array<{ warehouse: string; name: string }>; meterTotals: InventoryMeterCell[]; unconverted: InventoryTotals[]
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { createPortal, flushSync } from "react-dom"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
-import { InventoryByFamilyDocument } from "@/features/inventories/reports/components/inventory-by-family-document"
+import { InventoryByFamilyDocument, InventoryByFamilyPrintDocument } from "@/features/inventories/reports/components/inventory-by-family-document"
 import { inventoryByFamilyQuery, inventoryReportOptionsQuery } from "@/features/inventories/reports/logic"
 import type { InventoryCriteria, InventoryOptions } from "@/features/inventories/reports/model"
 import { downloadInventoryByFamily } from "@/features/inventories/reports/services/download-inventory-by-family"
@@ -118,7 +118,7 @@ function Workspace({ options }: { options: InventoryOptions }) {
         </ErpDataDialogBody>
       </ErpDataDialog>
     </DesktopWindowIdentity>}
-    {open && ready && printing && createPortal(<div className="inventory-family-print-root"><InventoryByFamilyDocument report={report.data!} detail={detail} /></div>, document.body)}
+    {open && ready && printing && createPortal(<div className="inventory-family-print-root"><InventoryByFamilyPrintDocument report={report.data!} detail={detail} /></div>, document.body)}
   </>
 }
 
