@@ -42,7 +42,7 @@ function Workspace({ options }: { options: InventoryOptions }) {
   const [open, setOpen] = useState(true)
   const [detail, setDetail] = useState(false)
   const [pendingOnly, setPendingOnly] = useState(false)
-  const [measure, setMeasure] = useState<InventoryMeasure>("value")
+  const [measure, setMeasure] = useState<InventoryMeasure>("historical")
   const [page, setPage] = useState(1)
   const [output, setOutput] = useState("pdf")
   const [exporting, setExporting] = useState(false)
@@ -97,7 +97,7 @@ function Workspace({ options }: { options: InventoryOptions }) {
           </form>
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-end gap-3">
-              <ReportSelect id="inventory-measure" label="Mostrar" value={measure} options={[{ value: "value", label: "Importe a costo promedio actual" }, { value: "meters", label: "Metros estimados" }]} onChange={value => setMeasure(value as InventoryMeasure)} disabled={busy} />
+              <ReportSelect id="inventory-measure" label="Mostrar" value={measure} options={[{ value: "historical", label: "Costo histórico de movimientos" }, { value: "value", label: "Importe a costo promedio actual" }, { value: "meters", label: "Metros estimados" }]} onChange={value => setMeasure(value as InventoryMeasure)} disabled={busy} />
               <Label htmlFor="inventory-detail"><Checkbox id="inventory-detail" checked={detail} onCheckedChange={value => { setDetail(value === true); setPendingOnly(false); setPage(1) }} />Detalle por producto en pantalla y PDF</Label>
               <Button size="sm" variant="outline" disabled={!ready || !report.data?.undatedMovements || busy} onClick={() => { setDetail(true); setPendingOnly(!pendingOnly); setPage(1) }}>{pendingOnly ? "Ver todo el detalle" : "Ver pendientes de fecha"}</Button>
             </div>

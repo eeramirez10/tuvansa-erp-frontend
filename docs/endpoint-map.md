@@ -196,3 +196,13 @@ no costo histórico confirmado. Incluir sin fecha es un escenario estimado
 explícito. Ver pendientes de fecha filtra el detalle; Excel agrega la hoja
 Pendientes de conciliar con entradas, salidas, saldo e importe sin fecha.
 SQL derivado; no hay captura nueva de OMNIS ni escritura a la base.
+
+### Inventario: costo de cada movimiento (2026-10-30)
+
+Mostrar inicia en Costo histórico de movimientos. Usa historical/historicalTotals
+e historicalByWarehouse del mismo GET, sin parámetros HTTP nuevos. El cálculo
+backend suma AICANT × AICOSTO por movimiento. Costo actual ILISTA4 y metros son
+opciones de comparación sin lecturas adicionales. Detalle y Excel agregan
+entradas/salidas a su costo, netos por escenario, revaluaciones aparte y conteos
+de costo cero/ausente. Excel incluye Costos históricos. No se certifica aún el
+saldo contable conciliado ni se sustituye un costo faltante por el actual.

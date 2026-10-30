@@ -31,8 +31,10 @@ defecto se mantienen separados. La casilla **Incluir movimientos sin fecha
 pertenecer a otro periodo. Nunca se inventan fechas. **Ver pendientes de fecha**
 muestra el detalle afectado conservando código y almacén original.
 
-**Mostrar** permite alternar entre valor y metros sin otra consulta. Valor usa
-la cantidad en UM original por FINV.ILISTA4 actual, en moneda base, con redondeo
+**Mostrar** inicia en **Costo histórico de movimientos**, entradas por su propio
+AICOSTO menos salidas por su propio AICOSTO. Conserva revaluaciones AIREVAL aparte
+y advierte costos cero/ausentes. Permite alternar a costo actual o metros sin otra
+consulta. Costo actual usa la cantidad en UM original por FINV.ILISTA4, con redondeo
 a centavos por producto/almacén. No equivale a costo promedio histórico al corte.
 Costos ausentes o no positivos se señalan sin sustituirlos por otra lista.
 
@@ -48,7 +50,7 @@ detalle seleccionado, no sólo la página visible. El DOM completo de impresión
 se materializa durante beforeprint para mantener ligera la navegación.
 
 Excel incluye Familias, Unidades originales, Totales por unidad, Productos,
-Pendientes de conciliar y Criterios con
+Pendientes de conciliar, Costos históricos y Criterios con
 todos los datos de la respuesta. Conserva códigos con ceros, cantidades numéricas
 con tres decimales, filtros, encabezados congelados y advertencia provisional.
 ExcelJS se importa de forma diferida. El resumen conserva fórmulas de porcentajes
@@ -92,3 +94,24 @@ Evidencia privada: `captures/ui/new-version/inventory-branch-reconciliation/`
 del backend. Se verifican API real de sólo lectura, escenarios, Excel/PDF,
 pendientes, cambio a metros sin HTTP adicional y consulta de almacén individual.
 No se activó general_log ni se modificaron datos.
+
+## Costo histórico de movimientos (2026-10-30)
+
+La API agrega historical/historicalTotals e historicalByWarehouse por familia.
+No cambia ruta, filtros ni query key. La matriz, el detalle y las exportaciones
+usan ese contrato al elegir el modo histórico; el frontend no recalcula costos.
+Cada producto conserva entradas/salidas a sus costos registrados y netos fechado,
+pendiente y reportado. Revaluaciones fechadas y sin fecha se muestran separadas;
+no se incorporan sin confirmar su tratamiento. Se conservan las de cantidad cero.
+
+Costos históricos en Excel permite revisar código/almacén, importes y movimientos
+con costo cero o ausente. No se sustituye un costo cero por la lista actual. Los
+netos se redondean después de sumar valores exactos; restar las dos columnas ya
+redondeadas puede producir diferencias de centavos. El cambio de modo es local.
+
+TCC México al 31/08/2026 devuelve 34,420,029.46 fechado y 34,248,946.02 incluyendo
+pendientes, a costo de cada movimiento. Hay 62 movimientos fechados con costo cero.
+Se necesita conciliar costos y revaluaciones antes de certificar el saldo histórico;
+no se afirma que coincida con la referencia 12,281,029.00. Las cifras anteriores
+de 14.96/14.83 millones corresponden exclusivamente al modo de costo actual.
+Evidencia privada: captures/ui/new-version/inventory-historical-costs/ del backend.

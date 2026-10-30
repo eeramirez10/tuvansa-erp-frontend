@@ -1,5 +1,6 @@
 export type InventoryCriteria = { asOf: string; warehouse: string; family: string; scope: "branch" | "warehouse"; includeUndated: boolean }
-export type InventoryMeasure = "value" | "meters"
+export type InventoryMeasure = "historical" | "value" | "meters"
+export type HistoricalInventoryValue = { incoming: number; outgoing: number; dated: number; unlinked: number; reported: number; revaluation: number; undatedRevaluation: number; zeroCostMovements: number; undatedZeroCostMovements: number }
 export type InventoryOptions = {
   company: string; defaultDate: string; defaultWarehouse: string
   warehouses: Array<{ code: string; name: string; branchCode?: string | null }>
@@ -17,12 +18,13 @@ export type InventoryTotals = {
 export type InventoryMeters = { incoming: number; outgoing: number; quantity: number; undatedQuantity: number }
 export type InventoryValuation = { dated: number; unlinked: number; reported: number; unpricedProducts: number }
 export type InventoryValueCell = { warehouse: string; amount: number; percentage: number | null }
-export type ConvertedInventoryProduct = InventoryProductBalance & { metersPerUnit: number | null; meters: InventoryMeters | null; datedQuantity: number; datedIncoming: number; datedOutgoing: number; valuation: InventoryValuation }
+export type ConvertedInventoryProduct = InventoryProductBalance & { metersPerUnit: number | null; meters: InventoryMeters | null; datedQuantity: number; datedIncoming: number; datedOutgoing: number; valuation: InventoryValuation; historical: HistoricalInventoryValue }
 export type InventoryMeterCell = InventoryMeters & { warehouse: string; percentage: number | null }
 export type InventoryByFamily = {
   title: string; company: string; criteria: InventoryCriteria; warehouseName: string; generatedAt: string
-  groups: Array<{ code: string; name: string; products: ConvertedInventoryProduct[]; totals: InventoryTotals[]; meters: InventoryMeters; byWarehouse: InventoryMeterCell[]; percentage: number | null; unconverted: InventoryTotals[]; valuation: InventoryValuation; valueByWarehouse: InventoryValueCell[]; valuationPercentage: number | null }>
+  groups: Array<{ code: string; name: string; products: ConvertedInventoryProduct[]; totals: InventoryTotals[]; meters: InventoryMeters; byWarehouse: InventoryMeterCell[]; percentage: number | null; unconverted: InventoryTotals[]; valuation: InventoryValuation; valueByWarehouse: InventoryValueCell[]; valuationPercentage: number | null; historical: HistoricalInventoryValue; historicalByWarehouse: InventoryValueCell[]; historicalPercentage: number | null }>
   totals: InventoryTotals[]; empty: boolean; provisional: boolean; undatedMovements: number; notes: string[]; source: "derivada"
   meters: InventoryMeters; meterColumns: Array<{ warehouse: string; name: string }>; meterTotals: InventoryMeterCell[]; unconverted: InventoryTotals[]
   valuation: InventoryValuation; valuationTotals: InventoryValueCell[]; includedWarehouses: Array<{ code: string; name: string }>
+  historical: HistoricalInventoryValue; historicalTotals: InventoryValueCell[]
 }
