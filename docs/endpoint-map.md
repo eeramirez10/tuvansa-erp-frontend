@@ -182,3 +182,17 @@ agrega meters/meterColumns/meterTotals/unconverted y conversiones por producto y
 familia, sin cambiar parámetros ni SQL. Matriz de una fila por familia con
 porcentajes y total general del corte elegido. El detalle conserva las UM
 originales; no se elige una lista de costos ni se mezclan unidades sin equivalencia.
+
+### Inventario: resguardos, valuación y pendientes (2026-10-30)
+
+La actualización sustituye la presentación exclusivamente en metros. La misma
+ruta acepta `scope=branch|warehouse` (predeterminado branch) e
+`includeUndated=true|false` (predeterminado false). Ambos forman parte de la
+query key y del bloqueo de exportación obsoleta. La sucursal incorpora sus
+resguardos mediante FALMCAT.CATMULTICIA; el detalle conserva el almacén original.
+
+Mostrar valor/metros no emite HTTP. El valor usa FINV.ILISTA4 actual en UM original,
+no costo histórico confirmado. Incluir sin fecha es un escenario estimado
+explícito. Ver pendientes de fecha filtra el detalle; Excel agrega la hoja
+Pendientes de conciliar con entradas, salidas, saldo e importe sin fecha.
+SQL derivado; no hay captura nueva de OMNIS ni escritura a la base.

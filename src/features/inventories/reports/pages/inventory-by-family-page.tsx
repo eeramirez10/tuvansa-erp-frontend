@@ -6,7 +6,7 @@ import { Controller, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { InventoryByFamilyDocument, InventoryByFamilyPrintDocument } from "@/features/inventories/reports/components/inventory-by-family-document"
 import { inventoryByFamilyQuery, inventoryReportOptionsQuery } from "@/features/inventories/reports/logic"
-import type { InventoryCriteria, InventoryOptions } from "@/features/inventories/reports/model"
+import type { InventoryCriteria, InventoryMeasure, InventoryOptions } from "@/features/inventories/reports/model"
 import { downloadInventoryByFamily } from "@/features/inventories/reports/services/download-inventory-by-family"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { notifications } from "@/shared/notifications/notifications"
@@ -21,7 +21,7 @@ import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Spinner } from "@/shared/ui/spinner"
 
-const schema = z.object({ asOf: z.iso.date(), warehouse: z.string(), family: z.string() })
+const schema = z.object({ asOf: z.iso.date(), warehouse: z.string(), family: z.string(), scope: z.enum(["branch", "warehouse"]), includeUndated: z.boolean() })
 function ReportSelect({ id, label, value, options, onChange, disabled }: {
   id: string; label: string; value: string; options: Array<{ value: string; label: string }>
   onChange: (value: string) => void; disabled: boolean
@@ -35,12 +35,14 @@ function ReportSelect({ id, label, value, options, onChange, disabled }: {
 }
 
 function Workspace({ options }: { options: InventoryOptions }) {
-  const defaults: InventoryCriteria = { asOf: options.defaultDate, warehouse: options.defaultWarehouse, family: "all" }
+  const defaults: InventoryCriteria = { asOf: options.defaultDate, warehouse: options.defaultWarehouse, family: "all", scope: "branch", includeUndated: false }
   const form = useForm<InventoryCriteria>({ resolver: zodResolver(schema), defaultValues: defaults })
   const current = useWatch({ control: form.control })
   const [criteria, setCriteria] = useState<InventoryCriteria | null>(null)
   const [open, setOpen] = useState(true)
   const [detail, setDetail] = useState(false)
+  const [pendingOnly, setPendingOnly] = useState(false)
+  const [measure, setMeasure] = useState<InventoryMeasure>("value")
   const [page, setPage] = useState(1)
   const [output, setOutput] = useState("pdf")
   const [exporting, setExporting] = useState(false)
@@ -53,10 +55,10 @@ function Workspace({ options }: { options: InventoryOptions }) {
     return () => { window.removeEventListener("beforeprint", before); window.removeEventListener("afterprint", after) }
   }, [])
   const report = useQuery({ ...inventoryByFamilyQuery(criteria ?? defaults), enabled: criteria !== null })
-  const matches = criteria !== null && criteria.asOf === current.asOf && criteria.warehouse === current.warehouse && criteria.family === current.family
+  const matches = criteria !== null && criteria.asOf === current.asOf && criteria.warehouse === current.warehouse && criteria.family === current.family && criteria.scope === current.scope && criteria.includeUndated === current.includeUndated
   const ready = Boolean(matches && report.data && !report.data.empty && !report.isFetching && !report.isError)
   const busy = report.isFetching || exporting
-  const count = report.data?.groups.reduce((sum, group) => sum + group.products.length, 0) ?? 0
+  const count = report.data?.groups.reduce((sum, group) => sum + group.products.filter(row => !pendingOnly || row.undatedMovements > 0).length, 0) ?? 0
   const pages = Math.max(1, Math.ceil(count / 100))
   const generate = (next: InventoryCriteria) => {
     setPage(1)
@@ -67,7 +69,7 @@ function Workspace({ options }: { options: InventoryOptions }) {
     if (!ready || !report.data || busy) return
     if (output === "pdf") { window.print(); return }
     setExporting(true)
-    try { await downloadInventoryByFamily(report.data) }
+    try { await downloadInventoryByFamily(report.data, measure) }
     catch (error) { notifications.error(error instanceof Error ? error.message : "No se pudo generar Excel.") }
     finally { setExporting(false) }
   }
@@ -75,23 +77,30 @@ function Workspace({ options }: { options: InventoryOptions }) {
     <h1 className="text-sm font-semibold">Inventario por familia</h1>
     {!open && <Button className="mt-2 self-start" onClick={() => setOpen(true)}>Abrir reporte</Button>}
     {open && <DesktopWindowIdentity id="inventories:reports:by-family">
-      <ErpDataDialog title="Inventario por familia" description="Existencias a una fecha, agrupadas por IFAMB" defaultWidth={1040} defaultHeight={Math.min(700, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
+      <ErpDataDialog title="Inventario por familia" description="Existencias a una fecha, agrupadas por IFAMB" defaultWidth={1120} defaultHeight={Math.min(740, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
         <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-2" onKeyDown={event => {
           if (event.key === "Escape" && !event.defaultPrevented && !document.querySelector('[data-slot="select-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"]')) {
             event.stopPropagation(); setOpen(false)
           }
         }}>
           <form onSubmit={form.handleSubmit(generate)} className="shrink-0 rounded-sm border bg-background p-2">
-            <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-[9rem_minmax(12rem,1fr)_minmax(12rem,1fr)_auto]">
+            <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-[9rem_10rem_minmax(11rem,1fr)_minmax(11rem,1fr)_auto]">
               <div className="grid gap-1"><Label htmlFor="inventory-as-of">Inventario al</Label><Input id="inventory-as-of" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("asOf")} /></div>
-              <Controller control={form.control} name="warehouse" render={({ field }) => <ReportSelect id="inventory-warehouse" label="Almacén / sucursal" value={field.value} options={[{ value: "all", label: "Todos los almacenes" }, ...options.warehouses.map(w => ({ value: w.code, label: w.code + " · " + w.name }))]} onChange={field.onChange} disabled={busy} />} />
+              <Controller control={form.control} name="scope" render={({ field }) => <ReportSelect id="inventory-scope" label="Consultar por" value={field.value} options={[{ value: "branch", label: "Sucursal y resguardos" }, { value: "warehouse", label: "Almacén individual" }]} onChange={value => { field.onChange(value); form.setValue("warehouse", options.defaultWarehouse) }} disabled={busy} />} />
+              <Controller control={form.control} name="warehouse" render={({ field }) => <ReportSelect id="inventory-warehouse" label={current.scope === "branch" ? "Sucursal" : "Almacén"} value={field.value} options={[{ value: "all", label: current.scope === "branch" ? "Todas las sucursales" : "Todos los almacenes" }, ...options.warehouses.filter(w => current.scope !== "branch" || w.branchCode === w.code).map(w => ({ value: w.code, label: w.code + " · " + w.name }))]} onChange={field.onChange} disabled={busy} />} />
               <Controller control={form.control} name="family" render={({ field }) => <ReportSelect id="inventory-family" label="Familia IFAMB" value={field.value} options={[{ value: "all", label: "Todas las familias" }, ...options.families.map(f => ({ value: f.code, label: (f.code || "—") + " · " + f.name }))]} onChange={field.onChange} disabled={busy} />} />
               <Button type="submit" size="lg" disabled={busy}>{report.isFetching ? "Generando…" : "Vista previa"}</Button>
             </div>
+            <Controller control={form.control} name="includeUndated" render={({ field }) => <Label htmlFor="inventory-include-undated" className="mt-2"><Checkbox id="inventory-include-undated" checked={field.value} onCheckedChange={field.onChange} disabled={busy} />Incluir movimientos sin fecha (escenario estimado)</Label>} />
+            {current.includeUndated && <p className="mt-1 text-[10px] text-amber-800">Incluye todos los pendientes, sin poder confirmar si ocurrieron antes del corte. El resultado se marca como estimación.</p>}
             {form.formState.errors.asOf && <p role="alert" className="mt-1 text-xs text-destructive">Selecciona una fecha válida.</p>}
           </form>
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
-            <Label htmlFor="inventory-detail"><Checkbox id="inventory-detail" checked={detail} onCheckedChange={value => { setDetail(value === true); setPage(1) }} />Detalle por producto en pantalla y PDF</Label>
+            <div className="flex flex-wrap items-end gap-3">
+              <ReportSelect id="inventory-measure" label="Mostrar" value={measure} options={[{ value: "value", label: "Importe a costo promedio actual" }, { value: "meters", label: "Metros estimados" }]} onChange={value => setMeasure(value as InventoryMeasure)} disabled={busy} />
+              <Label htmlFor="inventory-detail"><Checkbox id="inventory-detail" checked={detail} onCheckedChange={value => { setDetail(value === true); setPendingOnly(false); setPage(1) }} />Detalle por producto en pantalla y PDF</Label>
+              <Button size="sm" variant="outline" disabled={!ready || !report.data?.undatedMovements || busy} onClick={() => { setDetail(true); setPendingOnly(!pendingOnly); setPage(1) }}>{pendingOnly ? "Ver todo el detalle" : "Ver pendientes de fecha"}</Button>
+            </div>
             {ready && detail && <div className="flex items-center gap-2 text-[10px]">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>Anterior</Button>
               <span>Página {page} de {pages} · {count} productos / almacenes</span>
@@ -104,7 +113,7 @@ function Workspace({ options }: { options: InventoryOptions }) {
             {criteria && !matches && <p role="status" className="p-3 text-xs">Los filtros cambiaron. Genera de nuevo la vista previa para exportar.</p>}
             {matches && report.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(report.error)}</AlertDescription><Button size="sm" onClick={() => void report.refetch()}>Reintentar</Button></Alert>}
             {matches && !report.isFetching && !report.isError && report.data?.empty && <p role="status" className="p-3 text-xs">No hay movimientos para este corte.</p>}
-            {ready && <InventoryByFamilyDocument report={report.data!} detail={detail} page={page} />}
+            {ready && <InventoryByFamilyDocument report={report.data!} detail={detail} page={page} measure={measure} pendingOnly={pendingOnly} />}
           </div>
           <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-sm border bg-background p-2">
             <div className="flex items-center gap-3"><span id="inventory-output-label" className="text-xs">Salida</span>
@@ -118,7 +127,7 @@ function Workspace({ options }: { options: InventoryOptions }) {
         </ErpDataDialogBody>
       </ErpDataDialog>
     </DesktopWindowIdentity>}
-    {open && ready && printing && createPortal(<div className="inventory-family-print-root"><InventoryByFamilyPrintDocument report={report.data!} detail={detail} /></div>, document.body)}
+    {open && ready && printing && createPortal(<div className="inventory-family-print-root"><InventoryByFamilyPrintDocument report={report.data!} detail={detail} measure={measure} pendingOnly={pendingOnly} /></div>, document.body)}
   </>
 }
 

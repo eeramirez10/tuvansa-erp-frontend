@@ -10,11 +10,12 @@ El reporte es nuevo, solicitado por el usuario el 2026-10-29, con SQL **derivado
 No se afirma que copie un reporte nativo de OMNIS. Reglas y evidencia:
 `docs/modules/inventories/inventory-by-family.md` del backend.
 
-Una ventana ERP permite elegir **Inventario al**, **Almacén / sucursal** y
-**Familia IFAMB**. Inicia en fecha actual de México, almacén 01 México y todas
-las familias. El catálogo incluye resguardos y tránsito: Todos los almacenes no
-significa exclusivamente las siete sucursales. Vista previa calcula desde el
-inicio del historial hasta el corte inclusive. No hay valuación monetaria.
+Una ventana ERP permite elegir **Inventario al**, **Consultar por**, **Sucursal**
+o **Almacén**, **Familia IFAMB** y si se incluyen movimientos sin fecha. Inicia
+en fecha actual de México, sucursal 01 México con sus resguardos y todas las
+familias. La asignación procede de FALMCAT.CATMULTICIA, no del nombre ni prefijo.
+Todos también identifica almacenes sin sucursal asignada. Vista previa calcula
+desde el inicio del historial hasta el corte inclusive.
 
 La familia viene de FINV.IFAMB; FFAM.FAMTNUM aporta su descripción. Las cantidades
 se calculan en el backend con AICANT firmado, AIMES=1 y documentos vigentes.
@@ -24,9 +25,16 @@ una sola cantidad por familia. Se incluyen productos con movimiento aunque el
 saldo neto sea cero.
 La familia/unidad son las actuales, no un historial de clasificaciones.
 
-Cuando faltan documentos o sus fechas, el resultado es **PROVISIONAL**. Vista,
-Excel y PDF muestran el aviso y la cantidad sin fecha separada de la existencia
-fechada. No se distribuyen movimientos sin fecha entre periodos inventados.
+Cuando faltan documentos o sus fechas, el resultado es **PROVISIONAL**. Por
+defecto se mantienen separados. La casilla **Incluir movimientos sin fecha
+(escenario estimado)** añade todas sus entradas y salidas y advierte que podrían
+pertenecer a otro periodo. Nunca se inventan fechas. **Ver pendientes de fecha**
+muestra el detalle afectado conservando código y almacén original.
+
+**Mostrar** permite alternar entre valor y metros sin otra consulta. Valor usa
+la cantidad en UM original por FINV.ILISTA4 actual, en moneda base, con redondeo
+a centavos por producto/almacén. No equivale a costo promedio histórico al corte.
+Costos ausentes o no positivos se señalan sin sustituirlos por otra lista.
 
 Resumen: N.º, Producto / Familia, metros estimados y porcentaje por almacén,
 total de inventario y porcentaje general, siguiendo el Excel del usuario.
@@ -39,7 +47,8 @@ renglones y conserva scroll X/Y. La impresión incluye todos los renglones del
 detalle seleccionado, no sólo la página visible. El DOM completo de impresión
 se materializa durante beforeprint para mantener ligera la navegación.
 
-Excel incluye Familias, Unidades originales, Totales por unidad, Productos y Criterios con
+Excel incluye Familias, Unidades originales, Totales por unidad, Productos,
+Pendientes de conciliar y Criterios con
 todos los datos de la respuesta. Conserva códigos con ceros, cantidades numéricas
 con tres decimales, filtros, encabezados congelados y advertencia provisional.
 ExcelJS se importa de forma diferida. El resumen conserva fórmulas de porcentajes
@@ -55,7 +64,7 @@ posiciona sobre las ventanas del ERP.
 | Control | Endpoint relativo a /api | Query key |
 | --- | --- | --- |
 | Abrir / catálogos | GET /inventories/reports/by-family/options | inventories,reports,by-family,options |
-| Vista previa | GET /inventories/reports/by-family?asOf=2026-09-30&warehouse=01&family=all | inventories,reports,by-family,{asOf,warehouse,family} |
+| Vista previa | GET /inventories/reports/by-family?asOf=2026-08-31&warehouse=01&family=all&scope=branch&includeUndated=false | inventories,reports,by-family,{asOf,warehouse,family,scope,includeUndated} |
 | Excel / PDF | Sin HTTP adicional | Respuesta vigente |
 
 Evidencia local privada en el backend:
@@ -69,3 +78,17 @@ Decimal, una fila por familia, fórmulas en Excel nativo, conservación de UM/c�
 México/todos y PDF con columnas completas. La matriz corresponde a una fecha de
 corte; el ejemplo también contiene 2025/2024, cuyo comparativo simultáneo quedó
 pendiente de definir. No se copian cifras de ventas del archivo de referencia.
+
+## Conciliación de resguardos y pendientes (2026-10-30)
+
+La sucursal México incluye 01, 11, 12, 13 y 15 según el catálogo actual. Para
+TCC/B007 al 2026-08-31, la validación real devolvió $14,963,893.55 de movimientos
+fechados, valuados con ILISTA4 actual. Nueve salidas sin documento ni fecha
+representan −1,331.38 M y −$130,481.71; el escenario que las incluye devuelve
+$14,833,411.84. No se confirma aún el valor histórico esperado de $12,281,029.00.
+Los documentos faltantes tampoco aparecieron en los archivos 2024/2025 revisados.
+
+Evidencia privada: `captures/ui/new-version/inventory-branch-reconciliation/`
+del backend. Se verifican API real de sólo lectura, escenarios, Excel/PDF,
+pendientes, cambio a metros sin HTTP adicional y consulta de almacén individual.
+No se activó general_log ni se modificaron datos.
