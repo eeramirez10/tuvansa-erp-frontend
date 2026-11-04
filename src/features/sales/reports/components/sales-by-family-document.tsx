@@ -10,11 +10,11 @@ export function SalesByFamilyDocument({ report, measure, detail = false, page, b
     <header className="mb-3 space-y-1 text-center">
       <h2 className="text-sm font-semibold">{report.company}</h2><h3 className="text-sm font-semibold">Ventas brutas por familia</h3>
       <p className="text-xs">Del {salesDate(report.criteria.from)} al {salesDate(report.criteria.to)} · {report.criteria.branch === "all" ? "Todas las sucursales" : report.columns[0]?.name}</p>
-      <p className="text-[10px]">Familia IFAMB · Tipo de producto 1 · {measure === "amount" ? "Ventas antes de descuentos y devoluciones, sin IVA" : "Cantidades vendidas antes de devoluciones, en metros estimados"}</p>
+      <p className="text-[10px]">Familia IFAMB · Tipo de producto 1 · {measure === "amount" ? "Sólo facturas al precio registrado, sin IVA" : "Cantidades facturadas en metros estimados"}</p>
       {branches && <p className="text-[9px]">Columnas: {columns.map(c => c.name).join(", ")} · Total general de todas las sucursales seleccionadas</p>}
     </header>
     <p className="mb-2 text-[10px]">Ventas brutas: {salesMoney(report.amount)} · {report.movements} movimientos de venta · Sin restar devoluciones ni notas de crédito.</p>
-    {report.missingPrices > 0 && <p role="note" className="mb-2 border border-amber-600 p-2 text-xs">Importe incompleto: {report.missingPrices} movimientos sin precio bruto registrado.</p>}
+    {report.missingPrices > 0 && <p role="note" className="mb-2 border border-amber-600 p-2 text-xs">Importe incompleto: {report.missingPrices} movimientos sin precio registrado.</p>}
     {detail ? <Table className="min-w-[1300px]" aria-label="Detalle de ventas por producto">
       <TableHeader><TableRow>{["Familia", "Código", "Descripción", "Suc.", "UM", "Cantidad vendida", "Metros estimados", "Ventas brutas $", "Mov.", "Tipos", "Primera fecha", "Última fecha"].map(label => <TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader>
       <TableBody>{products.map(row => <TableRow key={row.productId + ":" + row.branch}>

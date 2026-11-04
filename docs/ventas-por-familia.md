@@ -17,15 +17,18 @@ permite una o todas; Familia IFAMB filtra el tipo de producto fijo **ITIPO=1**.
 | Mostrar / Detalle | Sin HTTP adicional | Importe o metros; pagina 100 productos/sucursales |
 | Excel / PDF | Sin HTTP adicional | Exporta la respuesta vigente |
 
-El importe es **ventas brutas**, calculado por el backend con AICANTF × AIPREBR
-y sólo cantidades facturadas AICANTF>0: antes de descuentos, sin restar
-devoluciones ni notas de crédito, sin IVA ni cargos de encabezado. Cantidades
-y metros también se calculan antes de devoluciones. Mantiene documentos
-DESFACT=1/DEST=0 y filtros POS capturados.
-No usa el costo AICOSTO del reporte de inventarios. No limita a FA ni reaplica
-descuentos o tipos de cambio; no sustituye un AIPREBR ausente por AIPRECIO.
-Los precios brutos nulos o cero con precio neto distinto de cero se señalan
-como importe incompleto. Presenta Ventas brutas, sin IVA ni cargos
+El importe es **ventas brutas: sólo facturas**, calculado por el backend con
+AICANTF × AIPRECIO y AICANTF>0, sin restar devoluciones ni notas de crédito,
+sin IVA ni cargos de encabezado. Se usa AIPRECIO tal como está registrado, no
+AIPREBR; no revierte ni reaplica descuentos o tipos de cambio. Cantidades y
+metros usan las mismas partidas de facturas. Mantiene DESFACT=1/DEST=0 y filtros
+POS capturados. El tipo fiscal se obtiene del folio FDOC.DNUM mediante FTIPMV:
+TIFISCAL=1, TIAFVTS=1, TIMODULO=4. DITIPMV y AITIPMV pueden conservar el tipo
+de remisión después de facturar; no se usan para identificar la factura.
+Se excluyen remisiones y otros documentos aunque tengan cantidad positiva.
+No usa el costo AICOSTO del reporte de inventarios. Precio AIPRECIO nulo señala
+importe incompleto; precio cero se conserva sin reemplazarlo por AIPREBR.
+Presenta Ventas brutas, sin IVA ni cargos
 del encabezado. No es un estado contable de ingresos. Sucursal procede de la
 compañía del documento e incluye sus ventas desde resguardos. La agrupación usa
 familia y tipo actuales. Detalles y evidencia: docs/modules/sales/sales-by-family.md
@@ -53,16 +56,21 @@ por año. No se inventa fecha para movimientos sin documento. No se modifica MyS
 Neon ni Firebase. Evidencia local privada inicial en captures/ui/new-version/sales-by-family/
 del backend; no se agrega a Git.
 
-Actualización a ventas brutas del 2026-11-04: el menú conserva su nombre y
+Actualización a ventas brutas del 2026-11-04, corregida a sólo facturas con
+AIPRECIO por aclaración del usuario: el menú conserva su nombre y
 ubicación; el documento impreso, el Excel y la vista previa identifican el criterio
 bruto. La respuesta incluye `basis: "gross"`, `amount` bruto y `gross` exacto por
 producto/sucursal; sustituye las columnas anteriores de ventas/créditos/neto.
 Archivos descargados con prefijo `ventas-brutas-familia-`.
-Evidencia nueva en `captures/ui/new-version/sales-by-family-gross/` del backend.
-Agosto 2026: México **9,505,873.55**; todas las sucursales **87,938,897.67**.
-Conciliados con partidas individuales; además se verificó un día histórico con
-descuento donde AIPREBR es distinto de AIPRECIO. PDF bruto de México: resumen
-una página y detalle completo cinco; siete sucursales, tres páginas de resumen.
+Evidencia de la corrección en `captures/ui/new-version/sales-by-family-invoices/`
+y `captures/sql/new-version/sales/invoice-only-by-family-20261104/` del backend.
+Los artefactos previos con AIPREBR se conservan como históricos, sustituidos.
+Agosto 2026 corregido: México **9,493,745.19** (178 partidas, 146 productos/sucursales);
+todas las sucursales **87,926,769.31** (3,112 partidas). Se excluyen 25 partidas
+de remisiones. Conciliación por partida y caso histórico con descuento confirman
+el uso de AIPRECIO. La paginación de México queda en 100/46. Cuatro Excel
+recalculados sin errores; PDF resumen una página y detalle cinco para México,
+tres páginas de resumen para todas las sucursales.
 
 Validación: lint/typecheck/build aprobados; navegador con API real para menú y
 ruta directa, fechas/sucursales/familias, detalle/paginación, scroll horizontal,

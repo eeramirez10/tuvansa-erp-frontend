@@ -10,7 +10,7 @@ export function createSalesByFamilyWorkbook(report: SalesByFamily, measure: Sale
     const sheet = book.addWorksheet(name)
     sheet.addRow([report.company]); sheet.addRow([`Ventas brutas por familia del ${report.criteria.from} al ${report.criteria.to}`])
     sheet.addRow([`Sucursal: ${report.criteria.branch === "all" ? "Todas" : report.columns[0]?.name} · Tipo de producto: 1 · Familia IFAMB`])
-    sheet.addRow([measure === "amount" ? "Ventas brutas: AICANTF × AIPREBR, sólo AICANTF>0. Antes de descuentos, sin restar devoluciones ni notas de crédito, sin IVA ni cargos de encabezado." : "Cantidades antes de devoluciones. Metros estimados: TR/PZ × 6.40, M/MT/MTR × 1 y FT × 0.3048. No convierte importes."])
+    sheet.addRow([measure === "amount" ? "Ventas brutas: sólo facturas, AICANTF × AIPRECIO y AICANTF>0. Excluye remisiones, devoluciones y notas de crédito; sin IVA ni cargos de encabezado. No revierte descuentos." : "Sólo cantidades facturadas. Metros estimados: TR/PZ × 6.40, M/MT/MTR × 1 y FT × 0.3048. No convierte importes."])
     sheet.addRow([`Movimientos: ${report.movements} · Sin precio: ${report.missingPrices} · Productos/sucursales sin equivalencia a metros: ${report.unconvertedProducts}`])
     sheet.addRow(headers)
     for (let row = 1; row <= 5; row++) { sheet.mergeCells(row, 1, row, headers.length); sheet.getRow(row).alignment = { wrapText: true, vertical: "middle" }; sheet.getRow(row).height = row === 4 ? 40 : 24 }
@@ -45,7 +45,7 @@ export function createSalesByFamilyWorkbook(report: SalesByFamily, measure: Sale
     cell.font = { name: "Arial Narrow", size: 11, bold: index === 6 || index === totalRow, ...(index === totalRow ? { color: { argb: "FFB91C1C" } } : {}) }; cell.alignment = { vertical: "middle", horizontal: col <= 2 ? "left" : "right", wrapText: true }
     if (index > 6 && index !== totalRow && col > 2) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F7EB" } }
   }) })
-  const products = cover("Productos", ["IFAMB", "Familia", "ISEQ", "Código", "Descripción", "Sucursal", "UM", "Cantidad vendida UM", "m/UM", "Metros estimados", "Ventas brutas $", "Movimientos", "Tipos", "Primera fecha", "Última fecha", "Sin precio bruto", "Bruto exacto SQL (texto)"])
+  const products = cover("Productos", ["IFAMB", "Familia", "ISEQ", "Código", "Descripción", "Sucursal", "UM", "Cantidad vendida UM", "m/UM", "Metros estimados", "Ventas brutas $", "Movimientos", "Tipos", "Primera fecha", "Última fecha", "Sin precio", "Bruto exacto SQL (texto)"])
   const units = new Map<string, { quantity: number; amount: number }>()
   for (const group of report.groups) for (const p of group.products) {
     products.addRow([p.family, p.familyName, p.productId, p.code, p.description, p.branch, p.unit, p.units, p.metersPerUnit, p.meters, p.amount, p.movements, p.movementTypes, p.firstDate, p.lastDate, p.missingPrices, p.gross])
