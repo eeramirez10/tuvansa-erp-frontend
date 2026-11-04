@@ -1,5 +1,22 @@
 # Mapa de vistas, controles y endpoints
 
+## Ventas por familia (2026-11-04)
+
+Entrada existente habilitada en Reportes → Reportes Financieros → Ventas por familia.
+Ruta /ventas/reportes/ventas-por-familia. Documento: [Ventas por familia](ventas-por-familia.md).
+
+| Vista / control | Evento | Endpoint relativo a /api | Query key / archivo |
+| --- | --- | --- | --- |
+| Ventas por familia | Abrir catálogos | GET /sales/reports/by-family/options | sales,reports,by-family,options |
+| Desde / Hasta / Sucursal / Familia IFAMB | Vista previa | GET /sales/reports/by-family?from=2026-08-01&to=2026-08-31&branch=01&family=all | sales,reports,by-family,{from,to,branch,family} |
+| Mostrar / Detalle | Importe/metros, paginación | Sin HTTP adicional | sales-by-family-document.tsx |
+| Excel / PDF | Exportar respuesta vigente | Sin HTTP adicional | sales-by-family-workbook.ts / impresión |
+
+FINV.ITIPO=1 fijo; importe AICANTF × AIPRECIO con signos y filtros de venta
+capturados. Agregación por IFAMB/compañía/periodo derivada; no usa AICOSTO ni
+modifica la base. Esta entrada sustituye el estado pendiente del menú descrito
+en las secciones históricas de Inventario por familia.
+
 Este documento es el contrato de trazabilidad entre la interfaz heredada de OMNIS/PROSCAI y el frontend. Cada pantalla implementada debe registrar el texto visible real del control, su evento, la petición HTTP y la clave de caché de TanStack Query.
 
 ## Estado inicial

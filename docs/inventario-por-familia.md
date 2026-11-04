@@ -2,7 +2,7 @@
 
 Ruta `/inventarios/reportes/inventario-por-familia`. Entrada global:
 **Reportes → Reportes Financieros → Inventario por familia**. El mismo submenú
-incluye Estado de resultados y Ventas por familia (deshabilitado hasta definirlo).
+incluye Estado de resultados y [Ventas por familia](ventas-por-familia.md).
 El catálogo de grupos/rutas se amplía en `features/reports/components/reports-menu.tsx`.
 Todos los controles usan shadcn/Base UI; no hay un menú HTML alternativo.
 

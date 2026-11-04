@@ -6,10 +6,10 @@ import { Button } from "@/shared/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 
 // Extend this catalog as reports are defined; entries without a route remain disabled.
-const groups = [
+const groups: Array<{ label: string; reports: Array<{ label: string; path: string | null }> }> = [
   { label: "Reportes Financieros", reports: [
     { label: "Estado de resultados", path: paths.incomeStatement },
-    { label: "Ventas por familia", path: null },
+    { label: "Ventas por familia", path: paths.salesByFamily },
     { label: "Inventario por familia", path: paths.inventoryByFamily },
   ] },
 ]

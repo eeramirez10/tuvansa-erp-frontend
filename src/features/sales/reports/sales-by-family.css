@@ -1,0 +1,22 @@
+.sales-family-document { font-family: Arial, Helvetica, sans-serif; line-height: 1.25; }
+.sales-family-matrix { border-collapse: collapse; }
+.sales-family-matrix th, .sales-family-matrix td { border: 1px solid #a3a3a3; }
+.sales-family-matrix thead { background: #e2f0d9; }
+.sales-family-matrix tbody td:nth-child(even):not(:nth-child(2)) { background: #f0f7eb; }
+.sales-family-matrix tbody tr:last-child { color: #b91c1c; font-weight: bold; }
+.sales-family-print-root { display: none; }
+@page sales-family { size: letter landscape; margin: 10mm; }
+@media print {
+  body:has(> .sales-family-print-root) > *:not(.sales-family-print-root) { display: none !important; }
+  .sales-family-print-root { display: block !important; page: sales-family; }
+  .sales-family-document { padding: 0; }
+  .sales-family-document + .sales-family-document { break-before: page; }
+  .sales-family-document [data-slot="table-container"] { display: contents; position: static; overflow: visible; }
+  .sales-family-document table { min-width: 0; width: 100%; font-size: 7pt; }
+  .sales-family-document thead { display: table-header-group; }
+  .sales-family-document tr { break-inside: avoid; }
+  .sales-family-document th, .sales-family-document td { padding: 3pt; }
+  .sales-family-document .sales-family-matrix th, .sales-family-document .sales-family-matrix td { padding: 2pt 3pt; }
+  .sales-family-document th { white-space: normal; }
+  .sales-family-document footer { break-inside: avoid; font-size: 6pt; line-height: 1.2; }
+}

@@ -24,6 +24,10 @@ export const router = createBrowserRouter([
         lazy: () => import("@/features/inventories/reports/inventory-by-family-route"),
       },
       {
+        path: "ventas/reportes/ventas-por-familia",
+        lazy: () => import("@/features/sales/reports/sales-by-family-route"),
+      },
+      {
         path: "cuentas-por-cobrar/clientes/:clientId?",
         lazy: () =>
           import("@/features/accounts-receivable/clients/accounts-receivable-clients-route"),
