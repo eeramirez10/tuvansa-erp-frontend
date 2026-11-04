@@ -45,7 +45,7 @@ function Workspace({ options }: { options: SalesOptions }) {
   return <>
     <h1 className="text-sm font-semibold">Ventas por familia</h1>
     {!open && <Button className="mt-2 self-start" onClick={() => setOpen(true)}>Abrir reporte</Button>}
-    {open && <DesktopWindowIdentity id="sales:reports:by-family"><ErpDataDialog title="Ventas por familia" description="Ventas del periodo por familia IFAMB, productos tipo 1" tone="sales" defaultWidth={1120} defaultHeight={Math.min(740, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
+    {open && <DesktopWindowIdentity id="sales:reports:by-family"><ErpDataDialog title="Ventas por familia" description="Ventas brutas del periodo por familia IFAMB, productos tipo 1" tone="sales" defaultWidth={1120} defaultHeight={Math.min(740, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
       <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-2">
         <form onSubmit={form.handleSubmit(generate)} className="shrink-0 rounded-sm border bg-background p-2">
           <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-[9rem_9rem_minmax(11rem,1fr)_minmax(11rem,1fr)_auto]">
@@ -54,16 +54,16 @@ function Workspace({ options }: { options: SalesOptions }) {
             <Controller control={form.control} name="branch" render={({ field }) => <ReportSelect id="sales-branch" label="Sucursal" value={field.value} options={[{ value: "all", label: "Todas las sucursales" }, ...options.branches.map(b => ({ value: b.code, label: b.code + " · " + b.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Controller control={form.control} name="family" render={({ field }) => <ReportSelect id="sales-family" label="Familia IFAMB" value={field.value} options={[{ value: "all", label: "Todas las familias" }, ...options.families.map(f => ({ value: f.code, label: (f.code || "—") + " · " + f.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Button type="submit" size="lg" disabled={busy}>{report.isFetching ? "Generando…" : "Vista previa"}</Button>
-          </div><p className="mt-2 text-[10px]">Tipo de producto: 1 · Ventas y devoluciones registradas · Periodo inclusivo</p>
+          </div><p className="mt-2 text-[10px]">Tipo de producto: 1 · Ventas brutas antes de descuentos y devoluciones, sin IVA · Periodo inclusivo</p>
           {(form.formState.errors.from || form.formState.errors.to) && <p role="alert" className="mt-1 text-xs text-destructive">{form.formState.errors.to?.message ?? "Selecciona fechas válidas."}</p>}
         </form>
         <div className="flex shrink-0 flex-wrap items-end justify-between gap-2"><div className="flex items-end gap-3">
-          <ReportSelect id="sales-measure" label="Mostrar" value={measure} options={[{ value: "amount", label: "Importe de ventas" }, { value: "meters", label: "Metros estimados" }]} onChange={value => setMeasure(value as SalesMeasure)} disabled={busy} />
+          <ReportSelect id="sales-measure" label="Mostrar" value={measure} options={[{ value: "amount", label: "Ventas brutas" }, { value: "meters", label: "Metros estimados" }]} onChange={value => setMeasure(value as SalesMeasure)} disabled={busy} />
           <Label htmlFor="sales-detail"><Checkbox id="sales-detail" checked={detail} onCheckedChange={value => { setDetail(value === true); setPage(1) }} />Detalle por producto en pantalla y PDF</Label>
         </div>{ready && detail && <div className="flex items-center gap-2 text-[10px]"><Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>Anterior</Button><span>Página {page} de {pages} · {count} productos / sucursales</span><Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(page + 1)}>Siguiente</Button></div>}</div>
         <div role="region" aria-label="Vista previa de ventas por familia" aria-busy={report.isFetching} className="min-h-0 flex-1 overflow-auto rounded-sm border bg-background">
-          {!criteria && <p className="p-3 text-xs">Selecciona periodo, sucursal y familia para consultar las ventas.</p>}
-          {report.isFetching && <p role="status" className="flex items-center gap-2 p-3 text-xs"><Spinner />Calculando ventas y devoluciones…</p>}
+          {!criteria && <p className="p-3 text-xs">Selecciona periodo, sucursal y familia para consultar las ventas brutas.</p>}
+          {report.isFetching && <p role="status" className="flex items-center gap-2 p-3 text-xs"><Spinner />Calculando ventas brutas…</p>}
           {criteria && !matches && <p role="status" className="p-3 text-xs">Los filtros cambiaron. Genera de nuevo la vista previa para exportar.</p>}
           {matches && report.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(report.error)}</AlertDescription><Button size="sm" onClick={() => void report.refetch()}>Reintentar</Button></Alert>}
           {matches && !report.isFetching && !report.isError && report.data?.empty && <p role="status" className="p-3 text-xs">No hay ventas para este periodo y filtros.</p>}

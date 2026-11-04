@@ -12,8 +12,11 @@ Ruta /ventas/reportes/ventas-por-familia. Documento: [Ventas por familia](ventas
 | Mostrar / Detalle | Importe/metros, paginación | Sin HTTP adicional | sales-by-family-document.tsx |
 | Excel / PDF | Exportar respuesta vigente | Sin HTTP adicional | sales-by-family-workbook.ts / impresión |
 
-FINV.ITIPO=1 fijo; importe AICANTF × AIPRECIO con signos y filtros de venta
-capturados. Agregación por IFAMB/compañía/periodo derivada; no usa AICOSTO ni
+FINV.ITIPO=1 fijo; **ventas brutas** AICANTF × AIPREBR, sólo AICANTF>0,
+antes de descuentos, sin restar devoluciones ni notas de crédito y sin IVA.
+Respuesta con basis:gross, amount bruto y gross exacto por producto/sucursal.
+Se conservan los filtros de venta capturados; la fórmula bruta y la agregación
+por IFAMB/compañía/periodo son derivadas; no usa AICOSTO ni
 modifica la base. Esta entrada sustituye el estado pendiente del menú descrito
 en las secciones históricas de Inventario por familia.
 

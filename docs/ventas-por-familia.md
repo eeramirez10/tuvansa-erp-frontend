@@ -17,10 +17,15 @@ permite una o todas; Familia IFAMB filtra el tipo de producto fijo **ITIPO=1**.
 | Mostrar / Detalle | Sin HTTP adicional | Importe o metros; pagina 100 productos/sucursales |
 | Excel / PDF | Sin HTTP adicional | Exporta la respuesta vigente |
 
-El importe lo calcula el backend con AICANTF × AIPRECIO, conservando créditos y
-devoluciones negativos, documentos DESFACT=1/DEST=0 y filtros POS capturados.
+El importe es **ventas brutas**, calculado por el backend con AICANTF × AIPREBR
+y sólo cantidades facturadas AICANTF>0: antes de descuentos, sin restar
+devoluciones ni notas de crédito, sin IVA ni cargos de encabezado. Cantidades
+y metros también se calculan antes de devoluciones. Mantiene documentos
+DESFACT=1/DEST=0 y filtros POS capturados.
 No usa el costo AICOSTO del reporte de inventarios. No limita a FA ni reaplica
-descuentos o tipos de cambio; presenta Importe registrado, sin IVA ni cargos
+descuentos o tipos de cambio; no sustituye un AIPREBR ausente por AIPRECIO.
+Los precios brutos nulos o cero con precio neto distinto de cero se señalan
+como importe incompleto. Presenta Ventas brutas, sin IVA ni cargos
 del encabezado. No es un estado contable de ingresos. Sucursal procede de la
 compañía del documento e incluye sus ventas desde resguardos. La agrupación usa
 familia y tipo actuales. Detalles y evidencia: docs/modules/sales/sales-by-family.md
@@ -29,7 +34,7 @@ en el backend. El SQL agregado de este reporte es derivado, no una captura nueva
 Mostrar permite importe o metros sin otra lectura. TR/PZ × 6.40, M/MT/MTR × 1,
 FT × 0.3048: aproximaciones solicitadas previamente, sólo para cantidades. Otras
 UM conservan su cantidad original y valor, sin añadirse a los metros. Detalle:
-familia/código/descripción/sucursal/UM/cantidad/metros/ventas/créditos/neto/conteo/
+familia/código/descripción/sucursal/UM/cantidad vendida/metros/ventas brutas/conteo/
 tipos/fechas. No se mezclan las cantidades originales de UM distintas.
 
 Cambiar parámetros oculta la vista anterior y deshabilita exportar hasta regenerar.
@@ -38,15 +43,26 @@ cierran la ventana; puede abrirse de nuevo. Enter dentro del formulario genera
 la vista previa mediante el mismo submit.
 
 ExcelJS se carga al descargar y genera Familias, Productos, Unidades originales y
-Criterios. Conserva fórmulas de porcentajes/totales y neto exacto SQL como texto,
+Criterios. Conserva fórmulas de porcentajes/totales y bruto exacto SQL como texto,
 códigos con ceros y cantidades numéricas. PDF imprime resumen o detalle completo;
 matrices de todas las sucursales se dividen en bloques de tres con total general
 explícito. No imprime la navegación del ERP ni limita el detalle a la página visible.
 
 Se leen periodos de la base configurada, sin sumar respaldos ni cambiar de origen
 por año. No se inventa fecha para movimientos sin documento. No se modifica MySQL,
-Neon ni Firebase. Evidencia local privada en captures/ui/new-version/sales-by-family/
+Neon ni Firebase. Evidencia local privada inicial en captures/ui/new-version/sales-by-family/
 del backend; no se agrega a Git.
+
+Actualización a ventas brutas del 2026-11-04: el menú conserva su nombre y
+ubicación; el documento impreso, el Excel y la vista previa identifican el criterio
+bruto. La respuesta incluye `basis: "gross"`, `amount` bruto y `gross` exacto por
+producto/sucursal; sustituye las columnas anteriores de ventas/créditos/neto.
+Archivos descargados con prefijo `ventas-brutas-familia-`.
+Evidencia nueva en `captures/ui/new-version/sales-by-family-gross/` del backend.
+Agosto 2026: México **9,505,873.55**; todas las sucursales **87,938,897.67**.
+Conciliados con partidas individuales; además se verificó un día histórico con
+descuento donde AIPREBR es distinto de AIPRECIO. PDF bruto de México: resumen
+una página y detalle completo cinco; siete sucursales, tres páginas de resumen.
 
 Validación: lint/typecheck/build aprobados; navegador con API real para menú y
 ruta directa, fechas/sucursales/familias, detalle/paginación, scroll horizontal,
