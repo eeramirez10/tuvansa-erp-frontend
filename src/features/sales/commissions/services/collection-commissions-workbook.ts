@@ -9,7 +9,7 @@ export function createCollectionCommissionsWorkbook(report: CollectionCommission
     sheet.addRow([report.company]); sheet.addRow([report.title])
     sheet.addRow([`Pagos PA del ${report.criteria.from} al ${report.criteria.to} · Sucursal: ${report.criteria.branch} · Agente: ${report.criteria.agent}`])
     sheet.addRow([report.calculationReady ? "Costo histórico y utilidad sobre cobranza según métodos 211, 213 y 214. Documentos agrupados por agente." : "Hay documentos sin costo calculable. Las celdas vacías no significan cero; consulta los criterios y partidas de origen."])
-    sheet.addRow(["Fechas de FAX.AFECHA; pagos y devoluciones sin IVA. Se conservan signos. Detalle y criterios en las demás hojas."])
+    sheet.addRow(["Sin facturas con servicios, incluidas mixtas. Pago sin IVA en positivo; Movimientos FAX conserva signos originales. Periodo por FAX.AFECHA."])
     sheet.addRow(headers)
     for (let row = 1; row <= 5; row++) { sheet.mergeCells(row, 1, row, headers.length); sheet.getRow(row).height = row === 4 ? 36 : 25; sheet.getRow(row).alignment = { wrapText: true, vertical: "middle" } }
     sheet.getRow(2).font = { bold: true, color: { argb: "FFB45309" } }
@@ -21,7 +21,7 @@ export function createCollectionCommissionsWorkbook(report: CollectionCommission
   const detail = create("Comisiones", collectionHeaders)
   const subtotalRows: number[] = []
   const totals = (row: ExcelJS.Row, values: CollectionCommissions["totals"], formula: (letter: string) => string) => {
-    for (const [col, result] of [[7, values.subtotal], [8, values.returns], [9, values.total], [10, values.payment], [11, values.cost], [12, values.realCost], [13, values.profit], [15, values.freight], [17, values.lm], [18, values.lmAmount]] as const) {
+    for (const [col, result] of [[7, values.subtotal], [8, values.returns], [9, values.total], [10, values.displayPayment], [11, values.cost], [12, values.realCost], [13, values.profit], [15, values.freight], [17, values.lm], [18, values.lmAmount]] as const) {
       if (result !== null) row.getCell(col).value = { formula: `ROUND(${formula(detail.getColumn(col).letter)},2)`, result }
     }
     row.font = { bold: true }; row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } }
@@ -32,7 +32,7 @@ export function createCollectionCommissionsWorkbook(report: CollectionCommission
     const first = detail.rowCount + 1
     for (const row of report.invoices.filter(r => r.agentCode === agent.code)) {
       const line = detail.addRow([row.agentName, row.customerName, new Date(row.date + "T00:00:00Z"), new Date(row.lastPaymentDate + "T00:00:00Z"), row.number, row.days,
-        row.subtotalAmount, row.returnAmount, row.totalAmount, row.paymentAmount, row.cost, row.realCost, row.profit, row.margin === null ? null : row.margin / 100, row.freightAmount, row.newCustomer, row.lm, row.lmAmount])
+        row.subtotalAmount, row.returnAmount, row.totalAmount, row.displayPaymentAmount, row.cost, row.realCost, row.profit, row.margin === null ? null : row.margin / 100, row.freightAmount, row.newCustomer, row.lm, row.lmAmount])
       line.outlineLevel = 1
     }
     const last = detail.rowCount, subtotal = detail.addRow([`Subtotal agente ${agent.code}`])
@@ -47,17 +47,17 @@ export function createCollectionCommissionsWorkbook(report: CollectionCommission
   totals(total, report.totals, letter => subtotalRows.length ? `SUM(${subtotalRows.map(row => `${letter}${row}`).join(",")})` : "0")
   total.font = { bold: true, color: { argb: "FFB91C1C" } }
   const summary = create("Resumen agentes", ["Código", "Agente", "Facturas", "Pagos PA", "Subtotal", "Devoluciones", "Total", "Pago", "Costo", "Costo real", "Utilidad", "Fletes", "LM", "LM_VALOR"])
-  report.agents.forEach(row => summary.addRow([row.code, row.name, row.invoices, row.payments, row.subtotal, row.returns, row.total, row.payment, row.cost, row.realCost, row.profit, row.freight, row.lm, row.lmAmount]))
+  report.agents.forEach(row => summary.addRow([row.code, row.name, row.invoices, row.payments, row.subtotal, row.returns, row.total, row.displayPayment, row.cost, row.realCost, row.profit, row.freight, row.lm, row.lmAmount]))
   summary.getColumn(2).width = 40; for (const col of [5,6,7,8,9,10,11,12,14]) summary.getColumn(col).numFmt = money
   const invoiceMap = new Map(report.invoices.map(row => [row.id, row]))
   const movements = create("Movimientos FAX", ["ASEQ", "DSEQ", "Factura", "Fecha", "Tipo", "ACANT con IVA", "% IVA", "Importe sin IVA", "Referencia", "Importe exacto sin IVA (texto)"])
   report.movements.forEach(row => movements.addRow([row.id, row.invoiceId, invoiceMap.get(row.invoiceId)?.number, new Date(row.date + "T00:00:00Z"), row.type,
     Number(row.amount), Number(row.vatRate), row.withoutVat === null ? null : Number(row.withoutVat), row.reference, row.withoutVat]))
   movements.getColumn(4).numFmt = "dd/mm/yyyy"; movements.getColumn(6).numFmt = money; movements.getColumn(8).numFmt = "0.00000000"; movements.getColumn(10).width = 33
-  const products = create("Partidas origen", ["AISEQ", "DSEQ", "Factura", "ISEQ", "Código", "Descripción", "IFAMB", "AICANT", "AICANTF", "AIPRECIO", "AICOSTO unitario de origen", "AIMES", "AITIPMV", "ILUGAR", "Movimiento de costo esperado", "Incluida en costo", "Compañía"])
+  const products = create("Partidas origen", ["AISEQ", "DSEQ", "Factura", "ISEQ", "Código", "Descripción", "IFAMB", "AICANT", "AICANTF", "AIPRECIO", "AICOSTO unitario de origen", "AIMES", "AITIPMV", "ILUGAR", "Movimiento de costo esperado", "Incluida en costo", "Compañía", "ITIPO"])
   report.products.forEach(row => products.addRow([row.id, row.invoiceId, invoiceMap.get(row.invoiceId)?.number, row.productId, row.code, row.description,
     row.family, Number(row.quantity), Number(row.billedQuantity), Number(row.price), Number(row.unitCost), row.applied, row.movementType, row.location,
-    invoiceMap.get(row.invoiceId)?.costMovementType, row.movementType === invoiceMap.get(row.invoiceId)?.costMovementType ? "Sí" : "No", invoiceMap.get(row.invoiceId)?.companyId]))
+    invoiceMap.get(row.invoiceId)?.costMovementType, row.movementType === invoiceMap.get(row.invoiceId)?.costMovementType ? "Sí" : "No", invoiceMap.get(row.invoiceId)?.companyId, row.typeId]))
   products.getColumn(6).width = 65; for (const col of [8, 9]) products.getColumn(col).numFmt = "0.000"; for (const col of [10, 11]) products.getColumn(col).numFmt = "0.00000"
   const criteria = book.addWorksheet("Criterios"); report.notes.forEach(note => criteria.addRow([note])); criteria.getColumn(1).width = 145
   criteria.eachRow(row => { row.alignment = { wrapText: true, vertical: "top" }; row.height = 42 })

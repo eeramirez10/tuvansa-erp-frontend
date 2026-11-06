@@ -40,7 +40,7 @@ function Workspace({ options }: { options: CollectionOptions }) {
     {!open && <Button className="mt-2 self-start" onClick={() => setOpen(true)}>Abrir reporte</Button>}
     {open && <DesktopWindowIdentity id="sales:reports:collection-commissions"><ErpDataDialog title="Reporte Comisiones x Cobranza" description="Cobranza PA por fecha de pago, factura y agente" tone="sales" defaultWidth={1140} defaultHeight={Math.min(760, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
       <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-2">
-        <Alert className="shrink-0"><AlertDescription>Documentos agrupados por agente. Costo histórico y utilidad sobre cobranza; incluye subtotales por agente y detalle en Excel.</AlertDescription></Alert>
+        <Alert className="shrink-0"><AlertDescription>Documentos agrupados por agente. Excluye facturas con servicios, incluidas las mixtas. Pagos presentados en positivo; incluye subtotales por agente y detalle en Excel.</AlertDescription></Alert>
         <form className="shrink-0 rounded-sm border bg-background p-2" onSubmit={form.handleSubmit(generate)}>
           <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-[9rem_9rem_minmax(10rem,1fr)_minmax(12rem,1fr)_auto]">
             <div className="grid gap-1"><Label htmlFor="collection-from">Pagos desde</Label><Input id="collection-from" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("from")} /></div>
@@ -61,7 +61,7 @@ function Workspace({ options }: { options: CollectionOptions }) {
           {criteria && !matches && <p role="status" className="p-3 text-xs">Los filtros cambiaron. Genera de nuevo la vista previa antes de exportar.</p>}
           {matches && report.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(report.error)}</AlertDescription><Button onClick={() => void report.refetch()}>Reintentar</Button></Alert>}
           {matches && !report.isFetching && !report.isError && report.data?.empty && <p role="status" className="p-3 text-xs">No hay facturas con pagos PA en este periodo y filtros.</p>}
-          {ready && <><div className="p-2 text-xs"><p className="font-semibold">{report.data!.company}</p><p>Facturas: {report.data!.totals.invoices} · Pagos PA: {report.data!.totals.payments} · Pago sin IVA presentado: {collectionMoney(report.data!.totals.payment)}</p></div>
+          {ready && <><div className="p-2 text-xs"><p className="font-semibold">{report.data!.company}</p><p>Facturas: {report.data!.totals.invoices} · Pagos PA: {report.data!.totals.payments} · Pago sin IVA presentado: {collectionMoney(report.data!.totals.displayPayment)}</p></div>
             {!report.data!.calculationReady && <p role="alert" className="p-2 text-xs text-destructive">{report.data!.totals.unavailableCosts} documentos sin costo calculable: revisa partidas de venta, compañía, IVA o subtotal cero. Los importes no disponibles se dejan vacíos en Excel.</p>}
             {report.data!.invoices.some(r => r.invalidVatCount > 0) && <p role="alert" className="p-2 text-xs text-destructive">Hay movimientos con IVA inválido. Sus importes no están disponibles.</p>}
             <CollectionCommissionsTable report={report.data!} summary={summary} page={page} />

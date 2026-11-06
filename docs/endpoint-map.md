@@ -8,6 +8,9 @@ Catálogos GET `/sales/reports/collection-commissions/options`; Vista previa GET
 `/sales/reports/collection-commissions?from=2026-08-01&to=2026-08-31&branch=01&agent=all`.
 Periodo FAX.AFECHA y pagos PA; partidas separadas evitan multiplicar cobranza.
 Costo histórico/prorrateado, utilidad y LM según CUATRO.pdf/método 214.
+Excluye facturas completas con servicios FINV.ITIPO=4, incluidas mixtas.
+`displayPaymentAmount` y `displayPayment` muestran pagos positivos; los campos
+firmados siguen disponibles para cálculo/auditoría. No cambia costo/utilidad.
 Documentos y subtotales por agente en pantalla y Excel; resumen y descarga sin HTTP.
 Datos indefinidos se señalan, no se sustituyen por cero. La ruta contable anterior
 redirige a Ventas. [Detalle](comisiones-por-cobranza.md).
