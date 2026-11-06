@@ -41,6 +41,7 @@
 - Si una tabla excede la ventana, habilita scroll X/Y y asegúrate de que la barra horizontal quede al final del contenido.
 - Reutiliza componentes compartidos antes de crear variantes por módulo.
 - Los menús del encabezado muestran sólo las opciones del módulo activo. Reutiliza Dropdown Menu y submenús de shadcn con catálogos por módulo; no propagues reportes globalmente. Los tres reportes financieros actuales pertenecen a Contabilidad; consulta `docs/menus-por-modulo.md`.
+- El menú principal de reportes se llama `Reportes <nombre del módulo>` (por ejemplo, `Reportes Contabilidad`, `Reportes Pedidos` o `Reportes Bancos`). Los nombres de los submenús se definen por separado conforme se agregan.
 
 ## Integración con la API
 

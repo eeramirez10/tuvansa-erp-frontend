@@ -1,10 +1,16 @@
 # Menús de reportes por módulo
 
 Actualización del 2026-11-06. El encabezado muestra únicamente los reportes
-registrados para el módulo activo. Se conserva **Reportes → submenú → reporte**
+registrados para el módulo activo. Se usa **Reportes <módulo> → submenú → reporte**
 con Dropdown Menu y Submenu de shadcn/Base UI.
 
 Los tres reportes financieros actuales pertenecen a **Contabilidad**:
+
+El menú principal se llama **Reportes Contabilidad**. El mismo formato se aplica
+a todos los módulos: Reportes Inventarios, Reportes Pedidos, Reportes Facturación,
+Reportes Bancos, etc. Los nombres proceden de `erpModuleNames` en
+`src/features/workspace/module-routes.ts`. Los submenús conservan sus nombres
+propios, como Reportes Financieros, y se definen conforme se agregan.
 
 | Módulo | Submenú | Reporte | Ruta |
 | --- | --- | --- | --- |
@@ -35,7 +41,7 @@ ventas y contabilidad permanecen iguales: este cambio sólo organiza navegación
 | Control | Efecto | HTTP / SQL |
 | --- | --- | --- |
 | Selector de módulos | Cambia catálogo de reportes según la ruta activa | Sin consulta adicional para construir el menú |
-| Reportes / Reportes Financieros | Abre submenú de Contabilidad | Sin HTTP ni SQL |
+| Reportes Contabilidad / Reportes Financieros | Abre submenú de Contabilidad | Sin HTTP ni SQL |
 | Reporte seleccionado | Abre ruta contable y carga su pantalla existente | Endpoints documentados en cada reporte |
 
 Validación: lint, typecheck y build. Navegador para módulos sin reportes,
@@ -47,3 +53,8 @@ afectaron únicamente las APIs de reportes; la navegación entre módulos se pro
 con sus consultas de lectura existentes.
 Evidencia privada en `captures/ui/new-version/module-report-menus-20261106/`
 del backend. Sin cambios de SQL, backend, base de datos ni Firebase.
+
+Validación de la etiqueta principal: lint/typecheck/build aprobados; navegador
+confirma `Reportes Contabilidad` tanto visible como accesible, conserva el submenú
+Reportes Financieros con los tres reportes y Escape, y no muestra un menú global
+en Inicio. Evidencia privada: `captures/ui/new-version/module-report-menu-labels-20261106/`.

@@ -1,6 +1,6 @@
 # Ventas por familia
 
-Implementación del 2026-11-04. Se habilita la entrada existente **Reportes →
+Implementación del 2026-11-04. Entrada actual **Reportes Contabilidad →
 Reportes Financieros → Ventas por familia**, conservando el texto.
 Desde el 2026-11-06 aparece exclusivamente en Contabilidad, en la ruta
 `/contabilidad/reportes/ventas-por-familia` con carga diferida. La ruta anterior

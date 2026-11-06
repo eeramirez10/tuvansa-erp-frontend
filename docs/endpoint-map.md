@@ -2,10 +2,12 @@
 
 ## Menús por módulo (2026-11-06)
 
-Los reportes actuales se muestran únicamente en **Contabilidad → Reportes →
+Los reportes actuales se muestran únicamente en **Contabilidad → Reportes Contabilidad →
 Reportes Financieros**. Se retira el catálogo global del resto de los módulos.
 El catálogo por módulo se define en `src/features/reports/model.ts`; cada módulo
 puede registrar grupos y reportes propios reutilizando el mismo Dropdown Menu.
+El menú principal siempre lleva el nombre del módulo: `Reportes <módulo>`;
+los nombres de los submenús se definen por separado.
 Detalles y validación: [Menús por módulo](menus-por-modulo.md).
 
 Ventas e Inventario por familia usan ahora las rutas

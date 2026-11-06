@@ -1,7 +1,7 @@
 # Inventario por familia a una fecha
 
 Ruta `/contabilidad/reportes/inventario-por-familia`. Entrada exclusiva de Contabilidad:
-**Reportes → Reportes Financieros → Inventario por familia**. El mismo submenú
+**Reportes Contabilidad → Reportes Financieros → Inventario por familia**. El mismo submenú
 incluye Estado de resultados y [Ventas por familia](ventas-por-familia.md).
 El catálogo por módulo está en `features/reports/model.ts`. La ruta anterior
 `/inventarios/reportes/inventario-por-familia` redirige al contexto contable.
