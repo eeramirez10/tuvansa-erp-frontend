@@ -1,8 +1,9 @@
-import { createBrowserRouter } from "react-router"
+import { createBrowserRouter, redirect } from "react-router"
 
 import { ErpLayout } from "@/app/layouts/erp-layout"
 import { RootErrorBoundary } from "@/app/router/root-error-boundary"
 import { RouteLoadingFallback } from "@/app/router/route-loading-fallback"
+import { paths } from "@/app/router/paths"
 
 export const router = createBrowserRouter([
   {
@@ -21,10 +22,18 @@ export const router = createBrowserRouter([
       },
       {
         path: "inventarios/reportes/inventario-por-familia",
+        loader: ({ request }) => { const url = new URL(request.url); return redirect(paths.inventoryByFamily + url.search + url.hash) },
+      },
+      {
+        path: paths.inventoryByFamily.slice(1),
         lazy: () => import("@/features/inventories/reports/inventory-by-family-route"),
       },
       {
         path: "ventas/reportes/ventas-por-familia",
+        loader: ({ request }) => { const url = new URL(request.url); return redirect(paths.salesByFamily + url.search + url.hash) },
+      },
+      {
+        path: paths.salesByFamily.slice(1),
         lazy: () => import("@/features/sales/reports/sales-by-family-route"),
       },
       {

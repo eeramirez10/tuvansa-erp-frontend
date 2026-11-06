@@ -1,9 +1,11 @@
 # Ventas por familia
 
 Implementación del 2026-11-04. Se habilita la entrada existente **Reportes →
-Reportes Financieros → Ventas por familia**, conservando ubicación y texto.
-Ruta `/ventas/reportes/ventas-por-familia` con carga diferida. El inventario por
-familia conserva su ruta y funcionamiento.
+Reportes Financieros → Ventas por familia**, conservando el texto.
+Desde el 2026-11-06 aparece exclusivamente en Contabilidad, en la ruta
+`/contabilidad/reportes/ventas-por-familia` con carga diferida. La ruta anterior
+`/ventas/reportes/ventas-por-familia` redirige a la actual. Los cálculos y endpoints
+siguen iguales. Detalles: [Menús por módulo](menus-por-modulo.md).
 
 Misma distribución visual de matriz, encabezados verdes y total rojo. Ventana ERP
 movible/redimensionable compartida, controles shadcn/Base UI. Desde/Hasta permiten

@@ -40,6 +40,7 @@
 - Las ventanas de datos usan el sistema compartido: tamaño inicial mediano, mover, resize, maximizar, minimizar, múltiples ventanas y barra inferior de tareas.
 - Si una tabla excede la ventana, habilita scroll X/Y y asegúrate de que la barra horizontal quede al final del contenido.
 - Reutiliza componentes compartidos antes de crear variantes por módulo.
+- Los menús del encabezado muestran sólo las opciones del módulo activo. Reutiliza Dropdown Menu y submenús de shadcn con catálogos por módulo; no propagues reportes globalmente. Los tres reportes financieros actuales pertenecen a Contabilidad; consulta `docs/menus-por-modulo.md`.
 
 ## Integración con la API
 

@@ -8,7 +8,7 @@ export function ErpLayout() {
   return (
     <div className="flex min-h-svh min-w-0 flex-col bg-muted/30">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <nav aria-label="Reportes" className="flex min-h-8 items-center border-b px-2"><ReportsMenu /></nav>
+        <ReportsMenu />
         <ErpModuleNavigation />
       </header>
       <main className="flex min-w-0 flex-1 flex-col p-2">

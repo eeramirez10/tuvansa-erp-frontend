@@ -1,21 +1,18 @@
-import { Link } from "react-router"
+import { Link, useLocation } from "react-router"
 import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { paths } from "@/app/router/paths"
+import { reportGroupsByModule } from "@/features/reports/model"
+import { getErpModuleForPath } from "@/features/workspace/module-routes"
 import { Button } from "@/shared/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 
-// Extend this catalog as reports are defined; entries without a route remain disabled.
-const groups: Array<{ label: string; reports: Array<{ label: string; path: string | null }> }> = [
-  { label: "Reportes Financieros", reports: [
-    { label: "Estado de resultados", path: paths.incomeStatement },
-    { label: "Ventas por familia", path: paths.salesByFamily },
-    { label: "Inventario por familia", path: paths.inventoryByFamily },
-  ] },
-]
-
 export function ReportsMenu() {
-  return <DropdownMenu modal={false}>
+  const { pathname } = useLocation()
+  const moduleId = getErpModuleForPath(pathname)
+  const groups = moduleId ? reportGroupsByModule[moduleId]?.filter(group => group.reports.length > 0) : undefined
+  if (!groups?.length) return null
+
+  return <nav aria-label="Reportes" className="flex min-h-8 items-center border-b px-2"><DropdownMenu key={moduleId} modal={false}>
     <DropdownMenuTrigger render={<Button size="lg" variant="ghost" />}>
       Reportes <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
     </DropdownMenuTrigger>
@@ -29,5 +26,5 @@ export function ReportsMenu() {
         </DropdownMenuSubContent>
       </DropdownMenuSub>)}
     </DropdownMenuContent>
-  </DropdownMenu>
+  </DropdownMenu></nav>
 }

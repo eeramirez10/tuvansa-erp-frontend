@@ -1,9 +1,11 @@
 # Inventario por familia a una fecha
 
-Ruta `/inventarios/reportes/inventario-por-familia`. Entrada global:
+Ruta `/contabilidad/reportes/inventario-por-familia`. Entrada exclusiva de Contabilidad:
 **Reportes → Reportes Financieros → Inventario por familia**. El mismo submenú
 incluye Estado de resultados y [Ventas por familia](ventas-por-familia.md).
-El catálogo de grupos/rutas se amplía en `features/reports/components/reports-menu.tsx`.
+El catálogo por módulo está en `features/reports/model.ts`. La ruta anterior
+`/inventarios/reportes/inventario-por-familia` redirige al contexto contable.
+Detalles: [Menús por módulo](menus-por-modulo.md).
 Todos los controles usan shadcn/Base UI; no hay un menú HTML alternativo.
 
 El reporte es nuevo, solicitado por el usuario el 2026-10-29, con SQL **derivado**.

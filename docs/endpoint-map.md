@@ -1,9 +1,22 @@
 # Mapa de vistas, controles y endpoints
 
+## Menús por módulo (2026-11-06)
+
+Los reportes actuales se muestran únicamente en **Contabilidad → Reportes →
+Reportes Financieros**. Se retira el catálogo global del resto de los módulos.
+El catálogo por módulo se define en `src/features/reports/model.ts`; cada módulo
+puede registrar grupos y reportes propios reutilizando el mismo Dropdown Menu.
+Detalles y validación: [Menús por módulo](menus-por-modulo.md).
+
+Ventas e Inventario por familia usan ahora las rutas
+`/contabilidad/reportes/ventas-por-familia` y
+`/contabilidad/reportes/inventario-por-familia`. Las rutas anteriores redirigen
+conservando la query string. Los endpoints y cálculos no cambian.
+
 ## Ventas por familia (2026-11-04)
 
 Entrada existente habilitada en Reportes → Reportes Financieros → Ventas por familia.
-Ruta /ventas/reportes/ventas-por-familia. Documento: [Ventas por familia](ventas-por-familia.md).
+Ruta /contabilidad/reportes/ventas-por-familia. Documento: [Ventas por familia](ventas-por-familia.md).
 
 | Vista / control | Evento | Endpoint relativo a /api | Query key / archivo |
 | --- | --- | --- | --- |
