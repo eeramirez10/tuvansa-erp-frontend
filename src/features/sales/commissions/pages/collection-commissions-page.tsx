@@ -36,11 +36,11 @@ function Workspace({ options }: { options: CollectionOptions }) {
     try { await downloadCollectionCommissions(report.data) } catch (error) { notifications.error(getApiErrorMessage(error)) } finally { setExporting(false) }
   }
   return <>
-    <h1 className="text-sm font-semibold">Comisiones por cobranza</h1>
+    <h1 className="text-sm font-semibold">Reporte Comisiones x Cobranza</h1>
     {!open && <Button className="mt-2 self-start" onClick={() => setOpen(true)}>Abrir reporte</Button>}
-    {open && <DesktopWindowIdentity id="sales:reports:collection-commissions"><ErpDataDialog title="Comisiones por cobranza — Preliminar" description="Cobranza PA por fecha de pago, factura y agente" tone="sales" defaultWidth={1140} defaultHeight={Math.min(760, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
+    {open && <DesktopWindowIdentity id="sales:reports:collection-commissions"><ErpDataDialog title="Reporte Comisiones x Cobranza" description="Cobranza PA por fecha de pago, factura y agente" tone="sales" defaultWidth={1140} defaultHeight={Math.min(760, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
       <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-2">
-        <Alert className="shrink-0 border-amber-500"><AlertDescription>Preliminar: cobranza disponible. Costos, utilidad, LM y comisión pendientes del procedimiento faltante; no equivalen a cero.</AlertDescription></Alert>
+        <Alert className="shrink-0"><AlertDescription>Documentos agrupados por agente. Costo histórico y utilidad sobre cobranza; incluye subtotales por agente y detalle en Excel.</AlertDescription></Alert>
         <form className="shrink-0 rounded-sm border bg-background p-2" onSubmit={form.handleSubmit(generate)}>
           <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-[9rem_9rem_minmax(10rem,1fr)_minmax(12rem,1fr)_auto]">
             <div className="grid gap-1"><Label htmlFor="collection-from">Pagos desde</Label><Input id="collection-from" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("from")} /></div>
@@ -61,12 +61,13 @@ function Workspace({ options }: { options: CollectionOptions }) {
           {criteria && !matches && <p role="status" className="p-3 text-xs">Los filtros cambiaron. Genera de nuevo la vista previa antes de exportar.</p>}
           {matches && report.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(report.error)}</AlertDescription><Button onClick={() => void report.refetch()}>Reintentar</Button></Alert>}
           {matches && !report.isFetching && !report.isError && report.data?.empty && <p role="status" className="p-3 text-xs">No hay facturas con pagos PA en este periodo y filtros.</p>}
-          {ready && <><div className="p-2 text-xs"><p className="font-semibold">{report.data!.company} · PRELIMINAR</p><p>Facturas: {report.data!.totals.invoices} · Pagos PA: {report.data!.totals.payments} · Pago sin IVA presentado: {collectionMoney(report.data!.totals.payment)}</p></div>
+          {ready && <><div className="p-2 text-xs"><p className="font-semibold">{report.data!.company}</p><p>Facturas: {report.data!.totals.invoices} · Pagos PA: {report.data!.totals.payments} · Pago sin IVA presentado: {collectionMoney(report.data!.totals.payment)}</p></div>
+            {!report.data!.calculationReady && <p role="alert" className="p-2 text-xs text-destructive">{report.data!.totals.unavailableCosts} documentos sin costo calculable: revisa partidas de venta, compañía, IVA o subtotal cero. Los importes no disponibles se dejan vacíos en Excel.</p>}
             {report.data!.invoices.some(r => r.invalidVatCount > 0) && <p role="alert" className="p-2 text-xs text-destructive">Hay movimientos con IVA inválido. Sus importes no están disponibles.</p>}
             <CollectionCommissionsTable report={report.data!} summary={summary} page={page} />
             <div className="space-y-1 p-2 text-[10px]">{report.data!.notes.map(note => <p key={note}>{note}</p>)}</div></>}
         </div>
-        <footer className="flex shrink-0 items-center justify-between gap-2 rounded-sm border bg-background p-2"><span className="text-[10px]">Excel incluye todo el detalle, movimientos FAX y partidas de origen.</span><div className="flex gap-2"><Button disabled={!ready || busy} onClick={() => void download()}>{exporting ? "Generando Excel…" : "Descargar Excel preliminar"}</Button><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button></div></footer>
+        <footer className="flex shrink-0 items-center justify-between gap-2 rounded-sm border bg-background p-2"><span className="text-[10px]">Excel incluye documentos y subtotales por agente, movimientos FAX y partidas de origen.</span><div className="flex gap-2"><Button disabled={!ready || busy} onClick={() => void download()}>{exporting ? "Generando Excel…" : "Descargar Excel"}</Button><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button></div></footer>
       </ErpDataDialogBody>
     </ErpDataDialog></DesktopWindowIdentity>}
   </>

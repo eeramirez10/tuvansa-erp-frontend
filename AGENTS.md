@@ -40,8 +40,8 @@
 - Las ventanas de datos usan el sistema compartido: tamaño inicial mediano, mover, resize, maximizar, minimizar, múltiples ventanas y barra inferior de tareas.
 - Si una tabla excede la ventana, habilita scroll X/Y y asegúrate de que la barra horizontal quede al final del contenido.
 - Reutiliza componentes compartidos antes de crear variantes por módulo.
-- Los menús del encabezado muestran sólo las opciones del módulo activo. Reutiliza Dropdown Menu y submenús de shadcn con catálogos por módulo; no propagues reportes globalmente. Los reportes financieros actuales pertenecen a Contabilidad; consulta `docs/menus-por-modulo.md`.
-- El menú principal de reportes se llama `Reportes <nombre del módulo>` (por ejemplo, `Reportes Contabilidad`, `Reportes Pedidos` o `Reportes Bancos`). Los nombres de los submenús se definen por separado conforme se agregan.
+- Los menús del encabezado muestran sólo las opciones del módulo activo. Reutiliza Dropdown Menu y submenús de shadcn con catálogos por módulo; no propagues reportes globalmente. Los reportes financieros actuales pertenecen a Contabilidad; Comisiones por Cobranza pertenece a Ventas (Pedidos y Facturación), en `Reportes de Ventas → Comisiones → Reporte Comisiones x Cobranza`; consulta `docs/menus-por-modulo.md`.
+- El menú principal de reportes se llama `Reportes <nombre del módulo>` (por ejemplo, `Reportes Contabilidad`, `Reportes Pedidos` o `Reportes Bancos`). La etiqueta explícita de Ventas es `Reportes de Ventas`. Los nombres de los submenús se definen por separado conforme se agregan.
 
 ## Integración con la API
 

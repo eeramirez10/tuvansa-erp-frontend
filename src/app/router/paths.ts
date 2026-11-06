@@ -23,7 +23,7 @@ export const paths = {
   incomeStatement: "/contabilidad/reportes/estado-de-resultados",
   inventoryByFamily: "/contabilidad/reportes/inventario-por-familia",
   salesByFamily: "/contabilidad/reportes/ventas-por-familia",
-  collectionCommissions: "/contabilidad/reportes/comisiones-por-cobranza",
+  collectionCommissions: "/ventas/reportes/comisiones-por-cobranza",
   accountingPolicies: "/contabilidad/polizas",
   accountingPolicy: (policyId: number) => `/contabilidad/polizas/${policyId}`,
 } as const

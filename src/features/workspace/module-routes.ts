@@ -1,7 +1,7 @@
 import { paths } from "@/app/router/paths"
 
 export type ErpModuleId = "accounting" | "inventories" | "accounts-receivable" | "accounts-payable"
-  | "purchase-orders" | "purchase-receptions" | "sales-orders" | "sales-invoicing" | "banking"
+  | "purchase-orders" | "purchase-receptions" | "sales-orders" | "sales-invoicing" | "sales" | "banking"
 
 export const erpModuleNames: Record<ErpModuleId, string> = {
   accounting: "Contabilidad",
@@ -12,11 +12,13 @@ export const erpModuleNames: Record<ErpModuleId, string> = {
   "purchase-receptions": "Recepciones",
   "sales-orders": "Pedidos",
   "sales-invoicing": "Facturación",
+  sales: "Ventas",
   banking: "Bancos",
 }
 
 const moduleRoutes: ReadonlyArray<{ id: ErpModuleId; prefix: string }> = [
   { id: "accounting", prefix: "/contabilidad" },
+  { id: "sales", prefix: "/ventas" },
   { id: "inventories", prefix: "/inventarios" },
   { id: "accounts-receivable", prefix: "/cuentas-por-cobrar" },
   { id: "accounts-payable", prefix: "/cuentas-por-pagar" },

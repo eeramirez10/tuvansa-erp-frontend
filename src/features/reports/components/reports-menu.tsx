@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router"
 import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { reportGroupsByModule } from "@/features/reports/model"
+import { reportGroupsByModule, reportMenuLabels } from "@/features/reports/model"
 import { erpModuleNames, getErpModuleForPath } from "@/features/workspace/module-routes"
 import { Button } from "@/shared/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
@@ -11,7 +11,7 @@ export function ReportsMenu() {
   const moduleId = getErpModuleForPath(pathname)
   const groups = moduleId ? reportGroupsByModule[moduleId]?.filter(group => group.reports.length > 0) : undefined
   if (!moduleId || !groups?.length) return null
-  const label = `Reportes ${erpModuleNames[moduleId]}`
+  const label = reportMenuLabels[moduleId] ?? `Reportes ${erpModuleNames[moduleId]}`
 
   return <nav aria-label={label} className="flex min-h-8 items-center border-b px-2"><DropdownMenu key={moduleId} modal={false}>
     <DropdownMenuTrigger render={<Button size="lg" variant="ghost" />}>

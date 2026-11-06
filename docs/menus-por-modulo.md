@@ -7,7 +7,7 @@ con Dropdown Menu y Submenu de shadcn/Base UI.
 Los reportes financieros actuales pertenecen a **Contabilidad**:
 
 El menú principal se llama **Reportes Contabilidad**. El mismo formato se aplica
-a todos los módulos: Reportes Inventarios, Reportes Pedidos, Reportes Facturación,
+por defecto a los módulos: Reportes Inventarios, Reportes Pedidos, Reportes Facturación,
 Reportes Bancos, etc. Los nombres proceden de `erpModuleNames` en
 `src/features/workspace/module-routes.ts`. Los submenús conservan sus nombres
 propios, como Reportes Financieros, y se definen conforme se agregan.
@@ -17,9 +17,9 @@ propios, como Reportes Financieros, y se definen conforme se agregan.
 | Contabilidad | Reportes Financieros | Estado de resultados | /contabilidad/reportes/estado-de-resultados |
 | Contabilidad | Reportes Financieros | Ventas por familia | /contabilidad/reportes/ventas-por-familia |
 | Contabilidad | Reportes Financieros | Inventario por familia | /contabilidad/reportes/inventario-por-familia |
-| Contabilidad | Reportes Financieros | Comisiones por cobranza (preliminar) | /contabilidad/reportes/comisiones-por-cobranza |
+| Ventas (Pedidos / Facturación) | Comisiones | Reporte Comisiones x Cobranza | /ventas/reportes/comisiones-por-cobranza |
 
-Inicio, Inventarios, Pedidos, Facturación, Clientes, Proveedores, Compras y Bancos
+Inicio, Inventarios, Clientes, Proveedores, Compras y Bancos
 no heredan esos reportes. Si un módulo no tiene grupos con reportes, se ocultan
 el botón y su franja vacía. Al cambiar de módulo se desmontan los desplegables
 anteriores, incluyendo los submenús abiertos. El menú sigue disponible durante
@@ -59,3 +59,13 @@ Validación de la etiqueta principal: lint/typecheck/build aprobados; navegador
 confirma `Reportes Contabilidad` tanto visible como accesible, conserva el submenú
 Reportes Financieros con los tres reportes y Escape, y no muestra un menú global
 en Inicio. Evidencia privada: `captures/ui/new-version/module-report-menu-labels-20261106/`.
+
+## Ventas: comisiones por cobranza (2026-11-06)
+
+Por indicación expresa, Ventas usa la etiqueta **Reportes de Ventas**, compartida
+por Pedidos, Facturación y las rutas /ventas. Tiene **Comisiones → Reporte
+Comisiones x Cobranza**, separado de Reportes Financieros de Contabilidad.
+`reportMenuLabels` permite la etiqueta explícita sin alterar los nombres de módulos.
+La ruta anterior /contabilidad/reportes/comisiones-por-cobranza redirige a /ventas
+con query/hash. La tarjeta del módulo indica Ventas. Otros reportes y módulos
+conservan su propietario y comportamiento; no se agrega un menú global.

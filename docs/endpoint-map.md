@@ -1,23 +1,24 @@
 # Mapa de vistas, controles y endpoints
 
-## Comisiones por cobranza (2026-11-06, preliminar)
+## Comisiones por cobranza (2026-11-06)
 
-Reportes Contabilidad → Reportes Financieros → Comisiones por cobranza;
-`/contabilidad/reportes/comisiones-por-cobranza`. Catálogos GET
-`/sales/reports/collection-commissions/options`; Vista previa GET
+**Reportes de Ventas → Comisiones → Reporte Comisiones x Cobranza**;
+`/ventas/reportes/comisiones-por-cobranza`. Disponible en Pedidos y Facturación.
+Catálogos GET `/sales/reports/collection-commissions/options`; Vista previa GET
 `/sales/reports/collection-commissions?from=2026-08-01&to=2026-08-31&branch=01&agent=all`.
-Periodo por FAX.AFECHA y pagos PA; movimientos/partidas separados para evitar
-duplicación. Resumen, paginación y Excel sin HTTP adicional. Costos, utilidad,
-LM y comisión pendientes del método 214 no proporcionado. Detalles:
-[Comisiones por cobranza](comisiones-por-cobranza.md).
+Periodo FAX.AFECHA y pagos PA; partidas separadas evitan multiplicar cobranza.
+Costo histórico/prorrateado, utilidad y LM según CUATRO.pdf/método 214.
+Documentos y subtotales por agente en pantalla y Excel; resumen y descarga sin HTTP.
+Datos indefinidos se señalan, no se sustituyen por cero. La ruta contable anterior
+redirige a Ventas. [Detalle](comisiones-por-cobranza.md).
 
 ## Menús por módulo (2026-11-06)
 
-Los reportes actuales se muestran únicamente en **Contabilidad → Reportes Contabilidad →
+Los reportes financieros se muestran únicamente en **Contabilidad → Reportes Contabilidad →
 Reportes Financieros**. Se retira el catálogo global del resto de los módulos.
 El catálogo por módulo se define en `src/features/reports/model.ts`; cada módulo
 puede registrar grupos y reportes propios reutilizando el mismo Dropdown Menu.
-El menú principal siempre lleva el nombre del módulo: `Reportes <módulo>`;
+Ventas usa la etiqueta solicitada `Reportes de Ventas` para Comisiones. Por defecto el menú lleva el nombre del módulo: `Reportes <módulo>`;
 los nombres de los submenús se definen por separado.
 Detalles y validación: [Menús por módulo](menus-por-modulo.md).
 
