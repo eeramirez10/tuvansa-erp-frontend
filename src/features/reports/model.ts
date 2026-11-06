@@ -10,6 +10,7 @@ export const reportGroupsByModule: Partial<Record<ErpModuleId, readonly ReportGr
       { label: "Estado de resultados", path: paths.incomeStatement },
       { label: "Ventas por familia", path: paths.salesByFamily },
       { label: "Inventario por familia", path: paths.inventoryByFamily },
+      { label: "Comisiones por cobranza", path: paths.collectionCommissions },
     ] },
   ],
 }

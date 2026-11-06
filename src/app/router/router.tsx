@@ -69,6 +69,10 @@ export const router = createBrowserRouter([
         lazy: () => import("@/features/accounting/reports/income-statement-route"),
       },
       {
+        path: paths.collectionCommissions.slice(1),
+        lazy: () => import("@/features/sales/commissions/collection-commissions-route"),
+      },
+      {
         path: "contabilidad/polizas/:policyId?",
         lazy: () => import("@/features/accounting/policies/accounting-policies-route"),
       },

@@ -1,5 +1,16 @@
 # Mapa de vistas, controles y endpoints
 
+## Comisiones por cobranza (2026-11-06, preliminar)
+
+Reportes Contabilidad → Reportes Financieros → Comisiones por cobranza;
+`/contabilidad/reportes/comisiones-por-cobranza`. Catálogos GET
+`/sales/reports/collection-commissions/options`; Vista previa GET
+`/sales/reports/collection-commissions?from=2026-08-01&to=2026-08-31&branch=01&agent=all`.
+Periodo por FAX.AFECHA y pagos PA; movimientos/partidas separados para evitar
+duplicación. Resumen, paginación y Excel sin HTTP adicional. Costos, utilidad,
+LM y comisión pendientes del método 214 no proporcionado. Detalles:
+[Comisiones por cobranza](comisiones-por-cobranza.md).
+
 ## Menús por módulo (2026-11-06)
 
 Los reportes actuales se muestran únicamente en **Contabilidad → Reportes Contabilidad →

@@ -4,7 +4,7 @@ Actualización del 2026-11-06. El encabezado muestra únicamente los reportes
 registrados para el módulo activo. Se usa **Reportes <módulo> → submenú → reporte**
 con Dropdown Menu y Submenu de shadcn/Base UI.
 
-Los tres reportes financieros actuales pertenecen a **Contabilidad**:
+Los reportes financieros actuales pertenecen a **Contabilidad**:
 
 El menú principal se llama **Reportes Contabilidad**. El mismo formato se aplica
 a todos los módulos: Reportes Inventarios, Reportes Pedidos, Reportes Facturación,
@@ -17,6 +17,7 @@ propios, como Reportes Financieros, y se definen conforme se agregan.
 | Contabilidad | Reportes Financieros | Estado de resultados | /contabilidad/reportes/estado-de-resultados |
 | Contabilidad | Reportes Financieros | Ventas por familia | /contabilidad/reportes/ventas-por-familia |
 | Contabilidad | Reportes Financieros | Inventario por familia | /contabilidad/reportes/inventario-por-familia |
+| Contabilidad | Reportes Financieros | Comisiones por cobranza (preliminar) | /contabilidad/reportes/comisiones-por-cobranza |
 
 Inicio, Inventarios, Pedidos, Facturación, Clientes, Proveedores, Compras y Bancos
 no heredan esos reportes. Si un módulo no tiene grupos con reportes, se ocultan
