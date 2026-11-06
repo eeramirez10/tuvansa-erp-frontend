@@ -54,7 +54,7 @@ function Workspace({ options }: { options: SalesOptions }) {
             <Controller control={form.control} name="branch" render={({ field }) => <ReportSelect id="sales-branch" label="Sucursal" value={field.value} options={[{ value: "all", label: "Todas las sucursales" }, ...options.branches.map(b => ({ value: b.code, label: b.code + " · " + b.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Controller control={form.control} name="family" render={({ field }) => <ReportSelect id="sales-family" label="Familia IFAMB" value={field.value} options={[{ value: "all", label: "Todas las familias" }, ...options.families.map(f => ({ value: f.code, label: (f.code || "—") + " · " + f.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Button type="submit" size="lg" disabled={busy}>{report.isFetching ? "Generando…" : "Vista previa"}</Button>
-          </div><p className="mt-2 text-[10px]">Tipo de producto: 1 · Ventas brutas: sólo facturas al precio registrado, sin IVA · Periodo inclusivo</p>
+          </div><p className="mt-2 text-[10px]">Tipo de producto: 1 · Facturas con folio F y estado CFD 3, al precio registrado, sin IVA · Periodo inclusivo</p>
           {(form.formState.errors.from || form.formState.errors.to) && <p role="alert" className="mt-1 text-xs text-destructive">{form.formState.errors.to?.message ?? "Selecciona fechas válidas."}</p>}
         </form>
         <div className="flex shrink-0 flex-wrap items-end justify-between gap-2"><div className="flex items-end gap-3">

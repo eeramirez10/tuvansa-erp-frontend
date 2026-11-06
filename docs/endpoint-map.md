@@ -12,10 +12,10 @@ Ruta /ventas/reportes/ventas-por-familia. Documento: [Ventas por familia](ventas
 | Mostrar / Detalle | Importe/metros, paginación | Sin HTTP adicional | sales-by-family-document.tsx |
 | Excel / PDF | Exportar respuesta vigente | Sin HTTP adicional | sales-by-family-workbook.ts / impresión |
 
-FINV.ITIPO=1 fijo; **ventas brutas: sólo facturas**, AICANTF × AIPRECIO,
-sólo AICANTF>0, sin restar devoluciones ni notas de crédito y sin IVA.
-Tipo fiscal del folio DNUM en FTIPMV (TIFISCAL=1, TIAFVTS=1, TIMODULO=4);
-excluye remisiones aunque compartan DITIPMV con facturas ya emitidas.
+FINV.ITIPO=1 fijo; **ventas brutas: sólo facturas**, AICANTF × AIPRECIO, sin IVA.
+Criterio vigente del 2026-11-06: MID(DNUM,1,1)='F' AND DSTATUSCFD=3 AND DESFACT=1.
+Se retira el filtro de catálogo FTIPMV y el requisito AICANTF>0. Las partidas de
+documentos elegibles conservan sus signos y ceros, también en cantidades/metros.
 Respuesta con basis:gross, amount bruto y gross exacto por producto/sucursal.
 Se usa el precio registrado sin revertir descuentos. Se conservan los filtros
 de venta capturados; la selección de facturas y la agregación

@@ -10,7 +10,7 @@ export function createSalesByFamilyWorkbook(report: SalesByFamily, measure: Sale
     const sheet = book.addWorksheet(name)
     sheet.addRow([report.company]); sheet.addRow([`Ventas brutas por familia del ${report.criteria.from} al ${report.criteria.to}`])
     sheet.addRow([`Sucursal: ${report.criteria.branch === "all" ? "Todas" : report.columns[0]?.name} · Tipo de producto: 1 · Familia IFAMB`])
-    sheet.addRow([measure === "amount" ? "Ventas brutas: sólo facturas, AICANTF × AIPRECIO y AICANTF>0. Excluye remisiones, devoluciones y notas de crédito; sin IVA ni cargos de encabezado. No revierte descuentos." : "Sólo cantidades facturadas. Metros estimados: TR/PZ × 6.40, M/MT/MTR × 1 y FT × 0.3048. No convierte importes."])
+    sheet.addRow([measure === "amount" ? "Facturas: MID(DNUM,1,1)='F' AND DSTATUSCFD=3 AND DESFACT=1. Importe AICANTF × AIPRECIO, conservando signos y ceros; sin IVA ni cargos de encabezado. No revierte descuentos." : "Facturas con folio F y estado CFD 3. Metros estimados: TR/PZ × 6.40, M/MT/MTR × 1 y FT × 0.3048. No convierte importes."])
     sheet.addRow([`Movimientos: ${report.movements} · Sin precio: ${report.missingPrices} · Productos/sucursales sin equivalencia a metros: ${report.unconvertedProducts}`])
     sheet.addRow(headers)
     for (let row = 1; row <= 5; row++) { sheet.mergeCells(row, 1, row, headers.length); sheet.getRow(row).alignment = { wrapText: true, vertical: "middle" }; sheet.getRow(row).height = row === 4 ? 40 : 24 }

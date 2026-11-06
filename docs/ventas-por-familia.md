@@ -18,14 +18,15 @@ permite una o todas; Familia IFAMB filtra el tipo de producto fijo **ITIPO=1**.
 | Excel / PDF | Sin HTTP adicional | Exporta la respuesta vigente |
 
 El importe es **ventas brutas: sólo facturas**, calculado por el backend con
-AICANTF × AIPRECIO y AICANTF>0, sin restar devoluciones ni notas de crédito,
-sin IVA ni cargos de encabezado. Se usa AIPRECIO tal como está registrado, no
+AICANTF × AIPRECIO. Condición vigente indicada por el usuario el 2026-11-06:
+**MID(DNUM,1,1)='F' AND DSTATUSCFD=3 AND DESFACT=1**, sin IVA ni cargos de encabezado.
+Se usa AIPRECIO tal como está registrado, no
 AIPREBR; no revierte ni reaplica descuentos o tipos de cambio. Cantidades y
-metros usan las mismas partidas de facturas. Mantiene DESFACT=1/DEST=0 y filtros
-POS capturados. El tipo fiscal se obtiene del folio FDOC.DNUM mediante FTIPMV:
-TIFISCAL=1, TIAFVTS=1, TIMODULO=4. DITIPMV y AITIPMV pueden conservar el tipo
-de remisión después de facturar; no se usan para identificar la factura.
-Se excluyen remisiones y otros documentos aunque tengan cantidad positiva.
+metros usan las mismas partidas de facturas. Mantiene DEST=0, AIMES=1, cliente
+existente y filtros POS capturados, además de fechas/sucursal/familia/tipo 1.
+Se elimina el filtro por FTIPMV y el requisito AICANTF>0; se conservan signos
+y ceros de partidas de documentos elegibles. No se restringe por DITIPMV.
+La pantalla y los documentos exportados indican folio F y estado CFD 3.
 No usa el costo AICOSTO del reporte de inventarios. Precio AIPRECIO nulo señala
 importe incompleto; precio cero se conserva sin reemplazarlo por AIPREBR.
 Presenta Ventas brutas, sin IVA ni cargos
@@ -56,7 +57,7 @@ por año. No se inventa fecha para movimientos sin documento. No se modifica MyS
 Neon ni Firebase. Evidencia local privada inicial en captures/ui/new-version/sales-by-family/
 del backend; no se agrega a Git.
 
-Actualización a ventas brutas del 2026-11-04, corregida a sólo facturas con
+Etapa anterior del 2026-11-04 (sustituida el 2026-11-06), sólo facturas con
 AIPRECIO por aclaración del usuario: el menú conserva su nombre y
 ubicación; el documento impreso, el Excel y la vista previa identifican el criterio
 bruto. La respuesta incluye `basis: "gross"`, `amount` bruto y `gross` exacto por
@@ -79,3 +80,15 @@ recalculados en Excel nativo sin errores. PDF de todas las sucursales conserva
 sus siete columnas distribuidas en tres páginas; detalle incluye todos los
 productos, sin cortarse en los 100 de la página visible. Los movimientos del
 ejemplo mensual se conciliaron individualmente con Decimal en el backend.
+
+Actualización vigente del 2026-11-06: selección exacta
+`MID(DNUM,1,1)='F' AND DSTATUSCFD=3 AND DESFACT=1`, con `AICANTF*AIPRECIO`.
+Se retiran FTIPMV y AICANTF>0; cantidades y precios conservan sus signos.
+Agosto 2026: México **9,493,745.19**, 194 partidas, 147 productos/sucursales
+(paginación 100/47); todas las sucursales **87,884,874.27**, 3,166 partidas.
+La cabecera, Excel y PDF identifican folio F y estado CFD 3. Navegación, filtros,
+errores/vacío y exportaciones con API real verificados; lint/typecheck/build aprobados.
+Evidencia nueva privada del backend: `captures/ui/new-version/sales-by-family-status3-20261106/`.
+Cuatro Excel contrastados con la API y PDF revisados visualmente. El recálculo
+adicional de esta revisión en Excel nativo no estuvo disponible por error COM
+0x800AC472; las verificaciones nativas del 2026-11-04 corresponden a los criterios anteriores.
