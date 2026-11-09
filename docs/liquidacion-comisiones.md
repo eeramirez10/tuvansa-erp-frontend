@@ -69,15 +69,23 @@ con pendientes claramente marcados y fórmulas vacías, sin falsos totales cero.
 La corrección del 2026-11-09 usa el Excel original y la captura del bloque azul
 proporcionada por el usuario. El orden es exactamente:
 
-1. **Ventas por agente**: agente y las trece columnas del detalle, agrupados por
+1. **Ventas por agente**: agente y las quince columnas del detalle, agrupados por
    agente y ordenados por fecha de factura, folio e identificador. Subtotales de
    todos los importes por agente y total general que suma sólo esos subtotales.
 2. **Comisiones Sep 26 Mex** (nombre dinámico por periodo/sucursal): exactamente
    tres filas por vendedor, normal, clientes nuevos/recuperados y lento movimiento;
    conserva las posiciones del resumen original y totaliza las comisiones.
 3. **Una hoja por vendedor**: sólo Cliente, Fecha documento, Fecha pago, Factura,
-   Días, Subtotal, Devoluciones, Total, Pago, Costo, Costo real, Utilidad, %%.
+   Días, Subtotal, Devoluciones, Total, Pago, Costo, Costo real, Utilidad, %%,
+   Cliente nuevo y 1% de lo pagado.
    Todas son visibles; no hay columnas auxiliares ocultas.
+
+Las dos columnas finales se agregan por solicitud posterior: sólo la marca
+`Nuevo` muestra **nuevo**, en minúsculas, y el 1% del pago sin IVA. Recurrente,
+Inactivo, Viejo recuperado y Sin clasificar quedan vacíos en ambas columnas.
+Se conserva precisión de cuatro decimales por documento, subtotal redondeado por
+agente y total que suma esos subtotales. No altera el incentivo de recuperados
+ya incluido en la liquidación; estas columnas identifican exclusivamente nuevos.
 
 Debajo de los documentos y su total aparece únicamente el resumen de **14 filas**
 de la captura: NOMBRE, COBRANZA DEL MES…, COSTO, UTILIDAD BRUTA, % UTILIDAD ANTES
@@ -128,3 +136,10 @@ la respuesta; un evaluador independiente comprueba la aritmética de las 420
 fórmulas, sin afirmar recálculo nativo de Excel. Sin columnas/hojas ocultas ni enlaces externos. Evidencia privada
 `captures/ui/new-version/commission-layout-20261109/` del backend. Backend:
 234 pruebas aprobadas, incluida ordenación por fecha y cobertura de pagos parciales.
+
+Adición posterior de columnas de clientes nuevos: cuatro libros conciliados con
+la API, 15 columnas individuales y 16 en Ventas por agente, 441 fórmulas por libro.
+Fixtures verifican que sólo Nuevo se marque, el 1% preciso, otras marcas vacías,
+pagos no disponibles y redondeo por agente (también signos negativos). El resumen
+de tres filas y bloque azul permanecen iguales. Evidencia privada en
+`captures/ui/new-version/commission-new-customers-20261109/` del backend.

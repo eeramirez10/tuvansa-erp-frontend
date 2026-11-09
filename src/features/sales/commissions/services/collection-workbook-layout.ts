@@ -2,7 +2,17 @@ import type ExcelJS from "exceljs"
 import type { CollectionCommissions, CollectionInvoice, CollectionTotals } from "@/features/sales/commissions/model"
 
 export const collectionExcelMoney = '"$"#,##0.00;[Red]-"$"#,##0.00;"$"0.00'
-export const invoiceHeaders = ["Cliente", "Fecha documento", "Fecha pago", "Factura", "Días", "Subtotal", "Devoluciones", "Total", "Pago", "Costo", "Costo real", "Utilidad", "%%"]
+export const invoiceHeaders = ["Cliente", "Fecha documento", "Fecha pago", "Factura", "Días", "Subtotal", "Devoluciones", "Total", "Pago", "Costo", "Costo real", "Utilidad", "%%", "Cliente nuevo", "1% de lo pagado"]
+export function newCustomerBonusTotal(invoices: CollectionInvoice[]) {
+  const groups = new Map<string, number>()
+  for (const invoice of invoices) {
+    if (invoice.customerStatus !== "Nuevo") continue
+    if (invoice.customerBonus === null) return null
+    groups.set(invoice.agentCode, (groups.get(invoice.agentCode) ?? 0) + Math.round(invoice.customerBonus * 10_000))
+  }
+  // Keep document precision, round once per agent, then sum the rounded amounts.
+  return [...groups.values()].reduce((total, value) => total + Math.sign(value) * Math.round(Math.abs(value) / 100), 0) / 100
+}
 export function orderedInvoices(report: CollectionCommissions, code: string) {
   return report.invoices.filter(r => r.agentCode === code)
     .sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number) || a.id - b.id)
@@ -37,19 +47,27 @@ export function createCollectionSheet(book: ExcelJS.Workbook, report: Collection
   sheet.getColumn(5 + offset).width = 8
   for (let col = 6; col <= 12; col++) sheet.getColumn(col + offset).numFmt = collectionExcelMoney
   sheet.getColumn(13 + offset).numFmt = "0.00%"
+  sheet.getColumn(15 + offset).numFmt = collectionExcelMoney
+  if (headers.includes("Cliente nuevo")) {
+    sheet.getCell(6, 14 + offset).note = 'Sólo muestra "nuevo" para la marca actual Nuevo. Las demás clasificaciones quedan vacías.'
+    sheet.getCell(6, 15 + offset).note = "1% del pago sin IVA sólo de clientes Nuevos. Cuatro decimales por documento; subtotales redondeados por agente. La liquidación conserva también el incentivo de clientes recuperados."
+  }
   sheet.views = [{ state: "frozen", ySplit: 6 }]
   sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: 6, column: headers.length } }
   sheet.pageSetup = { orientation: "landscape", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: "1:6" }
   return sheet
 }
 export function addInvoiceRow(sheet: ExcelJS.Worksheet, row: CollectionInvoice, includeAgent = false) {
-  sheet.addRow([...(includeAgent ? [row.agentName] : []), row.customerName,
+  const line = sheet.addRow([...(includeAgent ? [row.agentName] : []), row.customerName,
     new Date(row.date + "T00:00:00Z"), new Date(row.lastPaymentDate + "T00:00:00Z"), row.number, row.days,
     row.subtotalAmount, row.returnAmount, row.totalAmount, row.displayPaymentAmount, row.cost, row.realCost, row.profit,
-    row.margin === null ? null : row.margin / 100])
+    row.margin === null ? null : row.margin / 100,
+    row.customerStatus === "Nuevo" ? "nuevo" : null,
+    row.customerStatus === "Nuevo" ? row.customerBonus : null])
+  line.getCell(15 + (includeAgent ? 1 : 0)).numFmt = '"$"#,##0.0000;[Red]-"$"#,##0.0000;"$"0.0000'
 }
-export function addInvoiceTotals(sheet: ExcelJS.Worksheet, row: number, totals: CollectionTotals, offset: number, range: (col: string) => string) {
-  for (const [col, result] of [[6, totals.subtotal], [7, totals.returns], [8, totals.total], [9, totals.displayPayment], [10, totals.cost], [11, totals.realCost], [12, totals.profit]] as const) {
+export function addInvoiceTotals(sheet: ExcelJS.Worksheet, row: number, totals: CollectionTotals, offset: number, range: (col: string) => string, newCustomerBonus: number | null) {
+  for (const [col, result] of [[6, totals.subtotal], [7, totals.returns], [8, totals.total], [9, totals.displayPayment], [10, totals.cost], [11, totals.realCost], [12, totals.profit], [15, newCustomerBonus]] as const) {
     const column = sheet.getColumn(col + offset).letter
     const refs = range(column)
     excelFormula(sheet, `${column}${row}`, result === null ? '""' : refs ? `ROUND(SUM(${refs}),2)` : "0", result)

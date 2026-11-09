@@ -1,13 +1,13 @@
 import type ExcelJS from "exceljs"
 import type { CollectionCommissions } from "@/features/sales/commissions/model"
-import { addInvoiceRow, addInvoiceTotals, collectionExcelMoney, createCollectionSheet, excelFormula, invoiceHeaders, orderedInvoices } from "@/features/sales/commissions/services/collection-workbook-layout"
+import { addInvoiceRow, addInvoiceTotals, collectionExcelMoney, createCollectionSheet, excelFormula, invoiceHeaders, newCustomerBonusTotal, orderedInvoices } from "@/features/sales/commissions/services/collection-workbook-layout"
 
 const summaryHeaders = ["Nombre", "Cobranza", "Costo", "Utilidad bruta", "% utilidad bruta", "Flete entrega", "Gratificaciones", "Utilidad neta", "% utilidad neta", "% según tabla", "% comisión", "$ comisión", "", "Vendedor 1", "Vendedor 2", "Cotizador 1", "Cotizador 2", "Cotizador 3", "Totales"]
 const labels = ["NOMBRE", "COBRANZA", "COSTO", "UTILIDAD BRUTA", "% UTILIDAD ANTES DE GRATIFICACIONES Y FLETES", "FLETE ENTREGA", "GRATIFICIONES", "UTILIDAD NETA", "% UTILIDAD NETA", "% COMISION DE ACUERDO A TABLA DE VENDEDOR", "% COMISION", "$ COMISION", "PRODUCTO DE LENTO MOVIMIENTO", "CLIENTES NUEVOS"]
 const quote = (name: string) => `'${name.replace(/'/g, "''")}'!`
 const completeSum = (refs: string[]) => refs.length ? `IF(COUNT(${refs.join(",")})=${refs.length},ROUND(SUM(${refs.join(",")}),2),"")` : "0"
 
-/** Recreates only the requested summary and thirteen-column salesperson sheets. */
+/** Recreates the requested summary and salesperson detail, including new customers. */
 export function addCollectionSettlementWorkbook(book: ExcelJS.Workbook, report: CollectionCommissions) {
   const date = new Date(report.criteria.from + "T00:00:00Z")
   const shortMonth = new Intl.DateTimeFormat("es-MX", { month: "short", timeZone: "UTC" }).format(date).replace(".", "")
@@ -29,7 +29,7 @@ export function addCollectionSettlementWorkbook(book: ExcelJS.Workbook, report: 
     const last = sheet.rowCount
     const total = sheet.addRow(["TOTAL"])
     const source = report.agents.find(a => a.code === agent.code)!
-    addInvoiceTotals(sheet, total.number, source, 0, col => `${col}7:${col}${last}`)
+    addInvoiceTotals(sheet, total.number, source, 0, col => `${col}7:${col}${last}`, newCustomerBonusTotal(docs))
     const start = total.number + 4, cell = (offset: number) => `D${start + offset}`
     for (let i = 0; i < labels.length; i++) {
       const r = start + i
@@ -76,7 +76,7 @@ export function addCollectionSettlementWorkbook(book: ExcelJS.Workbook, report: 
     sheet.getCell(cell(1)).note = "Cobranza de cálculo: invierte el signo PA. Los contramovimientos compensan; Pago en el detalle se presenta positivo."
     sheet.getCell(cell(13)).note = "Incluye clientes Nuevos y Viejo_Reactivado, según la marca actual del ERP. 1% sobre lo pagado sin IVA, redondeado por agente."
     if (agent.pending.length) sheet.getCell(cell(11)).note = agent.pending.join("\n")
-    sheet.pageSetup.printArea = `A1:M${start + 13}`
+    sheet.pageSetup.printArea = `A1:O${start + 13}`
 
     // Exactly three rows per salesperson, with no additional group header.
     const r = summary.addRow([agent.name]).number

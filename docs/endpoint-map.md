@@ -18,7 +18,8 @@ ajustes usa POST `/sales/reports/collection-commissions/preview` con `{criteria,
 para calcular en READ ONLY, sin persistir. Permite modalidad adicional/sustitución,
 planes, flete, gratificaciones y costo manual. Aplicar conserva la consulta vigente.
 Libro con Ventas por agente, resumen de tres filas por vendedor y una hoja
-individual de trece columnas con el resumen azul de catorce filas. Orden por
+individual de quince columnas con el resumen azul de catorce filas. Agrega
+Cliente nuevo (sólo "nuevo", demás marcas vacías) y su 1% de lo pagado. Orden por
 fecha de factura; sin hojas adicionales ni columnas ocultas.
 [Formato y controles](liquidacion-comisiones.md).
 Datos indefinidos se señalan, no se sustituyen por cero. La ruta contable anterior

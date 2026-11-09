@@ -18,7 +18,7 @@ Las validaciones históricas de agosto descritas abajo corresponden al formato a
 | Pagos desde / hasta, Sucursal, Agente / Vista previa | GET /sales/reports/collection-commissions?from=2026-08-01&to=2026-08-31&branch=01&agent=all | Fecha de pago FAX.AFECHA, no fecha de factura |
 | Resumen por agente / paginación | Sin HTTP | Documentos agrupados y bono, páginas de 100 |
 | Liquidación y ajustes / Recalcular liquidación | POST /sales/reports/collection-commissions/preview | Cálculo de parámetros sin persistencia |
-| Descargar Excel | Sin HTTP | Ventas por agente y fecha, resumen de tres filas y hoja individual de trece columnas |
+| Descargar Excel | Sin HTTP | Ventas por agente y fecha, resumen de tres filas y hoja individual con marca nuevo y su 1% pagado |
 | Cancelar / Escape | Sin HTTP | Cierra y permite reabrir |
 
 Query keys incluyen from/to/branch/agent. Cambiar filtros bloquea exportación
@@ -52,7 +52,7 @@ cero, se informa costo no calculable; null no se convierte en cero. Los totales
 afectados también son no disponibles, sin presentar sumas parciales como completas.
 
 ExcelJS diferido: primero Ventas por agente, segundo Comisiones del mes (tres
-filas por vendedor) y después una hoja por vendedor con sólo trece columnas,
+filas por vendedor) y después una hoja por vendedor con quince columnas,
 total y el bloque azul de catorce filas de la captura proporcionada. Sin hojas
 extra ni columnas ocultas. Fórmulas y resultados guardados; total general suma
 sólo subtotales. Fechas/cantidades numéricas, margen porcentual; null vacío.
