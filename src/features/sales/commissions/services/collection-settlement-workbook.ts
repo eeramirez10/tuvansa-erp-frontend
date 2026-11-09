@@ -1,147 +1,115 @@
 import type ExcelJS from "exceljs"
 import type { CollectionCommissions } from "@/features/sales/commissions/model"
-import { collectionCustomerLabel } from "@/features/sales/commissions/logic"
+import { addInvoiceRow, addInvoiceTotals, collectionExcelMoney, createCollectionSheet, excelFormula, invoiceHeaders, orderedInvoices } from "@/features/sales/commissions/services/collection-workbook-layout"
 
-const money = '"$"#,##0.00;[Red]-"$"#,##0.00;"$"0.00'
-const blue = { argb: "FFE0F2FE" }, green = { argb: "FFDCFCE7" }
-function formula(sheet: ExcelJS.Worksheet, cell: string, expression: string, value: number | null) {
-  sheet.getCell(cell).value = { formula: expression, result: value ?? "" }
-}
-function editable(cell: ExcelJS.Cell) { cell.fill = { type:"pattern",pattern:"solid",fgColor:blue }; cell.protection = { locked:false } }
-function header(sheet: ExcelJS.Worksheet, row: number) {
-  sheet.getRow(row).font = { bold:true }; sheet.getRow(row).fill = { type:"pattern",pattern:"solid",fgColor:green }
-  sheet.getRow(row).alignment = { wrapText:true, vertical:"middle" }
-}
-function setup(sheet: ExcelJS.Worksheet, width: number) {
-  sheet.columns = Array.from({ length:width }, () => ({ width:17 })); sheet.getColumn(1).width = 40
-  sheet.views = [{ state:"frozen",ySplit:6 }]
-  sheet.pageSetup = { orientation:"landscape",paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:"1:6" }
-}
+const summaryHeaders = ["Nombre", "Cobranza", "Costo", "Utilidad bruta", "% utilidad bruta", "Flete entrega", "Gratificaciones", "Utilidad neta", "% utilidad neta", "% según tabla", "% comisión", "$ comisión", "", "Vendedor 1", "Vendedor 2", "Cotizador 1", "Cotizador 2", "Cotizador 3", "Totales"]
+const labels = ["NOMBRE", "COBRANZA", "COSTO", "UTILIDAD BRUTA", "% UTILIDAD ANTES DE GRATIFICACIONES Y FLETES", "FLETE ENTREGA", "GRATIFICIONES", "UTILIDAD NETA", "% UTILIDAD NETA", "% COMISION DE ACUERDO A TABLA DE VENDEDOR", "% COMISION", "$ COMISION", "PRODUCTO DE LENTO MOVIMIENTO", "CLIENTES NUEVOS"]
+const quote = (name: string) => `'${name.replace(/'/g, "''")}'!`
+const completeSum = (refs: string[]) => refs.length ? `IF(COUNT(${refs.join(",")})=${refs.length},ROUND(SUM(${refs.join(",")}),2),"")` : "0"
 
-/** Layout recreated from the supplied workbook; no source file or personal data is bundled. */
+/** Recreates only the requested summary and thirteen-column salesperson sheets. */
 export function addCollectionSettlementWorkbook(book: ExcelJS.Workbook, report: CollectionCommissions) {
-  const summary = book.addWorksheet("Liquidación"), rates = book.addWorksheet("Tarifas"), payout = book.addWorksheet("Neto a recibir")
-  setup(summary,19); setup(rates,7); setup(payout,7)
-  const branchName = report.branchName
-  const period = `${report.criteria.from} al ${report.criteria.to}`
-  const mode = { additional:"Adicional",exclusive:"Sustituye",unconfirmed:"Por confirmar" }[report.settlement.bonusMode]
-  summary.addRow([report.company]); summary.addRow(["COMISIONES POR COBRANZA"]); summary.addRow([`Sucursal: ${branchName} · Pagos ${period}`])
-  summary.addRow(["Normal, clientes nuevos/recuperados y lento movimiento separados. Celdas azules: parámetros y reparto editables."])
-  summary.addRow([report.settlement.ready ? "Liquidación calculada con los parámetros seleccionados." : "PENDIENTE: confirma modalidad del 1% y planes; los importes sin confirmar quedan vacíos."])
-  summary.addRow(["Nombre","Cobranza","Costo","Utilidad bruta","% utilidad bruta","Flete entrega","Gratificaciones","Utilidad neta","% utilidad neta","% según tabla","% comisión","$ comisión",null,"Vendedor 1","Vendedor 2","Cotizador 1","Cotizador 2","Cotizador 3","Total a recibir"])
-  for (let r=1;r<=5;r++) { summary.mergeCells(r,1,r,19); summary.getRow(r).height=r===4||r===5?32:24; summary.getRow(r).alignment={wrapText:true} }
-  header(summary,6); summary.getRow(6).height=52
-  rates.addRow(["TABULADOR PRINCIPAL CON SUELDO",null,null,null,"Tratamiento clientes 1%",mode]); rates.addRow(["Margen neto estrictamente mayor a 16%",null,null,null,"Bono de clientes",0.01]); rates.addRow(["Cobranza desde","% sobre utilidad neta"])
-  report.settlement.salaryTiers.forEach(t=>rates.addRow([t.from,t.rate/100]))
-  rates.getColumn(1).numFmt=money; rates.getColumn(2).numFmt="0.00%"; rates.getCell("F2").numFmt="0.00%"
-  rates.getCell("F1").dataValidation={ type:"list",allowBlank:false,formulae:['"Por confirmar,Adicional,Sustituye"'] }; editable(rates.getCell("F1"))
-  rates.getCell("A12").value="Límites inferiores del ejemplo. No se interpolan los intervalos de VLOOKUP."
-  rates.getCell("A14").value="Segunda tabla del ejemplo (referencia, sin asignación automática)"
-  rates.getCell("A15").value=270001; rates.getCell("B15").value=0.22; rates.getCell("C15").value=0.055
-  rates.getCell("A16").value=500001; rates.getCell("B16").value=0.25; rates.getCell("C16").value=0.06
-  for(const col of [2,3]) for(const row of [15,16]) rates.getCell(row,col).numFmt="0.00%"
-  rates.getCell("A18").value="Cambiar una clasificación en Excel no cambia la marca del ERP. Se leyó CLITARJETA actual, no histórica."
-  rates.getCell("A19").value="Los ajustes de costo/flete/gratificación de este libro no escriben en MySQL."
-  rates.getColumn(5).width=34;rates.getColumn(6).width=25
-  payout.addRow([report.company]); payout.addRow(["NETO A RECIBIR"]); payout.addRow([period]); payout.addRow(["Cada asignación identifica el agente de origen; una misma persona puede tener varias asignaciones."])
-  payout.addRow(["Reparte cada componente al 100% en las hojas por agente. No se inventan nombres de beneficiarios."])
-  payout.addRow(["Agente","Beneficiario","Rol","Comisión normal","Clientes 1%","PLM","Total"]); header(payout,6)
-  for(let r=1;r<=5;r++) { payout.mergeCells(r,1,r,7);payout.getRow(r).alignment={wrapText:true};payout.getRow(r).height=28 }
-  for(const col of [4,5,6,7]) payout.getColumn(col).numFmt=money
-  const normalRows:number[]=[],bonusRows:number[]=[],lmRows:number[]=[]
+  const date = new Date(report.criteria.from + "T00:00:00Z")
+  const shortMonth = new Intl.DateTimeFormat("es-MX", { month: "short", timeZone: "UTC" }).format(date).replace(".", "")
+  const month = shortMonth.charAt(0).toUpperCase() + shortMonth.slice(1, 3)
+  const branch = report.criteria.branch === "01" ? "Mex" : report.criteria.branch === "all" ? "Todas" : report.criteria.branch
+  const summary = createCollectionSheet(book, report, `Comisiones ${month} ${report.criteria.from.slice(2, 4)} ${branch}`, summaryHeaders)
+  summary.getColumn(1).width = 40
+  summary.getRow(6).height = 65
+  summary.columns.forEach(c => { c.numFmt = "General" })
+  for (const col of [2, 3, 4, 6, 7, 8, 12, 14, 15, 16, 17, 18, 19]) summary.getColumn(col).numFmt = collectionExcelMoney
+  for (const col of [5, 9, 10, 11]) summary.getColumn(col).numFmt = "0.00%"
+  const normalRows: number[] = [], commissionRows: number[] = []
+
   for (const agent of report.settlement.agents) {
-    const safe=Array.from(agent.code+" "+agent.name).map(c=>"\\/*?:[]".includes(c)?" ":c).join("").replace(/^'+|'+$/g,"").slice(0,31) || "Agente"
-    let name=safe, suffix=1;while(book.getWorksheet(name)) { const tail=" "+suffix++;name=safe.slice(0,31-tail.length)+tail }
-    const sheet=book.addWorksheet(name), q="'"+name.replaceAll("'","''")+"'!";setup(sheet,22)
-    const docs=report.invoices.filter(r=>r.agentCode===agent.code)
-    sheet.addRow([report.company]);sheet.addRow([`${agent.code} · ${agent.name}`]);sheet.addRow([`Pagos ${period}`]);sheet.addRow(["Azul: costo manual, flete, gratificaciones, plan y reparto. Sin escritura al ERP."])
-    sheet.addRow(["1% sobre el pago sin IVA para Nuevo o Viejo recuperado. La modalidad general se selecciona en Tarifas!F1."])
-    sheet.addRow(["Cliente","Fecha docto","Fecha pago","Factura","Días","Subtotal","Devoluciones","Total","Pago positivo","Costo total","Costo real","Utilidad origen","% origen","Fletes origen","Clasificación cliente","LM","LM_VALOR","Base clientes 1%","% clientes","Bono clientes","Código cliente","Cobranza de cálculo (-PA)"])
-    for(let r=1;r<=5;r++){sheet.mergeCells(r,1,r,22);sheet.getRow(r).height=25;sheet.getRow(r).alignment={wrapText:true}}
-    header(sheet,6);sheet.getRow(6).height=40
-    for(const doc of docs){
-      const r=sheet.addRow([doc.customerName,new Date(doc.date+"T00:00:00Z"),new Date(doc.lastPaymentDate+"T00:00:00Z"),doc.number,doc.days,doc.subtotalAmount,doc.returnAmount,doc.totalAmount,doc.displayPaymentAmount,doc.cost,doc.realCost,doc.profit,doc.margin===null?null:doc.margin/100,doc.freightAmount,collectionCustomerLabel(doc.customerStatus),doc.lm,doc.lmAmount,null,doc.customerBonusRate===null?null:doc.customerBonusRate/100,null,doc.customerCode,doc.paymentAmount===null?null:-doc.paymentAmount]).number
-      formula(sheet,"R"+r,`IF(OR(O${r}="Nuevo",O${r}="Viejo recuperado"),IF(ISNUMBER(V${r}),V${r},""),IF(OR(O${r}="Recurrente",O${r}="Inactivo"),0,""))`,doc.customerBonusBase)
-      formula(sheet,"T"+r,`IF(COUNT(R${r},S${r})=2,R${r}*S${r},"")`,doc.customerBonus)
-    }
-    const last=sheet.rowCount, start=last+4, status=`O7:O${last}`
-    const aggregate=(col:string)=>`IF('Tarifas'!$F$1="Sustituye",IF(COUNTIF(${status},"Sin clasificar")>0,"",IF(SUMPRODUCT(--(${status}<>"Nuevo"),--(${status}<>"Viejo recuperado"),--ISNUMBER(${col}7:${col}${last}))=COUNTIFS(${status},"<>Nuevo",${status},"<>Viejo recuperado"),ROUND(SUMIFS(${col}7:${col}${last},${status},"<>Nuevo",${status},"<>Viejo recuperado"),2),"")),IF(COUNT(${col}7:${col}${last})=${docs.length},ROUND(SUM(${col}7:${col}${last}),2),""))`
-    const row=(offset:number,label:string)=>{sheet.getCell(start+offset,1).value=label;return "B"+(start+offset)}
-    row(0,"NOMBRE");sheet.getCell(start,2).value=agent.name
-    const pay=row(1,"COBRANZA NORMAL"), sourceCost=row(2,"COSTO DE ORIGEN"), manual=row(3,"COSTO MANUAL (OPCIONAL)"), cost=row(4,"COSTO APLICADO"),gross=row(5,"UTILIDAD BRUTA"),grossMargin=row(6,"% UTILIDAD ANTES DE FLETE/GRATIFICACIONES"),freight=row(7,"FLETE ENTREGA"),grat=row(8,"GRATIFICACIONES"),net=row(9,"UTILIDAD NETA"),netMargin=row(10,"% UTILIDAD NETA"),plan=row(11,"PLAN"),fixed=row(12,"% FIJO"),rate=row(13,"% COMISIÓN"),regular=row(14,"COMISIÓN NORMAL"),bonusBase=row(15,"BASE CLIENTES 1%"),bonusRate=row(16,"% CLIENTES NUEVOS/RECUPERADOS"),bonus=row(17,"BONO CLIENTES"),includeLm=row(18,"INCLUIR PLM"),lm=row(19,"BONO PRODUCTO LENTO MOVIMIENTO"),total=row(20,"TOTAL COMISIÓN")
-    formula(sheet,pay,aggregate("V"),agent.payment);formula(sheet,sourceCost,aggregate(agent.config.costBasis==="total"?"J":"K"),agent.sourceCost)
-    sheet.getCell(manual).value=agent.config.costOverride;editable(sheet.getCell(manual));formula(sheet,cost,`IF(ISNUMBER(${manual}),${manual},IF(ISNUMBER(${sourceCost}),${sourceCost},""))`,agent.cost)
-    formula(sheet,gross,`IF(COUNT(${pay},${cost})=2,ROUND(${pay}-${cost},2),"")`,agent.grossProfit)
-    formula(sheet,grossMargin,`IF(AND(ISNUMBER(${gross}),${pay}<>0),${gross}/${pay},"")`,agent.grossMargin===null?null:agent.grossMargin/100)
-    sheet.getCell(freight).value=agent.freight;sheet.getCell(grat).value=agent.gratuities
-    for(const cell of [freight,grat,fixed])editable(sheet.getCell(cell))
-    formula(sheet,net,`IF(ISNUMBER(${gross}),ROUND(${gross}-${freight}-${grat},2),"")`,agent.netProfit)
-    formula(sheet,netMargin,`IF(AND(ISNUMBER(${net}),${pay}<>0),${net}/${pay},"")`,agent.netMargin===null?null:agent.netMargin/100)
-    sheet.getCell(plan).value={salary:"Tabulador",fixed:"Fijo",unconfirmed:"Por confirmar"}[agent.config.plan];sheet.getCell(plan).dataValidation={type:"list",allowBlank:false,formulae:['"Por confirmar,Tabulador,Fijo"']};editable(sheet.getCell(plan))
-    sheet.getCell(fixed).value=agent.config.fixedRate/100
-    const monthly=report.criteria.from.slice(0,7)===report.criteria.to.slice(0,7)?"TRUE":"FALSE"
-    formula(sheet,rate,`IF(${plan}="Fijo",${fixed},IF(AND(${plan}="Tabulador",${monthly},COUNT(${pay},${net})=2),IF(AND(${pay}>0,${net}*100>${pay}*16),VLOOKUP(${pay},'Tarifas'!$A$4:$B$10,2,TRUE),0),""))`,agent.rate===null?null:agent.rate/100)
-    formula(sheet,regular,`IF(AND('Tarifas'!$F$1<>"Por confirmar",COUNT(${net},${rate})=2),ROUND(${net}*${rate},2),"")`,agent.regularCommission)
-    formula(sheet,bonusBase,`IF(COUNT(R7:R${last})=${docs.length},ROUND(SUM(R7:R${last}),2),"")`,agent.customerBonusBase)
-    sheet.getCell(bonusRate).value=0.01;formula(sheet,bonus,`IF(COUNT(T7:T${last})=${docs.length},ROUND(SUM(T7:T${last}),2),"")`,agent.customerBonus)
-    sheet.getCell(includeLm).value=agent.config.includeLm?"Sí":"No";sheet.getCell(includeLm).dataValidation={type:"list",allowBlank:false,formulae:['"Sí,No"']};editable(sheet.getCell(includeLm))
-    formula(sheet,lm,`IF(${includeLm}="No",0,IF(COUNT(Q7:Q${last})=${docs.length},ROUND(SUM(Q7:Q${last}),2),""))`,agent.lmBonus)
-    formula(sheet,total,`IF(COUNT(${regular},${bonus},${lm})=3,ROUND(SUM(${regular},${bonus},${lm}),2),"")`,agent.totalCommission)
-    for(const cell of [grossMargin,netMargin,fixed,rate,bonusRate])sheet.getCell(cell).numFmt="0.00%"
-    for(const offset of [1,2,3,4,5,7,8,9,14,15,17,19,20])sheet.getCell(start+offset,2).numFmt=money
-    for(const col of [2,3])sheet.getColumn(col).numFmt="dd/mm/yyyy"
-    // Restore financial block formatting after date column defaults.
-    for(let r=start;r<=start+20;r++)sheet.getCell(r,2).numFmt=[6,10,12,13,16].includes(r-start)?"0.00%":money
-    for(const r of [start,start+11,start+18])sheet.getCell(r,2).numFmt="General"
-    for(const col of [6,7,8,9,10,11,12,14,17,18,20,22])sheet.getColumn(col).numFmt=money
-    for(let r=7;r<=last;r++)sheet.getCell(r,20).numFmt='"$"#,##0.0000'
-    for(const col of [13,19])sheet.getColumn(col).numFmt="0.00%"
-    const split=start+24,endSplit=split+5
-    sheet.getRow(split).values=["BENEFICIARIO","ROL","% NORMAL","% CLIENTES","% PLM","COMISIÓN NORMAL","CLIENTES 1%","PLM","TOTAL A RECIBIR"];header(sheet,split)
-    for(let n=0;n<5;n++){
-      const r=split+1+n,primary=n===0;sheet.getRow(r).values=[primary?agent.name:"",n<2?"Vendedor":"Cotizador",primary?1:0,primary?1:0,primary?1:0]
-      for(let col=1;col<=5;col++)editable(sheet.getCell(r,col))
-      for(const col of [3,4,5]){sheet.getCell(r,col).numFmt="0.00%";sheet.getCell(r,col).dataValidation={type:"decimal",operator:"between",allowBlank:false,formulae:[0,1]}}
-      for(const [col,share,base,cached]of [[6,"C",regular,agent.regularCommission],[7,"D",bonus,agent.customerBonus],[8,"E",lm,agent.lmBonus]] as const){
-        const shares=`${share}${split+1}:${share}${endSplit}`;const prev=n===0?"0":`SUM(${share}${split+1}:${share}${r-1})`
-        formula(sheet,`${String.fromCharCode(64+col)}${r}`,`IF(AND(ISNUMBER(${base}),ABS(SUM(${shares})-1)<0.000001,SUMPRODUCT(--($A$${split+1}:$A$${endSplit}=""),--(${shares}>0))=0),ROUND(${base}*SUM(${share}${split+1}:${share}${r})/SUM(${shares}),2)-ROUND(${base}*${prev}/SUM(${shares}),2),"")`,cached===null?null:primary?cached:0)
+    const name = `${agent.code || "Sin código"} ${agent.name}`.replace(/[\\/*?:[\]]/g, " ").slice(0, 31)
+    const sheet = createCollectionSheet(book, report, name, invoiceHeaders)
+    const docs = orderedInvoices(report, agent.code)
+    docs.forEach(doc => addInvoiceRow(sheet, doc))
+    const last = sheet.rowCount
+    const total = sheet.addRow(["TOTAL"])
+    const source = report.agents.find(a => a.code === agent.code)!
+    addInvoiceTotals(sheet, total.number, source, 0, col => `${col}7:${col}${last}`)
+    const start = total.number + 4, cell = (offset: number) => `D${start + offset}`
+    for (let i = 0; i < labels.length; i++) {
+      const r = start + i
+      sheet.mergeCells(r, 1, r, 3)
+      sheet.mergeCells(r, 4, r, 6)
+      const left = sheet.getCell(r, 1), right = sheet.getCell(r, 4)
+      left.value = labels[i]
+      left.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF99CCFF" } }
+      left.font = { name: "Arial Narrow", size: 12, bold: true }
+      right.font = { name: "Arial Narrow", size: 14 }
+      for (const c of [left, right]) {
+        c.alignment = { horizontal: "center", vertical: "middle", wrapText: true }
+        c.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+        c.numFmt = collectionExcelMoney
       }
-      formula(sheet,"I"+r,`IF(COUNT(F${r}:H${r})=3,ROUND(SUM(F${r}:H${r}),2),"")`,agent.totalCommission===null?null:primary?agent.totalCommission:0)
-      for(const col of [6,7,8,9])sheet.getCell(r,col).numFmt=money
-      const pr=payout.addRow([agent.code,null,n<2?"Vendedor":"Cotizador"]).number
-      payout.getCell(pr,2).value={formula:`IF(${q}A${r}="","",${q}A${r})`,result:primary?agent.name:""}
-      for(const [col,target,cached]of [[4,"F",agent.regularCommission],[5,"G",agent.customerBonus],[6,"H",agent.lmBonus],[7,"I",agent.totalCommission]] as const)formula(payout,`${String.fromCharCode(64+col)}${pr}`,`IF(ISNUMBER(${q}${target}${r}),${q}${target}${r},"")`,cached===null?null:primary?cached:0)
+      sheet.getRow(r).height = 26
     }
-    sheet.getCell(endSplit+2,1).value="Repartir cada componente al 100%. Si falta un nombre con porcentaje o la suma no es 100%, sus pagos quedan pendientes."
-    sheet.mergeCells(endSplit+2,1,endSplit+2,9);sheet.getRow(endSplit+2).alignment={wrapText:true};sheet.getRow(endSplit+2).height=30
-    const head=summary.addRow([`${agent.code} · ${agent.name}`]).number;header(summary,head)
-    for(let n=0;n<5;n++)summary.getCell(head,14+n).value={formula:`IF(${q}A${split+1+n}="","",${q}A${split+1+n})`,result:n===0?agent.name:""}
-    const normal=summary.addRow(["Comisión normal"]).number,bonusRow=summary.addRow(["Clientes nuevos / recuperados"]).number,lmRow=summary.addRow(["Producto lento movimiento"]).number
-    normalRows.push(normal);bonusRows.push(bonusRow);lmRows.push(lmRow)
-    for(const [col,ref,cached]of [[2,pay,agent.payment],[3,cost,agent.cost],[4,gross,agent.grossProfit],[5,grossMargin,agent.grossMargin===null?null:agent.grossMargin/100],[6,freight,agent.freight],[7,grat,agent.gratuities],[8,net,agent.netProfit],[9,netMargin,agent.netMargin===null?null:agent.netMargin/100],[10,rate,agent.rate===null?null:agent.rate/100],[11,rate,agent.rate===null?null:agent.rate/100],[12,regular,agent.regularCommission]] as const)formula(summary,`${String.fromCharCode(64+col)}${normal}`,`IF(ISNUMBER(${q}${ref}),${q}${ref},"")`,cached)
-    formula(summary,"B"+bonusRow,`${q}${bonusBase}`,agent.customerBonusBase);summary.getCell(bonusRow,11).value=0.01;formula(summary,"L"+bonusRow,`${q}${bonus}`,agent.customerBonus)
-    summary.getCell(lmRow,11).value=0.01;formula(summary,"L"+lmRow,`${q}${lm}`,agent.lmBonus)
-    for(const [r,column,cached]of [[normal,"F",agent.regularCommission],[bonusRow,"G",agent.customerBonus],[lmRow,"H",agent.lmBonus]] as const){
-      for(let n=0;n<5;n++)formula(summary,`${String.fromCharCode(78+n)}${r}`,`IF(ISNUMBER(${q}${column}${split+1+n}),${q}${column}${split+1+n},"")`,cached===null?null:n===0?cached:0)
-      formula(summary,"S"+r,`IF(COUNT(N${r}:R${r})=5,ROUND(SUM(N${r}:R${r}),2),"")`,cached)
+    sheet.getCell(start, 4).value = agent.name
+    sheet.getCell(start, 4).numFmt = "General"
+    const sameMonth = report.criteria.from.slice(0, 7) === report.criteria.to.slice(0, 7)
+    const monthName = new Intl.DateTimeFormat("es-MX", { month: "long", timeZone: "UTC" }).format(date).toUpperCase()
+    sheet.getCell(start + 1, 1).value = sameMonth ? `COBRANZA DEL MES DE ${monthName} ${report.criteria.from.slice(0, 4)}` : `COBRANZA DEL ${report.criteria.from} AL ${report.criteria.to}`
+
+    // These are the server's decimal-accurate snapshot amounts, including signed
+    // offsets and the selected bonus mode. No hidden helper columns are needed.
+    sheet.getCell(cell(1)).value = agent.payment
+    sheet.getCell(cell(2)).value = agent.cost
+    if (agent.config.costOverride !== null) sheet.getCell(cell(2)).note = "Costo manual aplicado en Liquidación y ajustes; el detalle conserva el costo de origen."
+    excelFormula(sheet, cell(3), `IF(COUNT(${cell(1)},${cell(2)})=2,ROUND(${cell(1)}-${cell(2)},2),"")`, agent.grossProfit)
+    excelFormula(sheet, cell(4), `IF(AND(ISNUMBER(${cell(3)}),${cell(1)}<>0),${cell(3)}/${cell(1)},"")`, agent.grossMargin === null ? null : agent.grossMargin / 100)
+    sheet.getCell(cell(5)).value = agent.freight
+    sheet.getCell(cell(6)).value = agent.gratuities
+    excelFormula(sheet, cell(7), `IF(COUNT(${cell(3)},${cell(5)},${cell(6)})=3,ROUND(${cell(3)}-${cell(5)}-${cell(6)},2),"")`, agent.netProfit)
+    excelFormula(sheet, cell(8), `IF(AND(ISNUMBER(${cell(7)}),${cell(1)}<>0),${cell(7)}/${cell(1)},"")`, agent.netMargin === null ? null : agent.netMargin / 100)
+    const tierRate = report.settlement.salaryTiers.reduce((expression, tier) => `IF(${cell(1)}>=${tier.from},${tier.rate / 100},${expression})`, "0")
+    const rate = agent.config.plan === "fixed" ? String(agent.config.fixedRate / 100) : agent.config.plan === "salary" && sameMonth
+      ? `IF(COUNT(${cell(1)},${cell(7)})=2,IF(AND(${cell(1)}>0,${cell(7)}*100>${cell(1)}*${report.settlement.minimumNetMargin}),${tierRate},0),"")` : '""'
+    excelFormula(sheet, cell(9), rate, agent.rate === null ? null : agent.rate / 100)
+    excelFormula(sheet, cell(10), `IF(ISNUMBER(${cell(9)}),${cell(9)},"")`, agent.rate === null ? null : agent.rate / 100)
+    excelFormula(sheet, cell(11), report.settlement.bonusMode === "unconfirmed" ? '""' : `IF(COUNT(${cell(7)},${cell(10)})=2,ROUND(${cell(7)}*${cell(10)},2),"")`, agent.regularCommission)
+    sheet.getCell(cell(12)).value = agent.lmBonus
+    sheet.getCell(cell(13)).value = agent.customerBonus
+    for (const offset of [4, 8, 9, 10]) sheet.getCell(cell(offset)).numFmt = "0.00%"
+    sheet.getCell(cell(1)).note = "Cobranza de cálculo: invierte el signo PA. Los contramovimientos compensan; Pago en el detalle se presenta positivo."
+    sheet.getCell(cell(13)).note = "Incluye clientes Nuevos y Viejo_Reactivado, según la marca actual del ERP. 1% sobre lo pagado sin IVA, redondeado por agente."
+    if (agent.pending.length) sheet.getCell(cell(11)).note = agent.pending.join("\n")
+    sheet.pageSetup.printArea = `A1:M${start + 13}`
+
+    // Exactly three rows per salesperson, with no additional group header.
+    const r = summary.addRow([agent.name]).number
+    const bonusRow = summary.addRow(["CLIENTES NUEVOS / RECUPERADOS"]).number
+    const lmRow = summary.addRow(["PRODUCTO DE LENTO MOVIMIENTO"]).number
+    normalRows.push(r); commissionRows.push(r, bonusRow, lmRow)
+    summary.getRow(r).font = { bold: true }
+    for (const row of [r, bonusRow, lmRow]) { summary.getRow(row).height = 32; summary.getRow(row).alignment = { wrapText: true, vertical: "middle" } }
+    const q = quote(name)
+    for (const [col, offset, cached] of [[2, 1, agent.payment], [3, 2, agent.cost], [4, 3, agent.grossProfit], [5, 4, agent.grossMargin === null ? null : agent.grossMargin / 100], [6, 5, agent.freight], [7, 6, agent.gratuities], [8, 7, agent.netProfit], [9, 8, agent.netMargin === null ? null : agent.netMargin / 100], [10, 9, agent.rate === null ? null : agent.rate / 100], [11, 10, agent.rate === null ? null : agent.rate / 100], [12, 11, agent.regularCommission]] as const) {
+      excelFormula(summary, `${summary.getColumn(col).letter}${r}`, `IF(ISNUMBER(${q}${cell(offset)}),${q}${cell(offset)},"")`, cached)
+    }
+    summary.getCell(bonusRow, 2).value = agent.customerBonusBase
+    summary.getCell(bonusRow, 10).value = 0.01
+    summary.getCell(bonusRow, 11).value = 0.01
+    summary.getCell(lmRow, 10).value = 0.01
+    summary.getCell(lmRow, 11).value = 0.01
+    for (const [row, offset, cached] of [[bonusRow, 13, agent.customerBonus], [lmRow, 12, agent.lmBonus]] as const) excelFormula(summary, `L${row}`, `IF(ISNUMBER(${q}${cell(offset)}),${q}${cell(offset)},"")`, cached)
+    for (const [row, cached] of [[r, agent.regularCommission], [bonusRow, agent.customerBonus], [lmRow, agent.lmBonus]] as const) {
+      excelFormula(summary, `N${row}`, `IF(ISNUMBER(L${row}),L${row},"")`, cached)
+      for (const col of [15, 16, 17, 18]) summary.getCell(row, col).value = 0
+      excelFormula(summary, `S${row}`, `IF(COUNT(N${row}:R${row})=5,SUM(N${row}:R${row}),"")`, cached)
     }
   }
-  const end=summary.addRow(["TOTAL"]).number;header(summary,end)
-  const summation=(rows:number[],col:string)=>rows.length?`SUM(${rows.map(r=>col+r).join(",")})`:"0"
-  const t=report.settlement.totals
-  const payoutEnd=payout.rowCount,payoutTotal=payout.addRow(["TOTAL"]).number;header(payout,payoutTotal)
-  for(const [col,cached]of [[4,t.regularCommission],[5,t.customerBonus],[6,t.lmBonus],[7,t.totalCommission]] as const){
-    const letter=String.fromCharCode(64+col)
-    formula(payout,letter+payoutTotal,`IF(COUNT(${letter}7:${letter}${payoutEnd})=${report.settlement.agents.length*5},ROUND(SUM(${letter}7:${letter}${payoutEnd}),2),"")`,cached)
+  const end = summary.addRow(["TOTAL COMISIONES"]).number
+  summary.getRow(end).font = { bold: true }
+  for (const [col, result] of [[2, report.settlement.totals.payment], [3, report.settlement.totals.cost], [4, report.settlement.totals.grossProfit], [6, report.settlement.totals.freight], [7, report.settlement.totals.gratuities], [8, report.settlement.totals.netProfit]] as const) {
+    const letter = summary.getColumn(col).letter
+    excelFormula(summary, `${letter}${end}`, completeSum(normalRows.map(r => `${letter}${r}`)), result)
   }
-  for(const [col,cached]of [[2,t.payment],[3,t.cost],[4,t.grossProfit],[6,t.freight],[7,t.gratuities],[8,t.netProfit]] as const)formula(summary,`${String.fromCharCode(64+col)}${end}`,`ROUND(${summation(normalRows,String.fromCharCode(64+col))},2)`,cached)
-  const every=[...normalRows,...bonusRows,...lmRows]
-  for(const col of [12,14,15,16,17,18,19])formula(summary,`${String.fromCharCode(64+col)}${end}`,`IF(COUNT(${every.map(r=>String.fromCharCode(64+col)+r).join(",")})=${every.length},ROUND(${summation(every,String.fromCharCode(64+col))},2),"")`,t.totalCommission===null?null:[12,14,19].includes(col)?t.totalCommission:0)
-  for(const col of [2,3,4,6,7,8,12,14,15,16,17,18,19])summary.getColumn(col).numFmt=money
-  for(const col of [5,9,10,11])summary.getColumn(col).numFmt="0.00%"
-  summary.getCell("A5").value={formula:`IF(AND('Tarifas'!F1<>"Por confirmar",COUNT(${every.map(r=>"S"+r).join(",")})=${every.length}),"Liquidación calculada con los parámetros seleccionados.","PENDIENTE: confirma modalidad del 1%, planes, marcas y reparto.")`,result:report.settlement.ready?"Liquidación calculada con los parámetros seleccionados.":"PENDIENTE: confirma modalidad del 1%, planes, marcas y reparto."}
-  summary.addRow([]);summary.addRow(["OTROS / REFERENCIA DEL EJEMPLO (NO INCLUIDO EN EL TOTAL AUTOMÁTICO)"])
-  const extra=summary.addRow(["Base manual",0,"Umbral",4500000,"Tasa",0.015,"Importe adicional"]).number
-  for(const c of [2,4,6])editable(summary.getCell(extra,c));summary.getCell(extra,6).numFmt="0.00%"
-  formula(summary,"H"+extra,`ROUND(MAX(B${extra}-D${extra},0)*F${extra},2)`,0)
+  for (const col of [12, 14, 15, 16, 17, 18, 19]) {
+    const letter = summary.getColumn(col).letter
+    excelFormula(summary, `${letter}${end}`, completeSum(commissionRows.map(r => `${letter}${r}`)), [12, 14, 19].includes(col) ? report.settlement.totals.totalCommission : 0)
+  }
+  summary.pageSetup.printArea = `A1:S${end}`
 }

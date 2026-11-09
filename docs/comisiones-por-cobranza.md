@@ -18,7 +18,7 @@ Las validaciones históricas de agosto descritas abajo corresponden al formato a
 | Pagos desde / hasta, Sucursal, Agente / Vista previa | GET /sales/reports/collection-commissions?from=2026-08-01&to=2026-08-31&branch=01&agent=all | Fecha de pago FAX.AFECHA, no fecha de factura |
 | Resumen por agente / paginación | Sin HTTP | Documentos agrupados y bono, páginas de 100 |
 | Liquidación y ajustes / Recalcular liquidación | POST /sales/reports/collection-commissions/preview | Cálculo de parámetros sin persistencia |
-| Descargar Excel | Sin HTTP | Resumen, hoja por agente, tarifas, reparto y origen |
+| Descargar Excel | Sin HTTP | Ventas por agente y fecha, resumen de tres filas y hoja individual de trece columnas |
 | Cancelar / Escape | Sin HTTP | Cierra y permite reabrir |
 
 Query keys incluyen from/to/branch/agent. Cambiar filtros bloquea exportación
@@ -26,13 +26,13 @@ obsoleta hasta regenerar; rangos hasta 366 días, estados carga/error/reintento/
 Requiere al menos un PA por factura en el rango, incluso de meses anteriores.
 Los pagos se muestran **positivos** en detalle, resumen, subtotales y total,
 sumando valores absolutos por factura, no el absoluto del neto. La API conserva
-el pago firmado para cálculo y la hoja Movimientos FAX conserva los signos
-originales. Devoluciones no cambian de signo. FECHA PAGO y DÍAS usan el último PA.
+el pago firmado y movimientos de origen para cálculo/auditoría en la respuesta.
+Devoluciones no cambian de signo. FECHA PAGO y DÍAS usan el último PA.
 México: almacenes 01/15. No hereda el filtro fiscal de Ventas por familia.
 
 Se excluye la **factura completa** si contiene alguna partida de servicio
 (`FINV.ITIPO=4`), incluidas las mixtas. Sus pagos y partidas tampoco aparecen
-en las hojas de auditoría ni en totales. El backend aplica esta regla; la UI
+en la respuesta ni en totales. El backend aplica esta regla; la UI
 la explica y no realiza un filtro local dependiente de la página visible.
 
 Costo=SUM(AICOSTO*AICANTF) de partidas con el movimiento de venta de la compañía;
@@ -44,17 +44,19 @@ comentado y no se aplica. LM cuenta partidas ILUGAR=XXX, LM_VALOR suma 1% de
 AICANTF*AIPRECIO de esas partidas. Detalles y procedencia **derivada de código
 proporcionado**, no captura nueva, en el documento del backend.
 
-Los documentos se agrupan por código de agente y folio, con cabecera y subtotal.
+Los documentos se agrupan por código de agente y fecha de factura, con folio e
+identificador como desempate, cabecera y subtotal.
 El resumen permite comparar agentes; la selección Agente filtra uno o todos.
 Si falta una partida de costo, su compañía es desconocida, IVA inválido o subtotal
 cero, se informa costo no calculable; null no se convierte en cero. Los totales
 afectados también son no disponibles, sin presentar sumas parciales como completas.
 
-ExcelJS diferido: Liquidación, Tarifas, Neto a recibir, hoja por agente, Comisiones
-(21 columnas, clasificación y bono), Resumen agentes, Movimientos FAX, Partidas
-origen y Criterios. Fórmulas y resultados
-guardados; total general suma sólo subtotales. Fechas/cantidades numéricas, margen
-porcentual; null vacío. La auditoría de partidas incluye AITIPMV, ILUGAR, compañía e ITIPO.
+ExcelJS diferido: primero Ventas por agente, segundo Comisiones del mes (tres
+filas por vendedor) y después una hoja por vendedor con sólo trece columnas,
+total y el bloque azul de catorce filas de la captura proporcionada. Sin hojas
+extra ni columnas ocultas. Fórmulas y resultados guardados; total general suma
+sólo subtotales. Fechas/cantidades numéricas, margen porcentual; null vacío.
+La clasificación y bono siguen disponibles en pantalla y respuesta de API.
 
 Validación con API real: México, todas las sucursales y agente 1501; 74/983/38
 facturas después de excluir 12 facturas con servicios (8 mixtas). FE0064185,

@@ -72,7 +72,7 @@ function Workspace({ options }: { options: CollectionOptions }) {
             <CollectionCommissionsTable report={report.data!} summary={summary} page={page} />
             <div className="space-y-1 p-2 text-[10px]">{report.data!.notes.map(note => <p key={note}>{note}</p>)}</div></>}
         </div>
-        <footer className="flex shrink-0 items-center justify-between gap-2 rounded-sm border bg-background p-2"><span className="text-[10px]">Excel incluye resumen, hoja por agente, clientes 1% y origen.</span><div className="flex gap-2"><Button variant="outline" disabled={!ready || busy} onClick={() => setSettlementOpen(true)}>Liquidación y ajustes</Button><Button disabled={!ready || busy} onClick={() => void download()}>{exporting ? "Generando Excel…" : "Descargar Excel"}</Button><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button></div></footer>
+        <footer className="flex shrink-0 items-center justify-between gap-2 rounded-sm border bg-background p-2"><span className="text-[10px]">Excel: ventas por agente, resumen de comisiones y una hoja de 13 columnas por vendedor.</span><div className="flex gap-2"><Button variant="outline" disabled={!ready || busy} onClick={() => setSettlementOpen(true)}>Liquidación y ajustes</Button><Button disabled={!ready || busy} onClick={() => void download()}>{exporting ? "Generando Excel…" : "Descargar Excel"}</Button><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button></div></footer>
       </ErpDataDialogBody>
     </ErpDataDialog></DesktopWindowIdentity>}
     {settlementOpen && ready && report.data && <CollectionSettlementDialog key={report.data.generatedAt} original={report.data} onClose={() => setSettlementOpen(false)} onApply={setSettings} />}
