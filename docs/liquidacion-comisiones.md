@@ -50,6 +50,13 @@ Bruta=cobranza normal-costo aplicado; neta=bruta-flete-gratificaciones;
 normal=neta*tasa; total=normal+clientes+PLM seleccionado. El costo manual se
 identifica separado de origen y no cambia las partidas originales.
 
+La columna **$ comisión** del resumen general (L) calcula siempre
+`ROUND(Hfila*Kfila,2)`: utilidad neta por porcentaje de comisión. El resumen
+individual y la API muestran el mismo importe, incluso si la modalidad del 1%
+sigue por confirmar. Ejemplo: 509,982.76 × 9% = 45,898.45. Una tasa conocida de
+cero muestra 0.00; sin tasa o sin utilidad neta queda vacío. La revisión global
+puede seguir pendiente, pero no oculta comisiones ya calculables.
+
 **Recalcular liquidación** envía únicamente criterios y parámetros al backend.
 **Aplicar y cerrar** conserva la configuración de esa consulta mediante su query key.
 Cambiar fechas, sucursal o agente la reinicia. No guarda preferencias globales.
@@ -143,3 +150,10 @@ Fixtures verifican que sólo Nuevo se marque, el 1% preciso, otras marcas vacía
 pagos no disponibles y redondeo por agente (también signos negativos). El resumen
 de tres filas y bloque azul permanecen iguales. Evidencia privada en
 `captures/ui/new-version/commission-new-customers-20261109/` del backend.
+
+Corrección de comisión normal: navegador/API real y cuatro descargas verifican
+45,898.45 para el perfil del 9% sin seleccionar antes la modalidad del bono.
+441 fórmulas por libro conciliadas y evaluadas independientemente. Casos con
+tasa cero, tasa desconocida y utilidad no disponible conservan su comportamiento.
+Evidencia privada `captures/ui/new-version/commission-amounts-20261109/` del backend;
+235 pruebas del backend, lint/build y lint/typecheck/build del frontend aprobados.

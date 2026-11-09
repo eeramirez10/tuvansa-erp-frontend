@@ -69,7 +69,7 @@ export function addCollectionSettlementWorkbook(book: ExcelJS.Workbook, report: 
       ? `IF(COUNT(${cell(1)},${cell(7)})=2,IF(AND(${cell(1)}>0,${cell(7)}*100>${cell(1)}*${report.settlement.minimumNetMargin}),${tierRate},0),"")` : '""'
     excelFormula(sheet, cell(9), rate, agent.rate === null ? null : agent.rate / 100)
     excelFormula(sheet, cell(10), `IF(ISNUMBER(${cell(9)}),${cell(9)},"")`, agent.rate === null ? null : agent.rate / 100)
-    excelFormula(sheet, cell(11), report.settlement.bonusMode === "unconfirmed" ? '""' : `IF(COUNT(${cell(7)},${cell(10)})=2,ROUND(${cell(7)}*${cell(10)},2),"")`, agent.regularCommission)
+    excelFormula(sheet, cell(11), `IF(COUNT(${cell(7)},${cell(10)})=2,ROUND(${cell(7)}*${cell(10)},2),"")`, agent.regularCommission)
     sheet.getCell(cell(12)).value = agent.lmBonus
     sheet.getCell(cell(13)).value = agent.customerBonus
     for (const offset of [4, 8, 9, 10]) sheet.getCell(cell(offset)).numFmt = "0.00%"
@@ -86,9 +86,10 @@ export function addCollectionSettlementWorkbook(book: ExcelJS.Workbook, report: 
     summary.getRow(r).font = { bold: true }
     for (const row of [r, bonusRow, lmRow]) { summary.getRow(row).height = 32; summary.getRow(row).alignment = { wrapText: true, vertical: "middle" } }
     const q = quote(name)
-    for (const [col, offset, cached] of [[2, 1, agent.payment], [3, 2, agent.cost], [4, 3, agent.grossProfit], [5, 4, agent.grossMargin === null ? null : agent.grossMargin / 100], [6, 5, agent.freight], [7, 6, agent.gratuities], [8, 7, agent.netProfit], [9, 8, agent.netMargin === null ? null : agent.netMargin / 100], [10, 9, agent.rate === null ? null : agent.rate / 100], [11, 10, agent.rate === null ? null : agent.rate / 100], [12, 11, agent.regularCommission]] as const) {
+    for (const [col, offset, cached] of [[2, 1, agent.payment], [3, 2, agent.cost], [4, 3, agent.grossProfit], [5, 4, agent.grossMargin === null ? null : agent.grossMargin / 100], [6, 5, agent.freight], [7, 6, agent.gratuities], [8, 7, agent.netProfit], [9, 8, agent.netMargin === null ? null : agent.netMargin / 100], [10, 9, agent.rate === null ? null : agent.rate / 100], [11, 10, agent.rate === null ? null : agent.rate / 100]] as const) {
       excelFormula(summary, `${summary.getColumn(col).letter}${r}`, `IF(ISNUMBER(${q}${cell(offset)}),${q}${cell(offset)},"")`, cached)
     }
+    excelFormula(summary, `L${r}`, `IF(COUNT(H${r},K${r})=2,ROUND(H${r}*K${r},2),"")`, agent.regularCommission)
     summary.getCell(bonusRow, 2).value = agent.customerBonusBase
     summary.getCell(bonusRow, 10).value = 0.01
     summary.getCell(bonusRow, 11).value = 0.01
