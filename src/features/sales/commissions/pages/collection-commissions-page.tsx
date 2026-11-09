@@ -4,8 +4,9 @@ import { useState } from "react"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { CollectionCommissionsTable } from "@/features/sales/commissions/components/collection-commissions-table"
+import { CollectionSettlementDialog } from "@/features/sales/commissions/components/collection-settlement-dialog"
 import { collectionMoney, collectionOptionsQuery, collectionReportQuery } from "@/features/sales/commissions/logic"
-import type { CollectionCriteria, CollectionOptions } from "@/features/sales/commissions/model"
+import type { CollectionCriteria, CollectionOptions, SettlementSettings } from "@/features/sales/commissions/model"
 import { downloadCollectionCommissions } from "@/features/sales/commissions/services/download-collection-commissions"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { notifications } from "@/shared/notifications/notifications"
@@ -25,11 +26,13 @@ function Workspace({ options }: { options: CollectionOptions }) {
   const defaults = { from: options.defaultFrom, to: options.defaultTo, branch: options.branches.some(b => b.code === "01") ? "01" : "all", agent: "all" }
   const form = useForm<CollectionCriteria>({ resolver: zodResolver(schema), defaultValues: defaults }), current = useWatch({ control: form.control })
   const [criteria, setCriteria] = useState<CollectionCriteria | null>(null), [open, setOpen] = useState(true), [summary, setSummary] = useState(false), [page, setPage] = useState(1), [exporting, setExporting] = useState(false)
-  const report = useQuery({ ...collectionReportQuery(criteria ?? defaults), enabled: criteria !== null })
+  const [settlementOpen, setSettlementOpen] = useState(false)
+  const [settings, setSettings] = useState<SettlementSettings | undefined>()
+  const report = useQuery({ ...collectionReportQuery(criteria ?? defaults, settings), enabled: criteria !== null })
   const matches = criteria !== null && criteria.from === current.from && criteria.to === current.to && criteria.branch === current.branch && criteria.agent === current.agent
   const ready = Boolean(matches && report.data && !report.data.empty && !report.isFetching && !report.isError), busy = report.isFetching || exporting
   const count = (summary ? report.data?.agents.length : report.data?.invoices.length) ?? 0, pages = Math.max(1, Math.ceil(count / 100))
-  const generate = (next: CollectionCriteria) => { setPage(1); if (JSON.stringify(next) === JSON.stringify(criteria)) void report.refetch(); else setCriteria(next) }
+  const generate = (next: CollectionCriteria) => { setPage(1); if (JSON.stringify(next) === JSON.stringify(criteria)) void report.refetch(); else { setSettings(undefined); setSettlementOpen(false); setCriteria(next) } }
   const download = async () => {
     if (!ready || !report.data || busy) return
     setExporting(true)
@@ -62,14 +65,17 @@ function Workspace({ options }: { options: CollectionOptions }) {
           {matches && report.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(report.error)}</AlertDescription><Button onClick={() => void report.refetch()}>Reintentar</Button></Alert>}
           {matches && !report.isFetching && !report.isError && report.data?.empty && <p role="status" className="p-3 text-xs">No hay facturas con pagos PA en este periodo y filtros.</p>}
           {ready && <><div className="p-2 text-xs"><p className="font-semibold">{report.data!.company}</p><p>Facturas: {report.data!.totals.invoices} · Pagos PA: {report.data!.totals.payments} · Pago sin IVA presentado: {collectionMoney(report.data!.totals.displayPayment)}</p></div>
+            <p className="p-2 text-xs">Clientes nuevos o recuperados: {report.data!.totals.customerBonusInvoices} documentos · Base 1%: {collectionMoney(report.data!.totals.customerBonusBase)} · Bono: {collectionMoney(report.data!.totals.customerBonus)}</p>
+            {report.data!.totals.unclassifiedInvoices > 0 && <p role="alert" className="p-2 text-xs text-destructive">{report.data!.totals.unclassifiedInvoices} documentos con cliente sin clasificar; bono pendiente de la marca del ERP.</p>}
             {!report.data!.calculationReady && <p role="alert" className="p-2 text-xs text-destructive">{report.data!.totals.unavailableCosts} documentos sin costo calculable: revisa partidas de venta, compañía, IVA o subtotal cero. Los importes no disponibles se dejan vacíos en Excel.</p>}
             {report.data!.invoices.some(r => r.invalidVatCount > 0) && <p role="alert" className="p-2 text-xs text-destructive">Hay movimientos con IVA inválido. Sus importes no están disponibles.</p>}
             <CollectionCommissionsTable report={report.data!} summary={summary} page={page} />
             <div className="space-y-1 p-2 text-[10px]">{report.data!.notes.map(note => <p key={note}>{note}</p>)}</div></>}
         </div>
-        <footer className="flex shrink-0 items-center justify-between gap-2 rounded-sm border bg-background p-2"><span className="text-[10px]">Excel incluye documentos y subtotales por agente, movimientos FAX y partidas de origen.</span><div className="flex gap-2"><Button disabled={!ready || busy} onClick={() => void download()}>{exporting ? "Generando Excel…" : "Descargar Excel"}</Button><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button></div></footer>
+        <footer className="flex shrink-0 items-center justify-between gap-2 rounded-sm border bg-background p-2"><span className="text-[10px]">Excel incluye resumen, hoja por agente, clientes 1% y origen.</span><div className="flex gap-2"><Button variant="outline" disabled={!ready || busy} onClick={() => setSettlementOpen(true)}>Liquidación y ajustes</Button><Button disabled={!ready || busy} onClick={() => void download()}>{exporting ? "Generando Excel…" : "Descargar Excel"}</Button><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button></div></footer>
       </ErpDataDialogBody>
     </ErpDataDialog></DesktopWindowIdentity>}
+    {settlementOpen && ready && report.data && <CollectionSettlementDialog key={report.data.generatedAt} original={report.data} onClose={() => setSettlementOpen(false)} onApply={setSettings} />}
   </>
 }
 export function CollectionCommissionsPage() {

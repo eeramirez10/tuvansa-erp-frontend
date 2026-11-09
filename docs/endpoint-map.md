@@ -1,6 +1,6 @@
 # Mapa de vistas, controles y endpoints
 
-## Comisiones por cobranza (2026-11-06)
+## Comisiones por cobranza (2026-11-09)
 
 **Reportes de Ventas → Comisiones → Reporte Comisiones x Cobranza**;
 `/ventas/reportes/comisiones-por-cobranza`. Disponible en Pedidos y Facturación.
@@ -12,6 +12,13 @@ Excluye facturas completas con servicios FINV.ITIPO=4, incluidas mixtas.
 `displayPaymentAmount` y `displayPayment` muestran pagos positivos; los campos
 firmados siguen disponibles para cálculo/auditoría. No cambia costo/utilidad.
 Documentos y subtotales por agente en pantalla y Excel; resumen y descarga sin HTTP.
+La marca actual FCLI.CLITARJETA se muestra completa y aporta 1% a Nuevo/Viejo_Reactivado
+sobre el pago sin IVA; precisión por documento y redondeo por agente. Liquidación y
+ajustes usa POST `/sales/reports/collection-commissions/preview` con `{criteria,settings}`
+para calcular en READ ONLY, sin persistir. Permite modalidad adicional/sustitución,
+planes, flete, gratificaciones y costo manual. Aplicar conserva la consulta vigente.
+Libro con resumen, hoja por agente, tarifas y reparto editable en Excel.
+[Formato y controles](liquidacion-comisiones.md).
 Datos indefinidos se señalan, no se sustituyen por cero. La ruta contable anterior
 redirige a Ventas. [Detalle](comisiones-por-cobranza.md).
 

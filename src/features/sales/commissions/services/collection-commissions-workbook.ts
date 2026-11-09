@@ -1,9 +1,11 @@
 import ExcelJS from "exceljs"
 import type { CollectionCommissions } from "@/features/sales/commissions/model"
-import { collectionHeaders } from "@/features/sales/commissions/logic"
+import { collectionCustomerLabel, collectionHeaders } from "@/features/sales/commissions/logic"
+import { addCollectionSettlementWorkbook } from "@/features/sales/commissions/services/collection-settlement-workbook"
 const money = '"$"#,##0.00;[Red]-"$"#,##0.00;"$"0.00'
 export function createCollectionCommissionsWorkbook(report: CollectionCommissions) {
   const book = new ExcelJS.Workbook(); book.creator = "TUVANSA ERP"; book.created = new Date(report.generatedAt); book.calcProperties.fullCalcOnLoad = true
+  addCollectionSettlementWorkbook(book, report)
   const create = (name: string, headers: string[]) => {
     const sheet = book.addWorksheet(name)
     sheet.addRow([report.company]); sheet.addRow([report.title])
@@ -21,18 +23,19 @@ export function createCollectionCommissionsWorkbook(report: CollectionCommission
   const detail = create("Comisiones", collectionHeaders)
   const subtotalRows: number[] = []
   const totals = (row: ExcelJS.Row, values: CollectionCommissions["totals"], formula: (letter: string) => string) => {
-    for (const [col, result] of [[7, values.subtotal], [8, values.returns], [9, values.total], [10, values.displayPayment], [11, values.cost], [12, values.realCost], [13, values.profit], [15, values.freight], [17, values.lm], [18, values.lmAmount]] as const) {
+    for (const [col, result] of [[7, values.subtotal], [8, values.returns], [9, values.total], [10, values.displayPayment], [11, values.cost], [12, values.realCost], [13, values.profit], [15, values.freight], [17, values.lm], [18, values.lmAmount], [19, values.customerBonusBase], [21, values.customerBonus]] as const) {
       if (result !== null) row.getCell(col).value = { formula: `ROUND(${formula(detail.getColumn(col).letter)},2)`, result }
     }
     row.font = { bold: true }; row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } }
   }
   for (const agent of report.agents) {
     const heading = detail.addRow([`Agente ${agent.code || "Sin código"} · ${agent.name} · ${agent.invoices} documentos`])
-    detail.mergeCells(heading.number, 1, heading.number, 18); heading.font = { bold: true }
+    detail.mergeCells(heading.number, 1, heading.number, 21); heading.font = { bold: true }
     const first = detail.rowCount + 1
     for (const row of report.invoices.filter(r => r.agentCode === agent.code)) {
       const line = detail.addRow([row.agentName, row.customerName, new Date(row.date + "T00:00:00Z"), new Date(row.lastPaymentDate + "T00:00:00Z"), row.number, row.days,
-        row.subtotalAmount, row.returnAmount, row.totalAmount, row.displayPaymentAmount, row.cost, row.realCost, row.profit, row.margin === null ? null : row.margin / 100, row.freightAmount, row.newCustomer, row.lm, row.lmAmount])
+        row.subtotalAmount, row.returnAmount, row.totalAmount, row.displayPaymentAmount, row.cost, row.realCost, row.profit, row.margin === null ? null : row.margin / 100, row.freightAmount, collectionCustomerLabel(row.customerStatus), row.lm, row.lmAmount,
+        row.customerBonusBase, row.customerBonusRate === null ? null : row.customerBonusRate / 100, row.customerBonus])
       line.outlineLevel = 1
     }
     const last = detail.rowCount, subtotal = detail.addRow([`Subtotal agente ${agent.code}`])
@@ -40,15 +43,17 @@ export function createCollectionCommissionsWorkbook(report: CollectionCommission
   }
   detail.getColumn(1).width = 32; detail.getColumn(2).width = 50
   for (const col of [3, 4]) detail.getColumn(col).numFmt = "dd/mm/yyyy"
-  for (const col of [7, 8, 9, 10, 11, 12, 13, 15, 18]) detail.getColumn(col).numFmt = money
+  for (const col of [7, 8, 9, 10, 11, 12, 13, 15, 18, 19, 21]) detail.getColumn(col).numFmt = money
   detail.getColumn(14).numFmt = "0.00%"
+  detail.getColumn(20).numFmt = "0.00%"
+  detail.eachRow(row => { if (row.getCell(3).value instanceof Date) row.getCell(21).numFmt='"$"#,##0.0000' })
   // Sum only agent subtotal cells: never double-count grouped document rows.
   const total = detail.addRow(["TOTAL"])
   totals(total, report.totals, letter => subtotalRows.length ? `SUM(${subtotalRows.map(row => `${letter}${row}`).join(",")})` : "0")
   total.font = { bold: true, color: { argb: "FFB91C1C" } }
-  const summary = create("Resumen agentes", ["Código", "Agente", "Facturas", "Pagos PA", "Subtotal", "Devoluciones", "Total", "Pago", "Costo", "Costo real", "Utilidad", "Fletes", "LM", "LM_VALOR"])
-  report.agents.forEach(row => summary.addRow([row.code, row.name, row.invoices, row.payments, row.subtotal, row.returns, row.total, row.displayPayment, row.cost, row.realCost, row.profit, row.freight, row.lm, row.lmAmount]))
-  summary.getColumn(2).width = 40; for (const col of [5,6,7,8,9,10,11,12,14]) summary.getColumn(col).numFmt = money
+  const summary = create("Resumen agentes", ["Código", "Agente", "Facturas", "Pagos PA", "Subtotal", "Devoluciones", "Total", "Pago", "Costo", "Costo real", "Utilidad", "Fletes", "LM", "LM_VALOR", "Base clientes 1%", "Bono clientes", "Documentos con bono", "Sin clasificar"])
+  report.agents.forEach(row => summary.addRow([row.code, row.name, row.invoices, row.payments, row.subtotal, row.returns, row.total, row.displayPayment, row.cost, row.realCost, row.profit, row.freight, row.lm, row.lmAmount, row.customerBonusBase, row.customerBonus, row.customerBonusInvoices, row.unclassifiedInvoices]))
+  summary.getColumn(2).width = 40; for (const col of [5,6,7,8,9,10,11,12,14,15,16]) summary.getColumn(col).numFmt = money
   const invoiceMap = new Map(report.invoices.map(row => [row.id, row]))
   const movements = create("Movimientos FAX", ["ASEQ", "DSEQ", "Factura", "Fecha", "Tipo", "ACANT con IVA", "% IVA", "Importe sin IVA", "Referencia", "Importe exacto sin IVA (texto)"])
   report.movements.forEach(row => movements.addRow([row.id, row.invoiceId, invoiceMap.get(row.invoiceId)?.number, new Date(row.date + "T00:00:00Z"), row.type,

@@ -1,22 +1,24 @@
 # Reporte Comisiones x Cobranza
 
-Actualizado el 2026-11-06. Pertenece a **Ventas**, disponible desde Pedidos,
+Actualizado el 2026-11-09. Pertenece a **Ventas**, disponible desde Pedidos,
 Facturación y su ruta directa `/ventas/reportes/comisiones-por-cobranza`.
 Menú exacto: **Reportes de Ventas → Comisiones → Reporte Comisiones x Cobranza**.
 Contabilidad ya no incluye esta opción. La ruta anterior contable redirige
 preservando query/hash; los otros tres reportes financieros conservan su ubicación.
 Ventana ERP, Dropdown Menu y controles compartidos shadcn/Base UI.
 
-El método 214 proporcionado en CUATRO.pdf completa costos, utilidad, % y LM.
-Ya no se etiqueta preliminar por falta de ese método. No se inventa una tasa
-adicional de comisión a pagar: los PDF definen las 18 columnas del reporte.
+El método 214 de CUATRO.pdf completa costos/utilidad/LM. El Excel y CLIENTES
+NUEVO.pdf agregan clasificación, incentivo del 1% y liquidación configurable.
+Formato actual, controles y reglas en [Liquidación de comisiones](liquidacion-comisiones.md).
+Las validaciones históricas de agosto descritas abajo corresponden al formato anterior.
 
 | Control | Endpoint relativo a /api | Efecto |
 | --- | --- | --- |
 | Abrir | GET /sales/reports/collection-commissions/options | Compañía, sucursales, agentes y fechas del mes actual |
 | Pagos desde / hasta, Sucursal, Agente / Vista previa | GET /sales/reports/collection-commissions?from=2026-08-01&to=2026-08-31&branch=01&agent=all | Fecha de pago FAX.AFECHA, no fecha de factura |
-| Resumen por agente / paginación | Sin HTTP | Resumen o documentos agrupados, páginas de 100 |
-| Descargar Excel | Sin HTTP | Cinco hojas con todos los documentos y subtotales por agente |
+| Resumen por agente / paginación | Sin HTTP | Documentos agrupados y bono, páginas de 100 |
+| Liquidación y ajustes / Recalcular liquidación | POST /sales/reports/collection-commissions/preview | Cálculo de parámetros sin persistencia |
+| Descargar Excel | Sin HTTP | Resumen, hoja por agente, tarifas, reparto y origen |
 | Cancelar / Escape | Sin HTTP | Cierra y permite reabrir |
 
 Query keys incluyen from/to/branch/agent. Cambiar filtros bloquea exportación
@@ -48,8 +50,9 @@ Si falta una partida de costo, su compañía es desconocida, IVA inválido o sub
 cero, se informa costo no calculable; null no se convierte en cero. Los totales
 afectados también son no disponibles, sin presentar sumas parciales como completas.
 
-ExcelJS diferido: Comisiones (18 columnas, grupos y subtotales por agente),
-Resumen agentes, Movimientos FAX, Partidas origen y Criterios. Fórmulas y resultados
+ExcelJS diferido: Liquidación, Tarifas, Neto a recibir, hoja por agente, Comisiones
+(21 columnas, clasificación y bono), Resumen agentes, Movimientos FAX, Partidas
+origen y Criterios. Fórmulas y resultados
 guardados; total general suma sólo subtotales. Fechas/cantidades numéricas, margen
 porcentual; null vacío. La auditoría de partidas incluye AITIPMV, ILUGAR, compañía e ITIPO.
 
