@@ -76,7 +76,7 @@ export function addCollectionSettlementWorkbook(book: ExcelJS.Workbook, report: 
     sheet.getCell(cell(1)).note = "Cobranza de cálculo: invierte el signo PA. Los contramovimientos compensan; Pago en el detalle se presenta positivo."
     sheet.getCell(cell(13)).note = "Incluye clientes Nuevos y Viejo_Reactivado, según la marca actual del ERP. 1% sobre lo pagado sin IVA, redondeado por agente."
     if (agent.pending.length) sheet.getCell(cell(11)).note = agent.pending.join("\n")
-    sheet.pageSetup.printArea = `A1:O${start + 13}`
+    sheet.pageSetup.printArea = `A1:P${start + 13}`
 
     // Exactly three rows per salesperson, with no additional group header.
     const r = summary.addRow([agent.name]).number

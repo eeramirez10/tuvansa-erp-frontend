@@ -43,7 +43,7 @@ function Workspace({ options }: { options: CollectionOptions }) {
     {!open && <Button className="mt-2 self-start" onClick={() => setOpen(true)}>Abrir reporte</Button>}
     {open && <DesktopWindowIdentity id="sales:reports:collection-commissions"><ErpDataDialog title="Reporte Comisiones x Cobranza" description="Cobros y ajustes por fecha del auxiliar, documento y agente" tone="sales" defaultWidth={1140} defaultHeight={Math.min(760, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
       <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-2">
-        <Alert className="shrink-0"><AlertDescription>Cobros agrupados por agente y ajustes en su propia fecha: cancelaciones, devoluciones D y notas C disminuyen en negativo. Los ajustes llevan REVISAR. Excluye facturas con servicios, incluidas mixtas.</AlertDescription></Alert>
+        <Alert className="shrink-0"><AlertDescription>Cobros agrupados por agente y ajustes en su propia fecha: cancelaciones, devoluciones D y notas C disminuyen en negativo. Las notas de crédito se integran al vendedor de la última factura vigente del mismo cliente al cierre; si no hay factura, se usa el catálogo del cliente. Se conserva el agente original para revisión. Excluye facturas con servicios, incluidas mixtas.</AlertDescription></Alert>
         <form className="shrink-0 rounded-sm border bg-background p-2" onSubmit={form.handleSubmit(generate)}>
           <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-[9rem_9rem_minmax(10rem,1fr)_minmax(12rem,1fr)_auto]">
             <div className="grid gap-1"><Label htmlFor="collection-from">Movimientos desde</Label><Input id="collection-from" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("from")} /></div>

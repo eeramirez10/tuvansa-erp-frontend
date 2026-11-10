@@ -12,6 +12,11 @@ previamente cobrada, devolución D y nota C se muestran en negativo aunque el PA
 sea anterior; K positivo de D/C compensa el abono. rowKey identifica cada evento;
 kind/eventDate/reviewRequired muestran tipo, fecha y REVISAR. No repite el cobro
 histórico. [Alcance y costo de ajustes](comisiones-ajustes.md).
+Notas C y sus reversiones se asignan al último agente que factura al mismo cliente
+y compañía hasta el cierre (catálogo del cliente como alternativa), antes del filtro
+Agente. creditNoteAmount/creditNotes separan **Notas de crédito** de Devoluciones;
+los metadatos del agente original permiten revisión. El Excel pasa a dieciséis
+columnas individuales. [Reglas y formato vigentes](comisiones-notas-credito.md).
 Costo histórico/prorrateado, utilidad y LM según CUATRO.pdf/método 214.
 Excluye facturas completas con servicios FINV.ITIPO=4, incluidas mixtas.
 `displayPaymentAmount` y `displayPayment` muestran pagos positivos; los campos

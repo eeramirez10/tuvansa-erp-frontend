@@ -10,6 +10,10 @@ Ventana ERP, Dropdown Menu y controles compartidos shadcn/Base UI.
 **Alcance vigente:** [cancelaciones, devoluciones y notas C por fecha del ajuste](comisiones-ajustes.md).
 Los ajustes se incluyen aunque no haya PA en su mes, con signo y aviso REVISAR.
 La marca actual CANCELADA junto a un cobro histórico no cambia su fecha de pago.
+[Notas C por cliente y vendedor](comisiones-notas-credito.md): se reasignan antes
+del filtro Agente, conservan el agente original y tienen columna separada.
+El Excel vigente tiene dieciséis columnas individuales; la descripción de quince
+columnas más abajo corresponde a la versión anterior.
 
 El método 214 de CUATRO.pdf completa costos/utilidad/LM. El Excel y CLIENTES
 NUEVO.pdf agregan clasificación, incentivo del 1% y liquidación configurable.

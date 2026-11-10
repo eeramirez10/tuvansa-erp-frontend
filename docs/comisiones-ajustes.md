@@ -2,6 +2,10 @@
 
 Actualización 2026-11-10. Mismo reporte y ruta de Ventas; no agrega menús ni endpoints.
 Sustituye el alcance inicial que sólo etiquetaba canceladas con PA en el mes.
+La [ampliación de notas de crédito](comisiones-notas-credito.md) las integra al
+vendedor resuelto por cliente y separa su columna. El formato vigente tiene
+dieciséis columnas individuales; las validaciones de quince columnas abajo
+documentan el estado anterior a esa ampliación.
 
 Los filtros **Movimientos desde / hasta** aplican a FAX.AFECHA, tanto para cobros
 como para ajustes. Una factura puede tener su PA en septiembre y una cancelación
