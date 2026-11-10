@@ -1,5 +1,9 @@
 # Liquidación y formato del reporte de comisiones
 
+Vigente: [ajustes K/D/C por fecha propia y con signo](comisiones-ajustes.md),
+incluidos aunque no haya PA en el mes. Se conserva el formato del libro descrito
+abajo; las limitaciones del etiquetado inicial de canceladas quedaron superadas.
+
 Actualización 2026-11-09, basada en `Reporte Comisiones Suc. Mexico Sep 26 V2.xlsx`
 y `CLIENTES NUEVO.pdf`, archivos proporcionados por el usuario y conservados fuera de Git.
 

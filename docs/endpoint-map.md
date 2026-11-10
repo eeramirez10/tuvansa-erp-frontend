@@ -7,9 +7,11 @@
 Catálogos GET `/sales/reports/collection-commissions/options`; Vista previa GET
 `/sales/reports/collection-commissions?from=2026-08-01&to=2026-08-31&branch=01&agent=all`.
 Periodo FAX.AFECHA y pagos PA; partidas separadas evitan multiplicar cobranza.
-Incluye canceladas con PA del periodo. `invoices[].canceled` muestra CANCELADA
-en pantalla y junto al folio del Excel, sin agregar columnas. Estado actual,
-sin fecha de cancelación inferida ni reversión automática de comisiones.
+Incluye cobros PA y ajustes K/D/C por su propia AFECHA. Cancelación K de factura
+previamente cobrada, devolución D y nota C se muestran en negativo aunque el PA
+sea anterior; K positivo de D/C compensa el abono. rowKey identifica cada evento;
+kind/eventDate/reviewRequired muestran tipo, fecha y REVISAR. No repite el cobro
+histórico. [Alcance y costo de ajustes](comisiones-ajustes.md).
 Costo histórico/prorrateado, utilidad y LM según CUATRO.pdf/método 214.
 Excluye facturas completas con servicios FINV.ITIPO=4, incluidas mixtas.
 `displayPaymentAmount` y `displayPayment` muestran pagos positivos; los campos

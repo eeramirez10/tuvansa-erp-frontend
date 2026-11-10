@@ -7,6 +7,10 @@ Contabilidad ya no incluye esta opción. La ruta anterior contable redirige
 preservando query/hash; los otros tres reportes financieros conservan su ubicación.
 Ventana ERP, Dropdown Menu y controles compartidos shadcn/Base UI.
 
+**Alcance vigente:** [cancelaciones, devoluciones y notas C por fecha del ajuste](comisiones-ajustes.md).
+Los ajustes se incluyen aunque no haya PA en su mes, con signo y aviso REVISAR.
+La marca actual CANCELADA junto a un cobro histórico no cambia su fecha de pago.
+
 El método 214 de CUATRO.pdf completa costos/utilidad/LM. El Excel y CLIENTES
 NUEVO.pdf agregan clasificación, incentivo del 1% y liquidación configurable.
 Formato actual, controles y reglas en [Liquidación de comisiones](liquidacion-comisiones.md).
@@ -23,15 +27,16 @@ Las validaciones históricas de agosto descritas abajo corresponden al formato a
 
 Query keys incluyen from/to/branch/agent. Cambiar filtros bloquea exportación
 obsoleta hasta regenerar; rangos hasta 366 días, estados carga/error/reintento/vacío.
-Requiere al menos un PA por factura en el rango, incluso de meses anteriores.
-Incluye también facturas canceladas: `canceled=true` muestra **CANCELADA** junto
+Los renglones de cobro requieren PA por factura en el rango, incluso de facturas
+de meses anteriores. K/D/C se presentan aparte por AFECHA sin exigir un PA nuevo.
+La primera versión incluyó facturas canceladas: `canceled=true` muestra **CANCELADA** junto
 al folio con Badge shadcn y en la misma celda Factura del Excel, en rojo y segunda
 línea. Es el estado actual del ERP. Se mantienen los pagos del periodo; no se
 revierten comisiones anteriores ni se infiere una fecha de cancelación.
 Si una cancelada quedó con subtotal cero, se conserva su PA conocido sin IVA;
 costo/utilidad no calculables quedan vacíos y generan la advertencia existente.
-Una cancelada sin PA en el periodo no se incorpora por una supuesta fecha de
-cancelación: la fuente de facturas no ofrece esa fecha.
+Ese límite fue sustituido por FAX.K: una cancelación con PA previo se ubica en
+AFECHA del K aunque el cobro haya sido de otro mes, sin inventar una fecha en FDOC.
 Los pagos se muestran **positivos** en detalle, resumen, subtotales y total,
 sumando valores absolutos por factura, no el absoluto del neto. La API conserva
 el pago firmado y movimientos de origen para cálculo/auditoría en la respuesta.

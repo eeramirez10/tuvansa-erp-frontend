@@ -1,8 +1,9 @@
 import type ExcelJS from "exceljs"
 import type { CollectionCommissions, CollectionInvoice, CollectionTotals } from "@/features/sales/commissions/model"
+import { collectionDocumentLabel } from "@/features/sales/commissions/document-label"
 
 export const collectionExcelMoney = '"$"#,##0.00;[Red]-"$"#,##0.00;"$"0.00'
-export const invoiceHeaders = ["Cliente", "Fecha documento", "Fecha pago", "Factura", "Días", "Subtotal", "Devoluciones", "Total", "Pago", "Costo", "Costo real", "Utilidad", "%%", "Cliente nuevo", "1% de lo pagado"]
+export const invoiceHeaders = ["Cliente", "Fecha documento", "Fecha pago / ajuste", "Factura", "Días", "Subtotal", "Devoluciones / NC", "Total", "Pago / ajuste", "Costo", "Costo real", "Utilidad", "%%", "Cliente nuevo", "1% de lo pagado"]
 export function newCustomerBonusTotal(invoices: CollectionInvoice[]) {
   const groups = new Map<string, number>()
   for (const invoice of invoices) {
@@ -15,7 +16,7 @@ export function newCustomerBonusTotal(invoices: CollectionInvoice[]) {
 }
 export function orderedInvoices(report: CollectionCommissions, code: string) {
   return report.invoices.filter(r => r.agentCode === code)
-    .sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number) || a.id - b.id)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.number.localeCompare(b.number) || a.eventDate.localeCompare(b.eventDate) || a.rowKey.localeCompare(b.rowKey))
 }
 export function excelFormula(sheet: ExcelJS.Worksheet, address: string, formula: string, result: number | null) {
   sheet.getCell(address).value = { formula, result: result ?? "" }
@@ -24,8 +25,8 @@ export function createCollectionSheet(book: ExcelJS.Workbook, report: Collection
   const sheet = book.addWorksheet(name)
   sheet.addRow([report.company])
   sheet.addRow([name])
-  sheet.addRow([`Sucursal: ${report.branchName} · Pagos del ${report.criteria.from} al ${report.criteria.to}`])
-  sheet.addRow(["Facturas ordenadas por fecha del documento, incluidas canceladas con pagos PA del periodo. Pago sin IVA en positivo. Costo real proporcional al pago original."])
+  sheet.addRow([`Sucursal: ${report.branchName} · Movimientos del ${report.criteria.from} al ${report.criteria.to}`])
+  sheet.addRow(["Cobros PA y ajustes por fecha del auxiliar. Cancelaciones, devoluciones D y notas C disminuyen en negativo; REVISAR señala conciliación. Importes sin IVA."])
   sheet.addRow([report.settlement.ready ? "Liquidación calculada con los parámetros seleccionados." : "PENDIENTE: confirma modalidad del 1% y planes en Liquidación y ajustes. Importes no disponibles: celdas vacías."])
   sheet.addRow(headers)
   for (let r = 1; r <= 5; r++) {
@@ -59,18 +60,20 @@ export function createCollectionSheet(book: ExcelJS.Workbook, report: Collection
 }
 export function addInvoiceRow(sheet: ExcelJS.Worksheet, row: CollectionInvoice, includeAgent = false) {
   const line = sheet.addRow([...(includeAgent ? [row.agentName] : []), row.customerName,
-    new Date(row.date + "T00:00:00Z"), new Date(row.lastPaymentDate + "T00:00:00Z"), row.canceled ? `${row.number}\nCANCELADA` : row.number, row.days,
+    new Date(row.date + "T00:00:00Z"), new Date(row.lastPaymentDate + "T00:00:00Z"), collectionDocumentLabel(row), row.days,
     row.subtotalAmount, row.returnAmount, row.totalAmount, row.displayPaymentAmount, row.cost, row.realCost, row.profit,
     row.margin === null ? null : row.margin / 100,
     row.customerStatus === "Nuevo" ? "nuevo" : null,
     row.customerStatus === "Nuevo" ? row.customerBonus : null])
   line.getCell(15 + (includeAgent ? 1 : 0)).numFmt = '"$"#,##0.0000;[Red]-"$"#,##0.0000;"$"0.0000'
-  if (row.canceled) {
+  if (row.canceled || row.reviewRequired) {
     const folio = line.getCell(4 + (includeAgent ? 1 : 0))
     folio.font = { bold: true, color: { argb: "FFB91C1C" } }
     folio.alignment = { wrapText: true, vertical: "middle" }
-    folio.note = "Factura cancelada según el estado actual del ERP. Esta marca no identifica su fecha de cancelación ni revierte comisiones anteriores. Si el ERP dejó el subtotal en cero, Pago conserva el PA original sin IVA; costo y utilidad quedan vacíos cuando no existe información histórica suficiente."
-    line.height = 30
+    folio.note = row.reviewRequired ? `Movimiento ${row.sourceMovementId}, ${row.eventDate}. Factura relacionada: ${row.relatedInvoiceNumber ?? "sin identificar"}. ${row.reviewReasons.join(" ")}`
+      : "Estado actual: cancelada. Este renglón conserva el pago en su fecha original; la disminución se registra por separado en la fecha del movimiento K."
+    line.height = row.reviewRequired ? 45 : 30
+    if (row.reviewRequired) line.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF7ED" } }
   }
 }
 export function addInvoiceTotals(sheet: ExcelJS.Worksheet, row: number, totals: CollectionTotals, offset: number, range: (col: string) => string, newCustomerBonus: number | null) {

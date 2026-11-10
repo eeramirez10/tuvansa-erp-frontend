@@ -41,34 +41,35 @@ function Workspace({ options }: { options: CollectionOptions }) {
   return <>
     <h1 className="text-sm font-semibold">Reporte Comisiones x Cobranza</h1>
     {!open && <Button className="mt-2 self-start" onClick={() => setOpen(true)}>Abrir reporte</Button>}
-    {open && <DesktopWindowIdentity id="sales:reports:collection-commissions"><ErpDataDialog title="Reporte Comisiones x Cobranza" description="Cobranza PA por fecha de pago, factura y agente" tone="sales" defaultWidth={1140} defaultHeight={Math.min(760, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
+    {open && <DesktopWindowIdentity id="sales:reports:collection-commissions"><ErpDataDialog title="Reporte Comisiones x Cobranza" description="Cobros y ajustes por fecha del auxiliar, documento y agente" tone="sales" defaultWidth={1140} defaultHeight={Math.min(760, window.innerHeight - 150)} fillHeight onOpenChange={setOpen}>
       <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-2">
-        <Alert className="shrink-0"><AlertDescription>Documentos agrupados por agente. Incluye canceladas con pagos PA del periodo, marcadas CANCELADA. Excluye facturas con servicios, incluidas las mixtas. Pagos presentados en positivo; incluye subtotales por agente y detalle en Excel.</AlertDescription></Alert>
+        <Alert className="shrink-0"><AlertDescription>Cobros agrupados por agente y ajustes en su propia fecha: cancelaciones, devoluciones D y notas C disminuyen en negativo. Los ajustes llevan REVISAR. Excluye facturas con servicios, incluidas mixtas.</AlertDescription></Alert>
         <form className="shrink-0 rounded-sm border bg-background p-2" onSubmit={form.handleSubmit(generate)}>
           <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-[9rem_9rem_minmax(10rem,1fr)_minmax(12rem,1fr)_auto]">
-            <div className="grid gap-1"><Label htmlFor="collection-from">Pagos desde</Label><Input id="collection-from" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("from")} /></div>
-            <div className="grid gap-1"><Label htmlFor="collection-to">Pagos hasta</Label><Input id="collection-to" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("to")} /></div>
+            <div className="grid gap-1"><Label htmlFor="collection-from">Movimientos desde</Label><Input id="collection-from" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("from")} /></div>
+            <div className="grid gap-1"><Label htmlFor="collection-to">Movimientos hasta</Label><Input id="collection-to" type="date" min="1901-01-01" max="2100-12-31" disabled={busy} {...form.register("to")} /></div>
             <Controller control={form.control} name="branch" render={({ field }) => <ReportSelect id="collection-branch" label="Sucursal" value={field.value} options={[{ value: "all", label: "Todas las sucursales" }, ...options.branches.map(b => ({ value: b.code, label: b.code + " · " + b.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Controller control={form.control} name="agent" render={({ field }) => <ReportSelect id="collection-agent" label="Agente" value={field.value} options={[{ value: "all", label: "Todos los agentes" }, ...options.agents.map(a => ({ value: a.code, label: (a.code || "—") + " · " + a.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Button type="submit" disabled={busy}>{report.isFetching ? "Generando…" : "Vista previa"}</Button>
-          </div><p className="mt-2 text-[10px]">Rango por fecha del pago (AFECHA), no por fecha de factura · Incluye pagos parciales PA · Importes sin IVA</p>
+          </div><p className="mt-2 text-[10px]">Rango por fecha del movimiento (AFECHA): pagos PA, cancelaciones K, devoluciones D y notas C · Importes sin IVA</p>
           {(form.formState.errors.from || form.formState.errors.to) && <p role="alert" className="mt-1 text-xs text-destructive">{form.formState.errors.to?.message ?? "Selecciona fechas válidas."}</p>}
         </form>
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
           <Label htmlFor="collection-summary"><Checkbox id="collection-summary" checked={summary} onCheckedChange={value => { setSummary(value === true); setPage(1) }} />Resumen por agente</Label>
-          {ready && <div className="flex items-center gap-2 text-[10px]"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Anterior</Button><span>Página {page} de {pages} · {count} {summary ? "agentes" : "facturas"}</span><Button variant="outline" size="sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>Siguiente</Button></div>}
+          {ready && <div className="flex items-center gap-2 text-[10px]"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Anterior</Button><span>Página {page} de {pages} · {count} {summary ? "agentes" : "documentos/ajustes"}</span><Button variant="outline" size="sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>Siguiente</Button></div>}
         </div>
         <div role="region" aria-label="Vista previa de comisiones por cobranza" aria-busy={report.isFetching} className="min-h-0 flex-1 overflow-auto rounded-sm border bg-background">
-          {!criteria && <p className="p-3 text-xs">Selecciona periodo de pagos, sucursal y agente para consultar.</p>}
-          {report.isFetching && <p role="status" className="flex items-center gap-2 p-3 text-xs"><Spinner />Leyendo pagos y sus facturas…</p>}
+          {!criteria && <p className="p-3 text-xs">Selecciona periodo de movimientos, sucursal y agente para consultar.</p>}
+          {report.isFetching && <p role="status" className="flex items-center gap-2 p-3 text-xs"><Spinner />Leyendo cobros y ajustes del auxiliar…</p>}
           {criteria && !matches && <p role="status" className="p-3 text-xs">Los filtros cambiaron. Genera de nuevo la vista previa antes de exportar.</p>}
           {matches && report.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(report.error)}</AlertDescription><Button onClick={() => void report.refetch()}>Reintentar</Button></Alert>}
-          {matches && !report.isFetching && !report.isError && report.data?.empty && <p role="status" className="p-3 text-xs">No hay facturas con pagos PA en este periodo y filtros.</p>}
-          {ready && <><div className="p-2 text-xs"><p className="font-semibold">{report.data!.company}</p><p>Facturas: {report.data!.totals.invoices} · Pagos PA: {report.data!.totals.payments} · Pago sin IVA presentado: {collectionMoney(report.data!.totals.displayPayment)}</p></div>
+          {matches && !report.isFetching && !report.isError && report.data?.empty && <p role="status" className="p-3 text-xs">No hay cobros ni ajustes en este periodo y filtros.</p>}
+          {ready && <><div className="p-2 text-xs"><p className="font-semibold">{report.data!.company}</p><p>Documentos/ajustes: {report.data!.totals.invoices} · Pagos PA: {report.data!.totals.payments} · Pago/ajuste sin IVA presentado: {collectionMoney(report.data!.totals.displayPayment)}</p></div>
             <p className="p-2 text-xs">Clientes nuevos o recuperados: {report.data!.totals.customerBonusInvoices} documentos · Base 1%: {collectionMoney(report.data!.totals.customerBonusBase)} · Bono: {collectionMoney(report.data!.totals.customerBonus)}</p>
             {report.data!.totals.unclassifiedInvoices > 0 && <p role="alert" className="p-2 text-xs text-destructive">{report.data!.totals.unclassifiedInvoices} documentos con cliente sin clasificar; bono pendiente de la marca del ERP.</p>}
-            {!report.data!.calculationReady && <p role="alert" className="p-2 text-xs text-destructive">{report.data!.totals.unavailableCosts} documentos sin costo calculable: revisa partidas de venta, compañía, IVA o subtotal cero. Los importes no disponibles se dejan vacíos en Excel.</p>}
+            {!report.data!.calculationReady && <p role="alert" className="p-2 text-xs text-destructive">{report.data!.totals.unavailableCosts} documentos/ajustes sin costo calculable: revisa las partidas históricas y la base del documento original. Los importes no disponibles se dejan vacíos en Excel.</p>}
             {report.data!.invoices.some(r => r.invalidVatCount > 0) && <p role="alert" className="p-2 text-xs text-destructive">Hay movimientos con IVA inválido. Sus importes no están disponibles.</p>}
+            {report.data!.invoices.some(r => r.reviewRequired) && <Alert className="m-2 w-auto border-amber-500"><AlertDescription>{report.data!.invoices.filter(r => r.reviewRequired).length} ajustes para REVISAR. Las cancelaciones y abonos disminuyen el mes del movimiento, aunque su pago sea anterior. Comprueba documento relacionado, importe y costo histórico antes de liquidar.</AlertDescription></Alert>}
             <CollectionCommissionsTable report={report.data!} summary={summary} page={page} />
             <div className="space-y-1 p-2 text-[10px]">{report.data!.notes.map(note => <p key={note}>{note}</p>)}</div></>}
         </div>
