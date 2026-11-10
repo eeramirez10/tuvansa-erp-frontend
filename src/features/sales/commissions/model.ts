@@ -1,7 +1,7 @@
 export type CollectionCriteria = { from: string; to: string; branch: string; agent: string }
 export type CollectionOptions = { company: string; defaultFrom: string; defaultTo: string
   branches: Array<{ code: string; name: string; warehouses: string[] }>; agents: Array<{ code: string; name: string }> }
-export type CollectionInvoice = { id: number; number: string; date: string; firstPaymentDate: string; lastPaymentDate: string
+export type CollectionInvoice = { id: number; number: string; canceled: boolean; date: string; firstPaymentDate: string; lastPaymentDate: string
   customerCode: string; customerName: string; agentCode: string; agentName: string; warehouse: string; branch: string; currency: number; companyId: number
   subtotal: string; payments: string | null; returns: string | null; freight: string; newCustomer: string; customerStatusRaw: string; paymentCount: number; invalidVatCount: number
   days: number; subtotalAmount: number; paymentAmount: number | null; displayPaymentAmount: number | null; returnAmount: number | null; totalAmount: number | null; freightAmount: number; paymentCapped: boolean

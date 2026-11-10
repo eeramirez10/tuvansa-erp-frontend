@@ -94,6 +94,21 @@ Se conserva precisión de cuatro decimales por documento, subtotal redondeado po
 agente y total que suma esos subtotales. No altera el incentivo de recuperados
 ya incluido en la liquidación; estas columnas identifican exclusivamente nuevos.
 
+Desde el 2026-11-10 se incluyen canceladas con pagos PA del periodo, con el
+letrero **CANCELADA** en la misma celda Factura (segunda línea roja) y en pantalla
+con Badge shadcn. No añade columnas ni hojas. Se usa el estado actual del ERP;
+sin fecha de cancelación disponible no se incorporan pagos de meses ajenos al
+rango ni se revierten comisiones previas automáticamente. Si se borraron el
+subtotal o las partidas originales al cancelar, se muestra el PA conocido y se
+dejan costo/utilidad no disponibles, sin sustituirlos por cero.
+
+Verificación con API real de septiembre/México: 70 documentos, uno cancelado,
+con las 69 facturas previas sin cambios. Cuatro descargas, 12 hojas/441 fórmulas,
+letrero en ambas hojas de detalle y pagos/costos contrastados con la respuesta;
+fórmulas evaluadas independientemente. Evidencia privada en
+`captures/ui/new-version/commission-cancellations-20261110/` del backend.
+Frontend lint/typecheck/build y 238 pruebas del backend aprobados.
+
 Debajo de los documentos y su total aparece únicamente el resumen de **14 filas**
 de la captura: NOMBRE, COBRANZA DEL MES…, COSTO, UTILIDAD BRUTA, % UTILIDAD ANTES
 DE GRATIFICACIONES Y FLETES, FLETE ENTREGA, GRATIFICIONES, UTILIDAD NETA,

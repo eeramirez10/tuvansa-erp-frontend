@@ -2,6 +2,7 @@ import type { CollectionCommissions } from "@/features/sales/commissions/model"
 import { Fragment } from "react"
 import { collectionBonusMoney, collectionCustomerLabel, collectionDate, collectionHeaders, collectionMoney } from "@/features/sales/commissions/logic"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
+import { Badge } from "@/shared/ui/badge"
 
 export function CollectionCommissionsTable({ report, summary, page }: { report: CollectionCommissions; summary: boolean; page: number }) {
   if (summary) return <Table aria-label="Resumen de cobranza por agente" className="min-w-[1050px]">
@@ -21,7 +22,7 @@ export function CollectionCommissionsTable({ report, summary, page }: { report: 
       {(index === 0 || report.invoices[position - 1]?.agentCode !== row.agentCode) && <TableRow className="bg-muted"><TableCell colSpan={21} className="font-semibold">Agente {row.agentCode || "Sin código"} · {row.agentName} · {agent.invoices} documentos</TableCell></TableRow>}
       <TableRow>
       <TableCell>{row.agentName}</TableCell><TableCell title={row.customerCode}>{row.customerName}</TableCell><TableCell>{collectionDate(row.date)}</TableCell>
-      <TableCell title={`Primer pago: ${collectionDate(row.firstPaymentDate)} · ${row.paymentCount} pagos PA`}>{collectionDate(row.lastPaymentDate)}</TableCell><TableCell>{row.number}</TableCell><TableCell>{row.days}</TableCell>
+      <TableCell title={`Primer pago: ${collectionDate(row.firstPaymentDate)} · ${row.paymentCount} pagos PA`}>{collectionDate(row.lastPaymentDate)}</TableCell><TableCell><span className="flex items-center gap-1">{row.number}{row.canceled && <Badge variant="destructive">CANCELADA</Badge>}</span></TableCell><TableCell>{row.days}</TableCell>
       {[row.subtotalAmount, row.returnAmount, row.totalAmount, row.displayPaymentAmount].map((amount, i) => <TableCell key={i} className="text-right" title={i === 3 && row.paymentCapped ? "Pago limitado al subtotal según el procedimiento" : undefined}>{collectionMoney(amount)}</TableCell>)}
       {[row.cost, row.realCost, row.profit].map((amount, i) => <TableCell key={i} className="text-right">{collectionMoney(amount)}</TableCell>)}
       <TableCell className="text-right">{row.margin === null ? "No disponible" : `${row.margin.toFixed(2)}%`}</TableCell>

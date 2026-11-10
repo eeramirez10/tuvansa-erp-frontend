@@ -1,6 +1,6 @@
 # Reporte Comisiones x Cobranza
 
-Actualizado el 2026-11-09. Pertenece a **Ventas**, disponible desde Pedidos,
+Actualizado el 2026-11-10. Pertenece a **Ventas**, disponible desde Pedidos,
 Facturación y su ruta directa `/ventas/reportes/comisiones-por-cobranza`.
 Menú exacto: **Reportes de Ventas → Comisiones → Reporte Comisiones x Cobranza**.
 Contabilidad ya no incluye esta opción. La ruta anterior contable redirige
@@ -24,6 +24,14 @@ Las validaciones históricas de agosto descritas abajo corresponden al formato a
 Query keys incluyen from/to/branch/agent. Cambiar filtros bloquea exportación
 obsoleta hasta regenerar; rangos hasta 366 días, estados carga/error/reintento/vacío.
 Requiere al menos un PA por factura en el rango, incluso de meses anteriores.
+Incluye también facturas canceladas: `canceled=true` muestra **CANCELADA** junto
+al folio con Badge shadcn y en la misma celda Factura del Excel, en rojo y segunda
+línea. Es el estado actual del ERP. Se mantienen los pagos del periodo; no se
+revierten comisiones anteriores ni se infiere una fecha de cancelación.
+Si una cancelada quedó con subtotal cero, se conserva su PA conocido sin IVA;
+costo/utilidad no calculables quedan vacíos y generan la advertencia existente.
+Una cancelada sin PA en el periodo no se incorpora por una supuesta fecha de
+cancelación: la fuente de facturas no ofrece esa fecha.
 Los pagos se muestran **positivos** en detalle, resumen, subtotales y total,
 sumando valores absolutos por factura, no el absoluto del neto. La API conserva
 el pago firmado y movimientos de origen para cálculo/auditoría en la respuesta.
