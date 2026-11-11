@@ -25,7 +25,10 @@ export function createCollectionSheet(book: ExcelJS.Workbook, report: Collection
   const sheet = book.addWorksheet(name)
   sheet.addRow([report.company])
   sheet.addRow([name])
-  sheet.addRow([`Sucursal: ${report.branchName} · Movimientos del ${report.criteria.from} al ${report.criteria.to}`])
+  const scoped = report.criteria.customerId !== undefined || report.criteria.agent !== "all"
+  const agent = report.criteria.agent === "all" ? "Todos" : `${report.criteria.agent} · ${report.agents.find(a => a.code === report.criteria.agent)?.name ?? "Sin movimientos"}`
+  const customer = report.criteria.customerId === undefined ? "Todos" : report.invoices[0] ? `${report.invoices[0].customerCode} · ${report.invoices[0].customerName}` : `ID ${report.criteria.customerId}`
+  sheet.addRow([`Sucursal: ${report.branchName} · Movimientos del ${report.criteria.from} al ${report.criteria.to}${scoped ? `\nAgente: ${agent} · Cliente: ${customer}` : ""}`])
   sheet.addRow(["Cobros PA y ajustes por fecha del auxiliar. Cancelaciones, devoluciones D y notas C disminuyen en negativo; REVISAR señala conciliación. Importes sin IVA."])
   sheet.addRow([report.settlement.ready ? "Liquidación calculada con los parámetros seleccionados." : "PENDIENTE: confirma modalidad del 1% y planes en Liquidación y ajustes. Importes no disponibles: celdas vacías."])
   sheet.addRow(headers)
@@ -34,6 +37,7 @@ export function createCollectionSheet(book: ExcelJS.Workbook, report: Collection
     sheet.getRow(r).height = r >= 4 ? 30 : 24
     sheet.getRow(r).alignment = { wrapText: true, vertical: "middle" }
   }
+  if (scoped) sheet.getRow(3).height = 42
   sheet.getRow(2).font = { bold: true, size: 14 }
   sheet.getRow(6).font = { bold: true }
   sheet.getRow(6).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFC1F6BA" } }

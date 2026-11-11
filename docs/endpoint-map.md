@@ -32,6 +32,10 @@ individual de quince columnas con el resumen azul de catorce filas. Agrega
 Cliente nuevo (sólo "nuevo", demás marcas vacías) y su 1% de lo pagado. Orden por
 fecha de factura; sin hojas adicionales ni columnas ocultas.
 [Formato y controles](liquidacion-comisiones.md).
+Desde 2026-11-11, [Cliente y Agente combinables](comisiones-filtros.md): el buscador
+reutiliza GET /accounts-receivable/clients?q=...&status=all&page=1&pageSize=25.
+El reporte agrega customerId opcional (CLISEQ) a GET, POST preview y query key.
+Excel y liquidación usan el resultado filtrado; limpiar cliente conserva los otros filtros.
 Datos indefinidos se señalan, no se sustituyen por cero. La ruta contable anterior
 redirige a Ventas. [Detalle](comisiones-por-cobranza.md).
 

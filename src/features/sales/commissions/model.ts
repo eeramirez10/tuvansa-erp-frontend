@@ -1,4 +1,4 @@
-export type CollectionCriteria = { from: string; to: string; branch: string; agent: string }
+export type CollectionCriteria = { from: string; to: string; branch: string; agent: string; customerId?: number | undefined }
 export type CollectionOptions = { company: string; defaultFrom: string; defaultTo: string
   branches: Array<{ code: string; name: string; warehouses: string[] }>; agents: Array<{ code: string; name: string }> }
 export type CollectionInvoice = { id: number; number: string; canceled: boolean; date: string; firstPaymentDate: string; lastPaymentDate: string

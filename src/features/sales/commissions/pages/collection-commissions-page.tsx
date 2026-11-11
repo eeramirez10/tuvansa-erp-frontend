@@ -5,6 +5,7 @@ import { Controller, useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 import { CollectionCommissionsTable } from "@/features/sales/commissions/components/collection-commissions-table"
 import { CollectionSettlementDialog } from "@/features/sales/commissions/components/collection-settlement-dialog"
+import { CollectionCustomerFilter } from "@/features/sales/commissions/components/collection-customer-filter"
 import { collectionMoney, collectionOptionsQuery, collectionReportQuery } from "@/features/sales/commissions/logic"
 import type { CollectionCriteria, CollectionOptions, SettlementSettings } from "@/features/sales/commissions/model"
 import { downloadCollectionCommissions } from "@/features/sales/commissions/services/download-collection-commissions"
@@ -19,17 +20,17 @@ import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { ReportSelect } from "@/shared/ui/report-select"
 import { Spinner } from "@/shared/ui/spinner"
-const schema = z.object({ from: z.iso.date(), to: z.iso.date(), branch: z.string(), agent: z.string() })
+const schema = z.object({ from: z.iso.date(), to: z.iso.date(), branch: z.string(), agent: z.string(), customerId: z.number().int().positive().optional() })
   .refine(v => v.from <= v.to && Date.parse(v.to) - Date.parse(v.from) <= 365 * 86400000, { path: ["to"], message: "Selecciona un rango válido de hasta 366 días." })
 
 function Workspace({ options }: { options: CollectionOptions }) {
-  const defaults = { from: options.defaultFrom, to: options.defaultTo, branch: options.branches.some(b => b.code === "01") ? "01" : "all", agent: "all" }
+  const defaults: CollectionCriteria = { from: options.defaultFrom, to: options.defaultTo, branch: options.branches.some(b => b.code === "01") ? "01" : "all", agent: "all", customerId: undefined }
   const form = useForm<CollectionCriteria>({ resolver: zodResolver(schema), defaultValues: defaults }), current = useWatch({ control: form.control })
   const [criteria, setCriteria] = useState<CollectionCriteria | null>(null), [open, setOpen] = useState(true), [summary, setSummary] = useState(false), [page, setPage] = useState(1), [exporting, setExporting] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
   const [settings, setSettings] = useState<SettlementSettings | undefined>()
   const report = useQuery({ ...collectionReportQuery(criteria ?? defaults, settings), enabled: criteria !== null })
-  const matches = criteria !== null && criteria.from === current.from && criteria.to === current.to && criteria.branch === current.branch && criteria.agent === current.agent
+  const matches = criteria !== null && criteria.from === current.from && criteria.to === current.to && criteria.branch === current.branch && criteria.agent === current.agent && criteria.customerId === current.customerId
   const ready = Boolean(matches && report.data && !report.data.empty && !report.isFetching && !report.isError), busy = report.isFetching || exporting
   const count = (summary ? report.data?.agents.length : report.data?.invoices.length) ?? 0, pages = Math.max(1, Math.ceil(count / 100))
   const generate = (next: CollectionCriteria) => { setPage(1); if (JSON.stringify(next) === JSON.stringify(criteria)) void report.refetch(); else { setSettings(undefined); setSettlementOpen(false); setCriteria(next) } }
@@ -51,7 +52,9 @@ function Workspace({ options }: { options: CollectionOptions }) {
             <Controller control={form.control} name="branch" render={({ field }) => <ReportSelect id="collection-branch" label="Sucursal" value={field.value} options={[{ value: "all", label: "Todas las sucursales" }, ...options.branches.map(b => ({ value: b.code, label: b.code + " · " + b.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Controller control={form.control} name="agent" render={({ field }) => <ReportSelect id="collection-agent" label="Agente" value={field.value} options={[{ value: "all", label: "Todos los agentes" }, ...options.agents.map(a => ({ value: a.code, label: (a.code || "—") + " · " + a.name }))]} onChange={field.onChange} disabled={busy} />} />
             <Button type="submit" disabled={busy}>{report.isFetching ? "Generando…" : "Vista previa"}</Button>
-          </div><p className="mt-2 text-[10px]">Rango por fecha del movimiento (AFECHA): pagos PA, cancelaciones K, devoluciones D y notas C · Importes sin IVA</p>
+          </div>
+          <div className="mt-2 max-w-xl"><Controller control={form.control} name="customerId" render={({ field }) => <CollectionCustomerFilter value={field.value} onChange={field.onChange} disabled={busy} />} /></div>
+          <p className="mt-2 text-[10px]">Rango por fecha del movimiento (AFECHA): pagos PA, cancelaciones K, devoluciones D y notas C · Importes sin IVA. Totales y liquidación corresponden sólo a los filtros seleccionados.</p>
           {(form.formState.errors.from || form.formState.errors.to) && <p role="alert" className="mt-1 text-xs text-destructive">{form.formState.errors.to?.message ?? "Selecciona fechas válidas."}</p>}
         </form>
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">

@@ -14,6 +14,8 @@ La marca actual CANCELADA junto a un cobro histórico no cambia su fecha de pago
 del filtro Agente, conservan el agente original y tienen columna separada.
 El Excel vigente tiene dieciséis columnas individuales; la descripción de quince
 columnas más abajo corresponde a la versión anterior.
+[Filtros por cliente y agente](comisiones-filtros.md): desde 2026-11-11 se puede
+buscar un cliente exacto y combinarlo con los filtros anteriores, también en Excel.
 
 El método 214 de CUATRO.pdf completa costos/utilidad/LM. El Excel y CLIENTES
 NUEVO.pdf agregan clasificación, incentivo del 1% y liquidación configurable.
