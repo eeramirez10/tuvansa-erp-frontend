@@ -29,3 +29,6 @@ omnis-*.png
 *.njsproj
 *.sln
 *.sw?
+
+# Private REA evidence belongs outside tracked UI source
+captures/

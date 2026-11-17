@@ -1,5 +1,7 @@
 # Traspaso de contexto del frontend PROSCAI
 
+> Actualización 2026-11-17: comenzar por [REA-START-HERE](REA-START-HERE.md) para el traslado sin OMNIS Studio y la skill versionada proscai-web-rea. El backend contiene las skills de observación/captura y el mapa de cobertura. Este documento conserva contexto histórico; no certifica que cada botón esté migrado ni que los cambios locales estén publicados.
+
 Este documento permite continuar el frontend desde una sesión nueva de Codex
 CLI. El procedimiento completo para observar y capturar SQL real vive en el
 repositorio backend:

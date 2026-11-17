@@ -57,3 +57,10 @@
 - Verifica rutas por acceso directo y navegación del encabezado.
 - Comprueba estados de carga, error, vacío, paginación y scroll.
 - No incluyas secretos, `.env`, capturas con datos sensibles ni artefactos de build.
+
+## Continuidad REA en otra instalación
+
+- Comenzar por [docs/REA-START-HERE.md](docs/REA-START-HERE.md) y la skill del repositorio `.agents/skills/proscai-web-rea/SKILL.md`.
+- Localizar el backend y su guía REA para inventario, captura de SQL y contratos. Las skills de ese repositorio no requieren OMNIS Studio; observar runtime y servidor de datos.
+- No asumir que el clon contiene cambios locales del otro equipo, capturas ni PDFs/Excel. Revalidar base, permisos, coordenadas y registros en el servidor nuevo.
+- Antes de abrir Pedidos con una URL Neon nueva, verificar destino y autorización de inicialización: incluso una lectura puede aplicar migraciones del overlay.

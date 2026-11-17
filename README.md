@@ -81,3 +81,9 @@ Cada módulo se desarrolla en una rama independiente y con commits enfocados. La
 ## Módulos disponibles
 
 - **Inventarios P.T.**: `/inventarios/productos`. Incluye navegación anterior/siguiente, búsqueda, alta, baja, edición, detalle del catálogo y los paneles de Acciones, Compras/Prod y Consultas. Véase la [trazabilidad completa](docs/inventarios-catalogo-productos.md).
+
+## Continuidad REA sin Studio
+
+Para llevar ambos proyectos a una instalación nueva, leer [docs/REA-START-HERE.md](docs/REA-START-HERE.md) y usar la skill versionada `.agents/skills/proscai-web-rea/SKILL.md`. La guía enlaza las skills backend para observar el runtime, capturar SQL real y migrar funciones; no necesita el historial del chat ni acceso al código fuente OMNIS.
+
+Un clon sólo recibe commits publicados. Variables de entorno, evidencia privada, documentos del escritorio y configuración Firebase local no se transportan con Git.
