@@ -141,7 +141,7 @@ export type ProductPanel = {
   source: "mysql" | "product-cache" | "not-available"
   items: Array<Record<string, unknown>>
   openingStock?: number
-  customerOrdersTotals?: { remaining: number }
+  customerOrdersTotals?: { assigned: number; remaining: number }
   reason?: string
 }
 

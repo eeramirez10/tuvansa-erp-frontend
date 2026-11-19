@@ -117,17 +117,19 @@ El botón `Pedidos por cliente` usa el mismo marco reutilizable del modal
 Auxiliar y consume `GET
 /inventories/products/:productId/queries/customer-orders?page=1&pageSize=500`.
 La tabla replica el orden visible de OMNIS: `Código`, `Descripción`, `Fecha E.`,
-`Núm.`, `Pedido`, `Surtido`, `Resta`, `Asignado` y `Núm ellos`; Precio y Factor
-se conservan como las dos columnas finales sin encabezado visible.
+`Núm.`, `Pedido`, `Surtido`, `Resta`, `Asignado` y `Num ellos`. Las tres
+columnas finales sin encabezado visible muestran las piezas asignadas, el precio
+y el factor.
 
 **Filtrar pedidos surtidos** conserva las partidas con `PLSURT < PLCANT`,
 como en `EINV#7/12` de Omnis 7. La API aplica el filtro antes de paginar
 cuando recibe `excludeFulfilled=true`. Al cerrar y volver a abrir la ventana
 se consulta la lista completa.
 
-El pie muestra `Asignado`, `Disponible`, `Stock`, `Total` y `Faltante`.
-`Total` viene de `data.customerOrdersTotals.remaining` y abarca toda la
-consulta activa. `Faltante` se deriva del total y la existencia disponible.
+El pie muestra `Asignado` y `Total` de `data.customerOrdersTotals.assigned` y
+`data.customerOrdersTotals.remaining`, calculados sobre toda la consulta
+activa. `Disponible` es `Stock - Asignado`. `Faltante` es el mayor entre
+`Total - Stock` y cero. `Stock` se toma de la ficha del producto.
 **Cargar más pedidos** agrega la siguiente página y permite reintentar sin
 perder los pedidos visibles. **Asignar**, **Traspasar** y **Documento** se
 muestran deshabilitados mientras se valida su flujo en Omnis 7.

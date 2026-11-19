@@ -27,6 +27,7 @@ type ProductCustomerOrdersDialogProps = {
 
 type CustomerOrderRow = ProductCustomerOrderItem & {
   remaining: number
+  assignedPieces: number
 }
 
 function numberValue(value: unknown) {
@@ -53,6 +54,7 @@ function toCustomerOrder(item: Record<string, unknown>): CustomerOrderRow {
     remaining: quantity - fulfilled,
     assigned: numberValue(item.assigned),
     externalNumber: textValue(item.externalNumber),
+    assignedPieces: numberValue(item.assignedPieces),
     price: numberValue(item.price),
     factor: numberValue(item.factor),
   }
@@ -78,11 +80,12 @@ export function ProductCustomerOrdersDialog({
     productCustomerOrdersQueryOptions(product.id, excludeFulfilled),
   )
   const rows = ordersQuery.data?.pages.flatMap((page) => page.data.items.map(toCustomerOrder)) ?? []
-  const assigned = product.accumulated.assigned
+  const totals = ordersQuery.data?.pages[0]?.data.customerOrdersTotals
+  const assigned = totals?.assigned
   const stock = product.accumulated.currentStock
-  const available = stock - assigned
-  const total = ordersQuery.data?.pages[0]?.data.customerOrdersTotals?.remaining
-  const missing = total === undefined ? undefined : Math.max(total - available, 0)
+  const available = assigned === undefined ? undefined : stock - assigned
+  const total = totals?.remaining
+  const missing = total === undefined ? undefined : Math.max(total - stock, 0)
 
   return (
     <ErpDataDialog
@@ -116,7 +119,7 @@ export function ProductCustomerOrdersDialog({
           </Alert>
         ) : (
           <ErpDataTableViewport className="h-[min(45vh,17rem)] min-h-64">
-            <table className="w-[64rem] table-fixed border-collapse text-[9px]/none tabular-nums">
+            <table className="w-[68rem] table-fixed border-collapse text-[9px]/none tabular-nums">
               <colgroup>
                 <col className="w-[5rem]" />
                 <col className="w-[12rem]" />
@@ -127,6 +130,7 @@ export function ProductCustomerOrdersDialog({
                 <col className="w-[3.2rem]" />
                 <col className="w-[4.2rem]" />
                 <col className="w-[7.4rem]" />
+                <col className="w-[4.2rem]" />
                 <col className="w-[5.2rem]" />
                 <col className="w-[3.2rem]" />
               </colgroup>
@@ -140,7 +144,8 @@ export function ProductCustomerOrdersDialog({
                   <th className="border-r border-input px-1 text-right font-normal">Surtido</th>
                   <th className="border-r border-input px-1 text-right font-normal">Resta</th>
                   <th className="border-r border-input px-1 text-right font-normal">Asignado</th>
-                  <th className="border-r border-input px-1 font-normal">Núm ellos</th>
+                  <th className="border-r border-input px-1 font-normal">Num ellos</th>
+                  <th aria-label="Piezas asignadas" className="border-r border-input px-1 font-normal" />
                   <th aria-label="Precio" className="border-r border-input px-1 font-normal" />
                   <th aria-label="Factor" className="px-1 font-normal" />
                 </tr>
@@ -164,13 +169,14 @@ export function ProductCustomerOrdersDialog({
                     <td className="border-r border-input px-1 text-right">{formatCompactNumber(row.remaining)}</td>
                     <td className="border-r border-input px-1 text-right">{formatCompactNumber(row.assigned)}</td>
                     <td className="truncate border-r border-input px-1">{row.externalNumber}</td>
+                    <td className="border-r border-input px-1 text-right">{formatCompactNumber(row.assignedPieces)}</td>
                     <td className="border-r border-input px-1 text-right">{row.price.toFixed(5)}</td>
                     <td className="px-1 text-right">{formatCompactNumber(row.factor)}</td>
                   </tr>
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td className="h-64 text-center text-muted-foreground" colSpan={11}>
+                    <td className="h-64 text-center text-muted-foreground" colSpan={12}>
                       Sin pedidos para este producto
                     </td>
                   </tr>
@@ -182,11 +188,11 @@ export function ProductCustomerOrdersDialog({
 
         <footer className="mt-1 min-h-14">
           <div className="flex items-end gap-2">
-            <ErpDataMetric label="Asignado" value={assigned.toFixed(3)} />
-            <ErpDataMetric label="Disponible" value={available.toFixed(3)} />
+            <ErpDataMetric label="Asignado" value={assigned?.toFixed(3) ?? "—"} />
+            <ErpDataMetric label="Disponible" value={available?.toFixed(3) ?? "—"} />
             <ErpDataMetric label="Stock" value={stock.toFixed(3)} />
-            <ErpDataMetric label="Total" value={total?.toFixed(3) ?? ""} />
-            <ErpDataMetric label="Faltante" value={missing === undefined ? "" : formatCompactNumber(missing)} />
+            <ErpDataMetric label="Total" value={total?.toFixed(3) ?? "—"} />
+            <ErpDataMetric label="Faltante" value={missing === undefined ? "—" : formatCompactNumber(missing)} />
             <Button
               aria-label="Documento"
               className="ml-12"
