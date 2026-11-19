@@ -131,8 +131,15 @@ El pie muestra `Asignado` y `Total` de `data.customerOrdersTotals.assigned` y
 activa. `Disponible` es `Stock - Asignado`. `Faltante` es el mayor entre
 `Total - Stock` y cero. `Stock` se toma de la ficha del producto.
 **Cargar más pedidos** agrega la siguiente página y permite reintentar sin
-perder los pedidos visibles. **Asignar**, **Traspasar** y **Documento** se
-muestran deshabilitados mientras se valida su flujo en Omnis 7.
+perder los pedidos visibles. **Asignar** y **Traspasar** se muestran
+deshabilitados mientras se valida su flujo en Omnis 7.
+
+**Documento** abre la impresión del navegador con el código y la descripción
+del producto. Como en `EINV#7/495`, el reporte muestra Código, Cliente,
+Fecha E, Num, Pedido, Surtido y Resta, con los tres totales de cantidades al
+pie. Antes de imprimir, consulta todas las páginas con el filtro activo y
+conserva el orden de entrega. La impresión sólo incluye el reporte. Si falla
+una página, se informa del error y se puede reintentar.
 
 La tabla conserva desplazamiento permanente en ambos ejes. El ancho interno es
 mayor que la ventana para revisar horizontalmente Precio y Factor, mientras el

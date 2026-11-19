@@ -1,14 +1,16 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import PrinterIcon from "@hugeicons/core-free-icons/PrinterIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useInfiniteQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query"
+import { useEffect, useRef, useState } from "react"
 
+import { printProductCustomerOrders } from "@/features/inventories/products/components/product-customer-orders-print"
 import { productCustomerOrdersQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
   ProductCustomerOrderItem,
 } from "@/features/inventories/products/model"
+import { getAllProductCustomerOrders } from "@/features/inventories/products/services/product-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -76,6 +78,26 @@ export function ProductCustomerOrdersDialog({
   onOpenChange,
 }: ProductCustomerOrdersDialogProps) {
   const [excludeFulfilled, setExcludeFulfilled] = useState(false)
+  const printController = useRef<AbortController>(null)
+  useEffect(() => () => printController.current?.abort(), [])
+
+  const printOrders = useMutation({
+    mutationFn: async (filtered: boolean) => {
+      const controller = new AbortController()
+      printController.current = controller
+      try {
+        const items = await getAllProductCustomerOrders(product.id, filtered, controller.signal)
+        if (controller.signal.aborted) return
+
+        printProductCustomerOrders(product, items.map((item) => {
+          const order = toCustomerOrder(item)
+          return { ...order, orderedAt: formatDate(order.orderedAt) }
+        }))
+      } finally {
+        printController.current = null
+      }
+    },
+  })
   const ordersQuery = useInfiniteQuery(
     productCustomerOrdersQueryOptions(product.id, excludeFulfilled),
   )
@@ -196,13 +218,14 @@ export function ProductCustomerOrdersDialog({
             <Button
               aria-label="Documento"
               className="ml-12"
-              disabled
+              disabled={ordersQuery.isPending || ordersQuery.isLoadingError || printOrders.isPending}
+              onClick={() => printOrders.mutate(excludeFulfilled)}
               size="icon-sm"
               title="Documento"
               type="button"
               variant="outline"
             >
-              <HugeiconsIcon icon={PrinterIcon} strokeWidth={2} />
+              {printOrders.isPending ? <Spinner /> : <HugeiconsIcon icon={PrinterIcon} strokeWidth={2} />}
             </Button>
           </div>
           <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1">
@@ -241,6 +264,23 @@ export function ProductCustomerOrdersDialog({
             <p className="text-right text-destructive" role="alert">
               {getApiErrorMessage(ordersQuery.error)}
             </p>
+          )}
+          {printOrders.isError && (
+            <Alert className="mt-1" variant="destructive">
+              <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} />
+              <AlertTitle>No fue posible preparar el documento</AlertTitle>
+              <AlertDescription>
+                {getApiErrorMessage(printOrders.error)}
+                <Button
+                  onClick={() => printOrders.mutate(excludeFulfilled)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Reintentar impresión
+                </Button>
+              </AlertDescription>
+            </Alert>
           )}
         </footer>
       </ErpDataDialogBody>

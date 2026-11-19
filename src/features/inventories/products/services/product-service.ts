@@ -162,3 +162,18 @@ export async function getProductPanel(
   }
   return response.data
 }
+
+export async function getAllProductCustomerOrders(
+  productId: number,
+  excludeFulfilled: boolean,
+  signal: AbortSignal,
+) {
+  const filters = excludeFulfilled ? { excludeFulfilled: true } : undefined
+  const items: ProductPanelResponse["data"]["items"] = []
+
+  for (let page = 1; ; page++) {
+    const response = await getProductPanel(productId, "customer-orders", signal, page, filters)
+    items.push(...response.data.items)
+    if (response.pagination.returned < response.pagination.pageSize) return items
+  }
+}
