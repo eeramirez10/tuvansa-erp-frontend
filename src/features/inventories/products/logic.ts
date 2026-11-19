@@ -68,11 +68,15 @@ export function productLedgerQueryOptions(productId: number, filters: ProductLed
   })
 }
 
-export function productCustomerOrdersQueryOptions(productId: number, excludeFulfilled: boolean) {
+export function productCustomerOrdersQueryOptions(
+  productId: number,
+  excludeFulfilled: boolean,
+  panel: "customer-orders" | "customer-quotes" = "customer-orders",
+) {
   return infiniteQueryOptions({
-    queryKey: [...productKeys.panel(productId, "customer-orders"), "pages", excludeFulfilled],
+    queryKey: [...productKeys.panel(productId, panel), "pages", excludeFulfilled],
     queryFn: ({ pageParam, signal }) =>
-      getProductPanel(productId, "customer-orders", signal, pageParam,
+      getProductPanel(productId, panel, signal, pageParam,
         excludeFulfilled ? { excludeFulfilled: true } : undefined),
     initialPageParam: 1,
     getNextPageParam: ({ pagination }) =>

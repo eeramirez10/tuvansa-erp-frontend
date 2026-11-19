@@ -150,6 +150,8 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | Inventarios PT | Pedidos por cliente | Documento | Clic | Mismo GET, recorriendo todas las páginas con el filtro activo | Preparación de impresión local | Imprime el reporte de `EINV#7/495` con los totales de Pedido, Surtido y Resta |
 | Inventarios PT | Consultas | Pedidos por cliente · `*` | Abrir ventana | `GET /inventories/products/:productId/queries/customer-orders/star` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-orders-star', 'pages', filters]` | Lista vacía hasta elegir un clasificador |
 | Inventarios PT | Pedidos por * | Clasificador o encabezado | Clic | Mismo GET con `classifier=1..9`, `sort=code\|name\|order\|date`, `page` y `pageSize` | Clave de Pedidos por * con el clasificador y orden activos | Renglones clasificados y totales de toda la consulta |
+| Inventarios PT | Consultas | Cotizaciones por cliente | Abrir ventana o cargar más cotizaciones | `GET /inventories/products/:productId/queries/customer-quotes?page=:page&pageSize=500` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-quotes', 'pages', excludeFulfilled]` | Conserva el título Pedidos por cliente y muestra el Total de toda la consulta |
+| Inventarios PT | Cotizaciones por cliente | Filtrar pedidos surtidos | Clic | Mismo GET con `excludeFulfilled=true` | Clave de Cotizaciones por cliente con el filtro activo | Conserva partidas con `PLSURT < PLCANT` |
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 

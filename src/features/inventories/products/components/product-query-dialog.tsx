@@ -146,71 +146,6 @@ function ClassificationFilters() {
   )
 }
 
-function OrderMetrics({ product, rows }: { product: Product; rows: QueryRow[] }) {
-  const assigned = sum(rows, "assigned")
-  const total = rows.reduce(
-    (value, row) => value + numberValue(row.quantity) - numberValue(row.fulfilled),
-    0,
-  )
-  const stock = product.accumulated.currentStock
-  const available = stock - assigned
-
-  return (
-    <div className="grid grid-cols-5 gap-1">
-      <ErpDataMetric label="Asignado" value={formatNumber(assigned)} />
-      <ErpDataMetric label="Disponible" value={formatNumber(available)} />
-      <ErpDataMetric label="Stock" value={formatNumber(stock)} />
-      <ErpDataMetric label="Total" value={formatNumber(total)} />
-      <ErpDataMetric label="Faltante" value={formatNumber(Math.max(total - available, 0))} />
-    </div>
-  )
-}
-
-const customerOrderColumns: QueryColumn[] = [
-  { key: "customerCode", label: "Código", width: "5rem" },
-  { key: "customerName", label: "Descripción", width: "12rem" },
-  dateColumn("quotedAt", "Fecha E."),
-  { key: "quoteNumber", label: "Núm.", width: "5rem" },
-  numberColumn("quantity", "Pedido"),
-  numberColumn("fulfilled", "Surtido"),
-  {
-    key: "remaining",
-    label: "Resta",
-    width: "4rem",
-    align: "right",
-    render: (row) => formatNumber(numberValue(row.quantity) - numberValue(row.fulfilled)),
-  },
-  numberColumn("assigned", "Asignado"),
-  { key: "externalNumber", label: "Núm ellos", width: "7rem" },
-]
-
-function CustomerQuotes({ product, rows }: { product: Product; rows: QueryRow[] }) {
-  return (
-    <>
-      <div className="mb-1 flex justify-center">
-        <output className="flex h-4 min-w-20 items-center justify-end border border-input bg-background px-1 shadow-inner">
-          0.000
-        </output>
-      </div>
-      <ProductQueryTable
-        className="h-[min(42vh,16rem)]"
-        columns={customerOrderColumns}
-        rows={rows}
-        tableClassName="w-[52rem]"
-      />
-      <footer className="mt-1">
-        <OrderMetrics product={product} rows={rows} />
-        <div className="mt-1 flex items-center gap-5">
-          <QueryButtons labels={["Filtrar pedidos surtidos", "Asignar", "Traspasar"]} />
-          <Button aria-label="Documento" size="icon-sm" title="Documento" type="button" variant="outline">
-            <HugeiconsIcon icon={PrinterIcon} strokeWidth={2} />
-          </Button>
-        </div>
-      </footer>
-    </>
-  )
-}
-
 const orderCtColumns: QueryColumn[] = [
   { key: "productCode", label: "Código", width: "5rem" },
   { key: "customerName", label: "Descripción", width: "11rem" },
@@ -659,8 +594,6 @@ function availablePresentation(
         className: "sm:max-w-[64rem]",
         body: <SplitCtView buttons={["Pedido", "Surtido", "Resta", "Filtrar Tipo"]} columns={orderCtColumns} rows={rows} />,
       }
-    case "customer-quotes":
-      return { title: "Pedidos por cliente", className: "sm:max-w-[54rem]", body: <CustomerQuotes product={product} rows={rows} /> }
     case "customer-sales":
       return {
         title: "Ventas por cliente",

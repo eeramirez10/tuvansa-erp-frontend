@@ -165,12 +165,26 @@ El pie usa los agregados completos de la API para Asignado y Total. Por Asignar
 es `Stock - Asignado` y Faltante es `Total - Stock`. La paginación conserva los
 agregados de la consulta activa y permite reintentar sin perder filas.
 
+### Modal Cotizaciones por cliente
+
+**Cotizaciones por cliente** abre la ventana titulada **Pedidos por cliente**.
+La tabla usa `GET /inventories/products/:productId/queries/customer-quotes`
+y pagina en orden de entrega. **Filtrar pedidos surtidos** solicita
+`excludeFulfilled=true` para conservar las partidas con `PLSURT < PLCANT`
+según `EINV#47/13`. Al reabrir se muestra la lista completa.
+
+**Total** es `data.customerOrdersTotals.remaining` para toda la lista de
+cotizaciones, equivalente a la lista local `LLISTA` de Omnis 7. **Stock** toma
+la existencia de la ficha. **Asignado**, **Disponible** y **Faltante** aparecen
+con un guion. Omnis los deriva de la lista global `#L1` de pedidos, mientras
+que esta consulta sirve la lista local `LLISTA`. **Asignar**, **Traspasar** y el
+campo de destino se conservan deshabilitados.
+
 ### Modales restantes de Consultas
 
 | Botón visible | Título observado en OMNIS | Presentación reproducida |
 | --- | --- | --- |
 | Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
-| Cotizaciones por cliente | Pedidos por cliente | Tabla de cotizaciones, cinco acumulados y botones de filtro/asignación/traspaso |
 | Ventas por cliente | Ventas por cliente | Acumulado por cliente con Cantidad e Importe |
 | Ventas por cliente · * | Ventas por * | Acumulado por cliente y matriz AGENTE/GIRO/SUCURSAL/FLETE/ORIGEN/PROYECTO |
 | Ventas por cliente · CT | Ventas por cliente | Acumulado por producto y panel CT lateral |

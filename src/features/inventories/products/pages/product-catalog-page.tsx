@@ -12,6 +12,7 @@ import { ProductActionDialog } from "@/features/inventories/products/components/
 import { ProductCatalogDetails } from "@/features/inventories/products/components/product-catalog-details"
 import { ProductCustomerOrdersDialog } from "@/features/inventories/products/components/product-customer-orders-dialog"
 import { ProductCustomerOrdersStarDialog } from "@/features/inventories/products/components/product-customer-orders-star-dialog"
+import { ProductCustomerQuotesDialog } from "@/features/inventories/products/components/product-customer-quotes-dialog"
 import { ProductFormDialog } from "@/features/inventories/products/components/product-form-dialog"
 import { ProductLedgerDialog } from "@/features/inventories/products/components/product-ledger-dialog"
 import { ProductPurchasesProductionDialog } from "@/features/inventories/products/components/product-purchases-production-dialog"
@@ -77,6 +78,8 @@ function OpenProductPanel({
     content = <ProductCustomerOrdersDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.key === "customer-orders-star") {
     content = <ProductCustomerOrdersStarDialog onOpenChange={onOpenChange} product={product} />
+  } else if (panel.key === "customer-quotes") {
+    content = <ProductCustomerQuotesDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.section === "queries") {
     content = <ProductQueryDialog onOpenChange={onOpenChange} panel={panel} product={product} />
   } else if (panel.section === "actions") {
