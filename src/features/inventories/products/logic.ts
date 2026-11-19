@@ -3,6 +3,7 @@ import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
 import type {
   Product,
   ProductFormValues,
+  ProductLedgerFilters,
   ProductMutationInput,
   ProductPanelKey,
 } from "@/features/inventories/products/model"
@@ -55,11 +56,11 @@ export function productPanelQueryOptions(
   })
 }
 
-export function productLedgerQueryOptions(productId: number) {
+export function productLedgerQueryOptions(productId: number, filters: ProductLedgerFilters) {
   return infiniteQueryOptions({
-    queryKey: [...productKeys.panel(productId, "ledger"), "pages"],
+    queryKey: [...productKeys.panel(productId, "ledger"), "pages", filters],
     queryFn: ({ pageParam, signal }) =>
-      getProductPanel(productId, "ledger", signal, pageParam),
+      getProductPanel(productId, "ledger", signal, pageParam, filters),
     initialPageParam: 1,
     getNextPageParam: ({ pagination }) =>
       pagination.returned === pagination.pageSize ? pagination.page + 1 : undefined,

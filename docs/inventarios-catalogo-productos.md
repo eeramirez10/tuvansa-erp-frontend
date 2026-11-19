@@ -90,10 +90,7 @@ siendo solamente visuales en esta etapa.
 **Auxiliar** usa la ventana compartida de Inventarios y consulta
 `GET /inventories/products/:productId/queries/ledger?page=:page&pageSize=500`.
 Conserva las columnas `Fecha`, `Doc.`, `T.M.`, `Costo`, `Entradas`, `Salidas`,
-`Stock`, `Alm`, `Lote`, `Usr` y `Reval`. Se muestran al final las tres
-columnas identificadas en el informe de la versión reciente: `Pzas` (`pieces`),
-`Ruta` (`route`) y `Referencia ellos` (`ellosReference`). Su ubicación exacta
-en la versión reciente queda pendiente de cotejo visual.
+`Stock`, `Alm`, `Lote`, `Usr` y `Reval` en el orden de Omnis 7.
 
 **Cargar más movimientos** agrega el siguiente lote al final de la lista sin
 reiniciar el saldo. Como en `EINV#10/239` de Omnis 7, el saldo comienza con
@@ -102,9 +99,17 @@ Un error al cargar el siguiente lote conserva los movimientos ya visibles y
 permite reintentar. La tabla tiene desplazamiento X/Y dentro de la ventana,
 que permite mover, redimensionar, minimizar, maximizar y restaurar.
 
-El filtro de almacén se observó en Omnis 7. El informe de la versión reciente
-menciona `Filtrar T'S` y `TST`. Los tres controles se muestran deshabilitados
-hasta verificar sus entradas y comportamiento.
+**Filtrar almacen** conserva los movimientos del almacén de la fila
+seleccionada. La primera fila se selecciona al abrir y se puede cambiar con
+un clic o con las flechas del teclado. El saldo inicial que devuelve la API
+resta la suma de los movimientos de la existencia actual de ese almacén.
+Un valor vacío en `Alm` se envía como `warehouse=`.
+
+**Filtrar XXX** conserva los movimientos tipo `R` y el saldo inicial vigente.
+Si se pulsa antes de **Filtrar almacen**, la suma usada para calcular el saldo
+inicial del almacén incluye sólo los movimientos tipo `R`. Ambos filtros se
+aplican antes de paginar. Al cerrar y volver a abrir, se muestra el auxiliar
+completo.
 
 ### Modal Pedidos por cliente
 

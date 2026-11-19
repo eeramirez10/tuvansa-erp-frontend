@@ -140,6 +140,7 @@ export type ProductPanel = {
   available: boolean
   source: "mysql" | "product-cache" | "not-available"
   items: Array<Record<string, unknown>>
+  openingStock?: number
   reason?: string
 }
 
@@ -150,6 +151,12 @@ export type ProductPanelResponse = {
     pageSize: number
     returned: number
   }
+}
+
+export type ProductLedgerFilters = {
+  warehouse?: string
+  movementType?: "R"
+  openingMovementType?: "R"
 }
 
 export type ProductLedgerItem = {
@@ -163,9 +170,6 @@ export type ProductLedgerItem = {
   lotId: number
   userId: number
   revaluation: number
-  pieces: number | null
-  route: string
-  ellosReference: string
 }
 
 export type ProductCustomerOrderItem = {
