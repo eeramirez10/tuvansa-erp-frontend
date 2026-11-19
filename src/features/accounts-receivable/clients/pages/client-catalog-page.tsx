@@ -22,7 +22,9 @@ import { getAdjacentClient } from "@/features/accounts-receivable/clients/servic
 import { invoiceKeys } from "@/features/sales/invoicing/logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { getApiErrorMessage } from "@/shared/api/api-error"
+import { notifications } from "@/shared/notifications/notifications"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { Button } from "@/shared/ui/button"
 import {
   DesktopWindowIdentity,
   useDesktopWindowCollection,
@@ -100,6 +102,20 @@ export function ClientCatalogPage() {
   }
 
   const controlsDisabled = navigationMutation.isPending || Boolean(activeCapture) || Boolean(removing)
+  const email = client?.contact.email.trim() ?? ""
+
+  async function copyEmail() {
+    if (!email) return
+
+    try {
+      await navigator.clipboard.writeText(email)
+      notifications.success("Correo copiado")
+    } catch {
+      notifications.error("No se pudo copiar el correo", {
+        description: "Comprueba los permisos del portapapeles del navegador.",
+      })
+    }
+  }
 
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
@@ -125,7 +141,20 @@ export function ClientCatalogPage() {
       {activeCapture ? <ClientCatalogCapture client={activeCapture.client} onClose={() => setCapture(null)} onSaved={saved} />
         : client ? <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="min-w-0">
-          <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientActionPanels} title="Acciones"><ClientFiscalAction key={client.id} clientId={client.id} /></ClientPanelButtons>
+          <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientActionPanels} title="Acciones">
+            <Button
+              className="w-full justify-start"
+              disabled={controlsDisabled || !email}
+              onClick={copyEmail}
+              size="xs"
+              title={email ? undefined : "El cliente no tiene correo registrado"}
+              type="button"
+              variant="outline"
+            >
+              Copiar e-mail
+            </Button>
+            <ClientFiscalAction key={client.id} clientId={client.id} />
+          </ClientPanelButtons>
         </aside>
         <ClientCatalogDetails client={client} />
         <aside className="min-w-0">

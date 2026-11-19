@@ -34,6 +34,12 @@ La tarjeta superior cambia a **Clientes · CXC** y utiliza el color azul de
 Cuentas x Cobrar. El indicador `Eventos *` se muestra cuando la API devuelve
 `indicators.hasEvents=true`.
 
+**Acciones → Copiar e-mail** usa el correo de la ficha abierta y lo copia al
+portapapeles del navegador sin solicitar datos adicionales. Cuando el cliente no
+tiene correo, el botón se deshabilita. La etiqueta consta en el inventario de la
+versión reciente. La acción web se dedujo de la etiqueta y queda pendiente
+verificar el clic en PROSCAI.
+
 ## Barra de navegación y mantenimiento
 
 | Control | Operación | Endpoint |
