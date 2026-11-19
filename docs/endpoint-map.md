@@ -145,6 +145,8 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | Inventarios PT | Consultas | Auxiliar | Abrir ventana o cargar más movimientos | `GET /inventories/products/:productId/queries/ledger?page=:page&pageSize=500` | `['inventories', 'products', 'detail', productId, 'panel', 'ledger', 'pages', filters]` | Lectura paginada con saldo acumulado |
 | Inventarios PT | Auxiliar | Filtrar almacen | Clic con una fila seleccionada | Mismo GET con `warehouse` y, si Filtrar XXX ya estaba activo, `movementType=R&openingMovementType=R` | Clave de Auxiliar con filtros | Usa `data.openingStock` del almacén seleccionado |
 | Inventarios PT | Auxiliar | Filtrar XXX | Clic | Mismo GET con `movementType=R` y los parámetros de almacén vigentes | Clave de Auxiliar con filtros | Conserva el saldo inicial y muestra únicamente movimientos tipo `R` |
+| Inventarios PT | Consultas | Pedidos por cliente | Abrir ventana o cargar más pedidos | `GET /inventories/products/:productId/queries/customer-orders?page=:page&pageSize=500` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-orders', 'pages', excludeFulfilled]` | Muestra `data.customerOrdersTotals.remaining` para toda la consulta |
+| Inventarios PT | Pedidos por cliente | Filtrar pedidos surtidos | Clic | Mismo GET con `excludeFulfilled=true` | Clave de Pedidos por cliente con el filtro activo | Conserva partidas con `PLSURT < PLCANT` |
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 

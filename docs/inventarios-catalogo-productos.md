@@ -82,8 +82,8 @@ La URL conserva el producto seleccionado para que navegación, recarga y enlaces
 Los botones de Acciones y Compras/Prod conservan el diálogo genérico. Todos los
 botones de Consultas usan el marco `ErpDataDialog` de shadcn/Base UI y una vista
 específica comparada contra OMNIS. Cada vista fija título, orden de columnas,
-totales, botones internos y desplazamiento X/Y; los botones internos siguen
-siendo solamente visuales en esta etapa.
+totales, botones internos y desplazamiento X/Y. Más abajo se documentan los
+controles internos conectados y los que siguen pendientes.
 
 ### Modal Auxiliar
 
@@ -115,14 +115,22 @@ completo.
 
 El botón `Pedidos por cliente` usa el mismo marco reutilizable del modal
 Auxiliar y consume `GET
-/inventories/products/:productId/queries/customer-orders?page=1&pageSize=100`.
+/inventories/products/:productId/queries/customer-orders?page=1&pageSize=500`.
 La tabla replica el orden visible de OMNIS: `Código`, `Descripción`, `Fecha E.`,
 `Núm.`, `Pedido`, `Surtido`, `Resta`, `Asignado` y `Núm ellos`; Precio y Factor
 se conservan como las dos columnas finales sin encabezado visible.
 
-El pie calcula y muestra `Asignado`, `Disponible`, `Stock`, `Total` y `Faltante`.
-También conserva los botones `Filtrar pedidos surtidos`, `Asignar`, `Traspasar`
-y Documento. En esta etapa los cuatro son solamente visuales.
+**Filtrar pedidos surtidos** conserva las partidas con `PLSURT < PLCANT`,
+como en `EINV#7/12` de Omnis 7. La API aplica el filtro antes de paginar
+cuando recibe `excludeFulfilled=true`. Al cerrar y volver a abrir la ventana
+se consulta la lista completa.
+
+El pie muestra `Asignado`, `Disponible`, `Stock`, `Total` y `Faltante`.
+`Total` viene de `data.customerOrdersTotals.remaining` y abarca toda la
+consulta activa. `Faltante` se deriva del total y la existencia disponible.
+**Cargar más pedidos** agrega la siguiente página y permite reintentar sin
+perder los pedidos visibles. **Asignar**, **Traspasar** y **Documento** se
+muestran deshabilitados mientras se valida su flujo en Omnis 7.
 
 La tabla conserva desplazamiento permanente en ambos ejes. El ancho interno es
 mayor que la ventana para revisar horizontalmente Precio y Factor, mientras el
@@ -176,7 +184,7 @@ permite seleccionar X, Y o XY según la estructura observada en OMNIS.
 
 Las consultas agregadas se calculan en MySQL antes de paginar para que cada
 renglón coincida con la agrupación visible de OMNIS. El frontend solicita hasta
-500 renglones por modal. `Documentos` ahora consulta movimientos del producto
+500 renglones por página. `Documentos` ahora consulta movimientos del producto
 seleccionado; `Piezas` permanece intencionalmente no disponible porque así lo
 declara esta versión del ERP.
 

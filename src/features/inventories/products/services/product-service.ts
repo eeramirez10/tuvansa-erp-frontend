@@ -1,6 +1,7 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
   Product,
+  ProductCustomerOrdersFilters,
   ProductLedgerFilters,
   ProductMutationInput,
   ProductPanelKey,
@@ -148,14 +149,14 @@ export async function getProductPanel(
   panel: ProductPanelKey,
   signal?: AbortSignal,
   page = 1,
-  ledgerFilters?: ProductLedgerFilters,
+  filters?: ProductLedgerFilters | ProductCustomerOrdersFilters,
 ) {
   const pageSize = 500
   const response = await apiClient.get<ProductPanelResponse>(
     `/inventories/products/${productId}/${productPanelPaths[panel]}`,
-    { params: { page, pageSize, ...ledgerFilters }, signal },
+    { params: { page, pageSize, ...filters }, signal },
   )
-  if (ledgerFilters?.warehouse !== undefined && typeof response.data.data.openingStock !== "number") {
+  if (filters && "warehouse" in filters && filters.warehouse !== undefined && typeof response.data.data.openingStock !== "number") {
     throw new Error("La API no devolvió el saldo inicial del almacén.")
   }
   return response.data

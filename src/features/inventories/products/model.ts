@@ -141,6 +141,7 @@ export type ProductPanel = {
   source: "mysql" | "product-cache" | "not-available"
   items: Array<Record<string, unknown>>
   openingStock?: number
+  customerOrdersTotals?: { remaining: number }
   reason?: string
 }
 
@@ -184,6 +185,10 @@ export type ProductCustomerOrderItem = {
   externalNumber: string
   price: number
   factor: number
+}
+
+export type ProductCustomerOrdersFilters = {
+  excludeFulfilled?: boolean
 }
 
 export type ProductCustomerOrderSummary = {

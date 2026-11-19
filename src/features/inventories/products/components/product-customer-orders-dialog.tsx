@@ -1,9 +1,10 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import PrinterIcon from "@hugeicons/core-free-icons/PrinterIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
+import { useState } from "react"
 
-import { productPanelQueryOptions } from "@/features/inventories/products/logic"
+import { productCustomerOrdersQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
   ProductCustomerOrderItem,
@@ -72,15 +73,16 @@ export function ProductCustomerOrdersDialog({
   product,
   onOpenChange,
 }: ProductCustomerOrdersDialogProps) {
-  const ordersQuery = useQuery(
-    productPanelQueryOptions(product.id, "customer-orders"),
+  const [excludeFulfilled, setExcludeFulfilled] = useState(false)
+  const ordersQuery = useInfiniteQuery(
+    productCustomerOrdersQueryOptions(product.id, excludeFulfilled),
   )
-  const rows = (ordersQuery.data?.data.items ?? []).map(toCustomerOrder)
+  const rows = ordersQuery.data?.pages.flatMap((page) => page.data.items.map(toCustomerOrder)) ?? []
   const assigned = product.accumulated.assigned
   const stock = product.accumulated.currentStock
   const available = stock - assigned
-  const total = rows.reduce((sum, row) => sum + row.remaining, 0)
-  const missing = Math.max(total - available, 0)
+  const total = ordersQuery.data?.pages[0]?.data.customerOrdersTotals?.remaining
+  const missing = total === undefined ? undefined : Math.max(total - available, 0)
 
   return (
     <ErpDataDialog
@@ -95,12 +97,21 @@ export function ProductCustomerOrdersDialog({
             <Spinner />
             Cargando pedidos por cliente…
           </div>
-        ) : ordersQuery.isError ? (
+        ) : ordersQuery.isLoadingError ? (
           <Alert className="min-h-72" variant="destructive">
             <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} />
             <AlertTitle>No fue posible cargar los pedidos</AlertTitle>
             <AlertDescription>
               {getApiErrorMessage(ordersQuery.error)}
+              <Button
+                disabled={ordersQuery.isFetching}
+                onClick={() => void ordersQuery.refetch()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Reintentar
+              </Button>
             </AlertDescription>
           </Alert>
         ) : (
@@ -174,11 +185,12 @@ export function ProductCustomerOrdersDialog({
             <ErpDataMetric label="Asignado" value={assigned.toFixed(3)} />
             <ErpDataMetric label="Disponible" value={available.toFixed(3)} />
             <ErpDataMetric label="Stock" value={stock.toFixed(3)} />
-            <ErpDataMetric label="Total" value={total.toFixed(3)} />
-            <ErpDataMetric label="Faltante" value={formatCompactNumber(missing)} />
+            <ErpDataMetric label="Total" value={total?.toFixed(3) ?? ""} />
+            <ErpDataMetric label="Faltante" value={missing === undefined ? "" : formatCompactNumber(missing)} />
             <Button
               aria-label="Documento"
               className="ml-12"
+              disabled
               size="icon-sm"
               title="Documento"
               type="button"
@@ -187,17 +199,43 @@ export function ProductCustomerOrdersDialog({
               <HugeiconsIcon icon={PrinterIcon} strokeWidth={2} />
             </Button>
           </div>
-          <div className="mt-1 flex gap-6">
-            <Button className="w-32" size="sm" type="button" variant="outline">
+          <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1">
+            <Button
+              className="w-32"
+              disabled={excludeFulfilled || ordersQuery.isPending}
+              onClick={() => setExcludeFulfilled(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
               Filtrar pedidos surtidos
             </Button>
-            <Button className="w-17" size="sm" type="button" variant="outline">
+            <Button className="w-17" disabled size="sm" type="button" variant="outline">
               Asignar
             </Button>
-            <Button className="w-17" size="sm" type="button" variant="outline">
+            <Button className="w-17" disabled size="sm" type="button" variant="outline">
               Traspasar
             </Button>
+            {ordersQuery.hasNextPage && (
+              <Button
+                className="ml-auto"
+                disabled={ordersQuery.isFetching}
+                onClick={() => void ordersQuery.fetchNextPage()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {ordersQuery.isFetchingNextPage
+                  ? "Cargando pedidos…"
+                  : ordersQuery.isFetchNextPageError ? "Reintentar" : "Cargar más pedidos"}
+              </Button>
+            )}
           </div>
+          {ordersQuery.isFetchNextPageError && (
+            <p className="text-right text-destructive" role="alert">
+              {getApiErrorMessage(ordersQuery.error)}
+            </p>
+          )}
         </footer>
       </ErpDataDialogBody>
     </ErpDataDialog>

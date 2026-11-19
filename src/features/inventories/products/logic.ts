@@ -67,6 +67,18 @@ export function productLedgerQueryOptions(productId: number, filters: ProductLed
   })
 }
 
+export function productCustomerOrdersQueryOptions(productId: number, excludeFulfilled: boolean) {
+  return infiniteQueryOptions({
+    queryKey: [...productKeys.panel(productId, "customer-orders"), "pages", excludeFulfilled],
+    queryFn: ({ pageParam, signal }) =>
+      getProductPanel(productId, "customer-orders", signal, pageParam,
+        excludeFulfilled ? { excludeFulfilled: true } : undefined),
+    initialPageParam: 1,
+    getNextPageParam: ({ pagination }) =>
+      pagination.returned === pagination.pageSize ? pagination.page + 1 : undefined,
+  })
+}
+
 export function getProductFormDefaults(product?: Product): ProductFormValues {
   return {
     code: product?.code ?? "",
