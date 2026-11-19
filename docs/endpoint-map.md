@@ -142,6 +142,7 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | General | Selector de módulos | Inicio | Abrir aplicación | Sin petición | Sin caché | Implementado |
 | Cuentas por cobrar | Catálogo de clientes | Carga del catálogo | Abrir vista | `GET /accounts-receivable/clients` | `['accounts-receivable', 'clients', ...]` | Implementado |
 | Inventarios PT | Catálogo de productos | Carga del catálogo | Abrir vista | `GET /inventories/products` | `['inventories', 'products', ...]` | Implementado |
+| Inventarios PT | Consultas | Auxiliar | Abrir ventana o cargar más movimientos | `GET /inventories/products/:productId/queries/ledger?page=:page&pageSize=500` | `['inventories', 'products', 'detail', productId, 'panel', 'ledger', 'pages']` | Lectura paginada con saldo acumulado |
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 

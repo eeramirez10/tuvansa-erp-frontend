@@ -87,17 +87,24 @@ siendo solamente visuales en esta etapa.
 
 ### Modal Auxiliar
 
-El botón `Auxiliar` ya usa una vista específica comparada contra OMNIS, no la
-tabla dinámica genérica. Consume `GET
-/inventories/products/:productId/queries/ledger?page=1&pageSize=100` y presenta,
-en este orden, `Fecha`, `Doc.`, `T.M.`, `Costo`, `Entradas`, `Salidas`, `Stock`,
-`Alm`, `Lote`, `Usr` y `Reval`. La cantidad positiva o negativa se separa en
-entradas y salidas; el stock se acumula desde el stock anterior del producto.
+**Auxiliar** usa la ventana compartida de Inventarios y consulta
+`GET /inventories/products/:productId/queries/ledger?page=:page&pageSize=500`.
+Conserva las columnas `Fecha`, `Doc.`, `T.M.`, `Costo`, `Entradas`, `Salidas`,
+`Stock`, `Alm`, `Lote`, `Usr` y `Reval`. Se muestran al final las tres
+columnas identificadas en el informe de la versión reciente: `Pzas` (`pieces`),
+`Ruta` (`route`) y `Referencia ellos` (`ellosReference`). Su ubicación exacta
+en la versión reciente queda pendiente de cotejo visual.
 
-La ventana conserva `Stock anterior`, el renglón seleccionado y los botones
-visibles `Filtrar almacen` y `Filtrar XXX`. Estos dos filtros y los controles
-Minimizar/Maximizar son solamente visuales en esta etapa; Cerrar sí termina el
-modal.
+**Cargar más movimientos** agrega el siguiente lote al final de la lista sin
+reiniciar el saldo. Como en `EINV#10/239` de Omnis 7, el saldo comienza con
+`Stock anterior` y suma la cantidad de cada movimiento en el orden recibido.
+Un error al cargar el siguiente lote conserva los movimientos ya visibles y
+permite reintentar. La tabla tiene desplazamiento X/Y dentro de la ventana,
+que permite mover, redimensionar, minimizar, maximizar y restaurar.
+
+El filtro de almacén se observó en Omnis 7. El informe de la versión reciente
+menciona `Filtrar T'S` y `TST`. Los tres controles se muestran deshabilitados
+hasta verificar sus entradas y comportamiento.
 
 ### Modal Pedidos por cliente
 

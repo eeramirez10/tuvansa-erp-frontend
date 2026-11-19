@@ -1,8 +1,8 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 
-import { productPanelQueryOptions } from "@/features/inventories/products/logic"
+import { productLedgerQueryOptions } from "@/features/inventories/products/logic"
 import type { Product, ProductLedgerItem } from "@/features/inventories/products/model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -34,6 +34,12 @@ function textValue(value: unknown) {
   return value === null || value === undefined ? "" : String(value)
 }
 
+function optionalNumberValue(value: unknown) {
+  if (value == null || value === "") return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 function toLedgerItem(item: Record<string, unknown>): ProductLedgerItem {
   return {
     id: numberValue(item.id),
@@ -46,6 +52,9 @@ function toLedgerItem(item: Record<string, unknown>): ProductLedgerItem {
     lotId: numberValue(item.lotId),
     userId: numberValue(item.userId),
     revaluation: numberValue(item.revaluation),
+    pieces: optionalNumberValue(item.pieces),
+    route: textValue(item.route),
+    ellosReference: textValue(item.ellosReference),
   }
 }
 
@@ -85,18 +94,21 @@ export function ProductLedgerDialog({
   product,
   onOpenChange,
 }: ProductLedgerDialogProps) {
-  const ledgerQuery = useQuery(productPanelQueryOptions(product.id, "ledger"))
+  const ledgerQuery = useInfiniteQuery(productLedgerQueryOptions(product.id))
   const openingStock = product.accumulated.previousStock
-  const rows = buildLedgerRows(ledgerQuery.data?.data.items ?? [], openingStock)
+  const items = ledgerQuery.data?.pages.flatMap((page) => page.data.items) ?? []
+  const rows = buildLedgerRows(items, openingStock)
 
   return (
     <ErpDataDialog
       description={`Auxiliar de movimientos del producto ${product.code}.`}
+      defaultHeight={415}
+      fillHeight
       onOpenChange={onOpenChange}
       title="Auxiliar"
     >
-        <ErpDataDialogBody>
-          <div className="mb-1 flex h-5 items-center justify-center gap-2">
+        <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col">
+          <div className="mb-1 flex h-5 shrink-0 items-center justify-center gap-2">
             <span>Stock anterior</span>
             <output className="flex h-4 min-w-16 items-center justify-end border border-input bg-background px-1 tabular-nums shadow-inner">
               {openingStock.toFixed(2)}
@@ -104,12 +116,12 @@ export function ProductLedgerDialog({
           </div>
 
           {ledgerQuery.isPending ? (
-            <div className="flex min-h-72 items-center justify-center gap-1.5 border border-input bg-background text-muted-foreground">
+            <div className="flex flex-1 items-center justify-center gap-1.5 border border-input bg-background text-muted-foreground">
               <Spinner />
               Cargando auxiliar…
             </div>
-          ) : ledgerQuery.isError ? (
-            <Alert className="min-h-72" variant="destructive">
+          ) : ledgerQuery.isLoadingError ? (
+            <Alert className="flex-1" variant="destructive">
               <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} />
               <AlertTitle>No fue posible cargar el auxiliar</AlertTitle>
               <AlertDescription>
@@ -117,8 +129,8 @@ export function ProductLedgerDialog({
               </AlertDescription>
             </Alert>
           ) : (
-            <ErpDataTableViewport className="h-[min(52vh,20rem)] min-h-64">
-              <table className="w-[43rem] min-w-full table-fixed border-collapse text-[9px]/none tabular-nums">
+            <ErpDataTableViewport className="min-h-0 flex-1">
+              <table className="w-[61rem] min-w-full table-fixed border-collapse text-[9px]/none tabular-nums">
                 <colgroup>
                   <col className="w-[4.6rem]" />
                   <col className="w-[5.8rem]" />
@@ -131,6 +143,9 @@ export function ProductLedgerDialog({
                   <col className="w-[2.8rem]" />
                   <col className="w-[2.8rem]" />
                   <col className="w-[4.4rem]" />
+                  <col className="w-[4rem]" />
+                  <col className="w-[5rem]" />
+                  <col className="w-[9rem]" />
                 </colgroup>
                 <thead className="sticky top-0 z-10 bg-background">
                   <tr className="h-4 border-b border-input text-left font-normal">
@@ -145,6 +160,9 @@ export function ProductLedgerDialog({
                     <th className="px-1 text-right font-normal">Lote</th>
                     <th className="px-1 text-right font-normal">Usr</th>
                     <th className="px-1 text-right font-normal">Reval</th>
+                    <th className="px-1 text-right font-normal">Pzas</th>
+                    <th className="px-1 font-normal">Ruta</th>
+                    <th className="px-1 font-normal">Referencia ellos</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,11 +188,16 @@ export function ProductLedgerDialog({
                       <td className="px-1 text-right">
                         {formatOptional(row.revaluation, 2)}
                       </td>
+                      <td className="px-1 text-right">{row.pieces ?? ""}</td>
+                      <td className="truncate px-1" title={row.route}>{row.route}</td>
+                      <td className="truncate px-1" title={row.ellosReference}>
+                        {row.ellosReference}
+                      </td>
                     </tr>
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td className="h-64 text-center text-muted-foreground" colSpan={11}>
+                      <td className="h-64 text-center text-muted-foreground" colSpan={14}>
                         Sin movimientos para este producto
                       </td>
                     </tr>
@@ -184,13 +207,35 @@ export function ProductLedgerDialog({
             </ErpDataTableViewport>
           )}
 
-          <footer className="flex h-7 items-end gap-2 pl-8">
-            <Button className="w-32" size="sm" type="button" variant="outline">
-              Filtrar almacen
+          <footer className="flex shrink-0 flex-wrap items-center gap-2 pt-1">
+            <Button disabled size="sm" type="button" variant="outline">
+              Filtrar almacén
             </Button>
-            <Button className="w-32" size="sm" type="button" variant="outline">
-              Filtrar XXX
+            <Button disabled size="sm" type="button" variant="outline">
+              Filtrar T'S
             </Button>
+            <Button disabled size="sm" type="button" variant="outline">
+              TST
+            </Button>
+            {ledgerQuery.hasNextPage && (
+              <Button
+                className="ml-auto"
+                disabled={ledgerQuery.isFetching}
+                onClick={() => void ledgerQuery.fetchNextPage()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {ledgerQuery.isFetchingNextPage
+                  ? "Cargando movimientos…"
+                  : ledgerQuery.isFetchNextPageError ? "Reintentar" : "Cargar más movimientos"}
+              </Button>
+            )}
+            {ledgerQuery.isFetchNextPageError && (
+              <p className="w-full text-right text-destructive" role="alert">
+                {getApiErrorMessage(ledgerQuery.error)}
+              </p>
+            )}
           </footer>
         </ErpDataDialogBody>
     </ErpDataDialog>

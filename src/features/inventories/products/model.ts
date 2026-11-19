@@ -163,6 +163,9 @@ export type ProductLedgerItem = {
   lotId: number
   userId: number
   revaluation: number
+  pieces: number | null
+  route: string
+  ellosReference: string
 }
 
 export type ProductCustomerOrderItem = {
