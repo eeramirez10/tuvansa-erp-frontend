@@ -142,18 +142,21 @@ revisan en OMNIS tanto el extremo derecho como el último registro.
 
 ### Modal Pedidos por *
 
-El botón pequeño `*` abre `Pedidos por *`. El resumen consume `GET
-/inventories/products/:productId/queries/customer-orders/star` y los renglones
-pendientes reutilizan `GET
-/inventories/products/:productId/queries/customer-orders?page=1&pageSize=100`,
-filtrando aquellos cuya resta sea mayor que cero.
+El botón pequeño `*` abre `Pedidos por *` con la tabla vacía, como en
+`EINV#7A/0` de Omnis 7. Los nueve botones seleccionan el clasificador
+`CLIPAR1..9` con `GET /inventories/products/:productId/queries/customer-orders/star?classifier=:n`.
+Las etiquetas de México son **AGENTE**, **GIRO O SECTOR**, **SUCURSAL**,
+tres botones sin texto, **FLETE**, **ORIGEN** y **PROYECTO**.
 
-La tabla presenta `Código`, `Nombre`, `Pedido#`, `Fecha`, `Pedido`, `Surtido`,
-`Resta` y `Asignado`. El pie conserva `Asignado`, `Por Asignar`, `Stock`, `Total`
-y `Faltante`, además de la matriz visual `AGENTE`, `GIRO O SECTOR`, `SUCURSAL`,
-`FLETE`, `ORIGEN`, `PROYECTO` y sus espacios reservados. Los filtros todavía no
-ejecutan acciones. Esta ventana usa desplazamiento vertical; el modal compartido
-permite seleccionar X, Y o XY según la estructura observada en OMNIS.
+La tabla de desplazamiento vertical presenta `Código`, `Nombre`, `Pedido#`,
+`Fecha`, `Pedido`, `Surtido`, `Resta` y `Asignado`. Los cuatro primeros
+encabezados ordenan toda la consulta en forma ascendente. Elegir un
+clasificador vuelve al orden por fecha. Pedido, surtido y resta se muestran
+como enteros truncados. Asignado lleva un asterisco cuando difiere de la resta.
+
+El pie usa los agregados completos de la API para Asignado y Total. Por Asignar
+es `Stock - Asignado` y Faltante es `Total - Stock`. La paginación conserva los
+agregados de la consulta activa y permite reintentar sin perder filas.
 
 ### Modales restantes de Consultas
 

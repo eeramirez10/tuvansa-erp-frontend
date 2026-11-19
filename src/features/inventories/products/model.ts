@@ -191,11 +191,11 @@ export type ProductCustomerOrdersFilters = {
   excludeFulfilled?: boolean
 }
 
-export type ProductCustomerOrderSummary = {
-  ordered: number
-  assigned: number
-  stock: number
-  pending: number
+export type ProductCustomerOrdersStarSort = "code" | "name" | "order" | "date"
+
+export type ProductCustomerOrdersStarFilters = {
+  classifier?: number
+  sort: ProductCustomerOrdersStarSort
 }
 
 export type ProductPanelDefinition = {

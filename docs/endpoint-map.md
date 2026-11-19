@@ -147,6 +147,8 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | Inventarios PT | Auxiliar | Filtrar XXX | Clic | Mismo GET con `movementType=R` y los parámetros de almacén vigentes | Clave de Auxiliar con filtros | Conserva el saldo inicial y muestra únicamente movimientos tipo `R` |
 | Inventarios PT | Consultas | Pedidos por cliente | Abrir ventana o cargar más pedidos | `GET /inventories/products/:productId/queries/customer-orders?page=:page&pageSize=500` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-orders', 'pages', excludeFulfilled]` | Muestra Asignado y Total de toda la consulta con `data.customerOrdersTotals` |
 | Inventarios PT | Pedidos por cliente | Filtrar pedidos surtidos | Clic | Mismo GET con `excludeFulfilled=true` | Clave de Pedidos por cliente con el filtro activo | Conserva partidas con `PLSURT < PLCANT` |
+| Inventarios PT | Consultas | Pedidos por cliente · `*` | Abrir ventana | `GET /inventories/products/:productId/queries/customer-orders/star` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-orders-star', 'pages', filters]` | Lista vacía hasta elegir un clasificador |
+| Inventarios PT | Pedidos por * | Clasificador o encabezado | Clic | Mismo GET con `classifier=1..9`, `sort=code\|name\|order\|date`, `page` y `pageSize` | Clave de Pedidos por * con el clasificador y orden activos | Renglones clasificados y totales de toda la consulta |
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 

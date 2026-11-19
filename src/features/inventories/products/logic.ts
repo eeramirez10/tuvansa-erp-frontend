@@ -2,6 +2,7 @@ import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
 
 import type {
   Product,
+  ProductCustomerOrdersStarFilters,
   ProductFormValues,
   ProductLedgerFilters,
   ProductMutationInput,
@@ -73,6 +74,20 @@ export function productCustomerOrdersQueryOptions(productId: number, excludeFulf
     queryFn: ({ pageParam, signal }) =>
       getProductPanel(productId, "customer-orders", signal, pageParam,
         excludeFulfilled ? { excludeFulfilled: true } : undefined),
+    initialPageParam: 1,
+    getNextPageParam: ({ pagination }) =>
+      pagination.returned === pagination.pageSize ? pagination.page + 1 : undefined,
+  })
+}
+
+export function productCustomerOrdersStarQueryOptions(
+  productId: number,
+  filters: ProductCustomerOrdersStarFilters,
+) {
+  return infiniteQueryOptions({
+    queryKey: [...productKeys.panel(productId, "customer-orders-star"), "pages", filters],
+    queryFn: ({ pageParam, signal }) =>
+      getProductPanel(productId, "customer-orders-star", signal, pageParam, filters),
     initialPageParam: 1,
     getNextPageParam: ({ pagination }) =>
       pagination.returned === pagination.pageSize ? pagination.page + 1 : undefined,
