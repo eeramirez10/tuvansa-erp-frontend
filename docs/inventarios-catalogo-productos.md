@@ -216,6 +216,18 @@ gráfica. Los acumulados de los meses y el total general vienen de
 `annualSalesDetails.fromDate` en formato día/mes/año cuando está configurada.
 **Cargar más ventas** recorre las siguientes páginas con los mismos totales.
 
+### Ordenado a proveedor
+
+**Ordenado a proveedor** abre **Ordenado a proveedores**. La tabla muestra las
+cantidades de Pedido, Surtido y Resta divididas por su factor y con cero
+decimales. **Filtrar pedidos surtidos** conserva las partidas con
+`PLSURT < PLCANT` según `EINV#12/4`. Al reabrir se muestra la lista completa.
+
+**Por llegar** viene de `supplierOrdersTotals.remaining`, que suma las
+cantidades base de toda la consulta. **Total** agrega el stock de la ficha.
+**Cargar más pedidos** conserva ambos valores mientras se recorren las
+páginas. **Coment** aparece deshabilitado.
+
 ### Modales restantes de Consultas
 
 | Botón visible | Título observado en OMNIS | Presentación reproducida |
@@ -223,7 +235,6 @@ gráfica. Los acumulados de los meses y el total general vienen de
 | Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
 | Ventas por cliente · CT | Ventas por cliente | Acumulado por cliente en Código, Descripción, Cantidad e Importe, con panel CT lateral |
 | Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. El pie acumula la cantidad de toda la consulta. |
-| Ordenado a proveedor | Ordenado a proveedores | O.C., sucursal, unidad, pedido/surtido/resta, precio, fechas, almacén, observaciones y Stock/Por llegar/Total |
 | Ordenado a proveedor · CT | Ordenado a proveedores | Tabla y panel CT lateral con totales y botones Pedido/Surtido/Resta |
 | Cotizado a proveedores | Cotizado a proveedores | Pedido/surtido/resta y Stock/Por llegar/Total |
 | Compras por proveedor | Compras por proveedor | Acumulado por proveedor con Cantidad e Importe |

@@ -5,7 +5,7 @@ import { useInfiniteQuery, useMutation } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 
 import { printProductCustomerOrders } from "@/features/inventories/products/components/product-customer-orders-print"
-import { productCustomerOrdersQueryOptions } from "@/features/inventories/products/logic"
+import { productOrderListQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
   ProductCustomerOrderItem,
@@ -99,7 +99,7 @@ export function ProductCustomerOrdersDialog({
     },
   })
   const ordersQuery = useInfiniteQuery(
-    productCustomerOrdersQueryOptions(product.id, excludeFulfilled),
+    productOrderListQueryOptions(product.id, "customer-orders", excludeFulfilled),
   )
   const rows = ordersQuery.data?.pages.flatMap((page) => page.data.items.map(toCustomerOrder)) ?? []
   const totals = ordersQuery.data?.pages[0]?.data.customerOrdersTotals

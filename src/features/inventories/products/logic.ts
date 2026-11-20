@@ -70,10 +70,10 @@ export function productLedgerQueryOptions(productId: number, filters: ProductLed
   })
 }
 
-export function productCustomerOrdersQueryOptions(
+export function productOrderListQueryOptions(
   productId: number,
+  panel: "customer-orders" | "customer-quotes" | "supplier-orders",
   excludeFulfilled: boolean,
-  panel: "customer-orders" | "customer-quotes" = "customer-orders",
 ) {
   return infiniteQueryOptions({
     queryKey: [...productKeys.panel(productId, panel), "pages", excludeFulfilled],

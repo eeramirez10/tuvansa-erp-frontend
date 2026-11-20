@@ -142,6 +142,7 @@ export type ProductPanel = {
   items: Array<Record<string, unknown>>
   openingStock?: number
   customerOrdersTotals?: { assigned: number; remaining: number }
+  supplierOrdersTotals?: { remaining: number }
   customerSalesTotals?: { quantity: number; amount: number }
   annualSalesDetails?: { fromDate: string | null; totals: Record<string, number> }
   reason?: string
@@ -189,7 +190,7 @@ export type ProductCustomerOrderItem = {
   factor: number
 }
 
-export type ProductCustomerOrdersFilters = {
+export type ProductOrderListFilters = {
   excludeFulfilled?: boolean
 }
 

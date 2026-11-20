@@ -1,11 +1,11 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
   Product,
-  ProductCustomerOrdersFilters,
   ProductCustomerOrdersStarFilters,
   ProductCustomerSalesFilters,
   ProductLedgerFilters,
   ProductMutationInput,
+  ProductOrderListFilters,
   ProductPanelKey,
   ProductPanelResponse,
   ProductSearchResponse,
@@ -151,7 +151,7 @@ export async function getProductPanel(
   panel: ProductPanelKey,
   signal?: AbortSignal,
   page = 1,
-  filters?: ProductLedgerFilters | ProductCustomerOrdersFilters | ProductCustomerOrdersStarFilters | ProductCustomerSalesFilters,
+  filters?: ProductLedgerFilters | ProductOrderListFilters | ProductCustomerOrdersStarFilters | ProductCustomerSalesFilters,
 ) {
   const pageSize = 500
   const response = await apiClient.get<ProductPanelResponse>(

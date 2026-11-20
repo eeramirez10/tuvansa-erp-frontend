@@ -2,9 +2,9 @@ import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleI
 import PrinterIcon from "@hugeicons/core-free-icons/PrinterIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
-import { productAnnualSalesQueryOptions, productPanelQueryOptions } from "@/features/inventories/products/logic"
+import { productAnnualSalesQueryOptions, productOrderListQueryOptions, productPanelQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
   ProductPanel,
@@ -372,52 +372,120 @@ function AnnualSalesDialog({ panel, product, onOpenChange }: ProductQueryDialogP
   )
 }
 
+function formatSupplierQuantity(value: unknown, factor: unknown) {
+  const amount = numberValue(value) / numberValue(factor)
+  if (!Number.isFinite(amount)) return ""
+  const formatted = amount.toFixed(0)
+  return Number(formatted) === 0 ? "" : formatted
+}
+
 const supplierOrderColumns: QueryColumn[] = [
   { key: "supplierCode", label: "Código", width: "5rem" },
   { key: "supplierName", label: "Descripción", width: "12rem" },
   { key: "orderNumber", label: "O.C.", width: "5rem" },
   { key: "branch", label: "Sucursal", width: "4rem" },
   { key: "unit", label: "U.M", width: "3rem" },
-  numberColumn("quantity", "Pedido"),
-  numberColumn("fulfilled", "Surtido"),
+  {
+    ...numberColumn("quantity", "Pedido"),
+    render: (row) => formatSupplierQuantity(row.quantity, row.factor),
+  },
+  {
+    ...numberColumn("fulfilled", "Surtido"),
+    render: (row) => formatSupplierQuantity(row.fulfilled, row.factor),
+  },
   {
     key: "remaining",
     label: "Resta",
     width: "4rem",
     align: "right",
-    render: (row) => formatNumber(numberValue(row.quantity) - numberValue(row.fulfilled)),
+    render: (row) => formatSupplierQuantity(numberValue(row.quantity) - numberValue(row.fulfilled), row.factor),
   },
   moneyColumn("price", "Precio"),
-  { key: "externalNumber", label: "D.C. Prv.", width: "6rem" },
+  { key: "externalNumber", label: "O.C. Prv.", width: "6rem" },
   dateColumn("orderedAt", "Fecha E."),
   dateColumn("date", "Fecha"),
   { key: "warehouse", label: "Alm", width: "3rem" },
   { key: "observations", label: "Obs....", width: "10rem" },
 ]
 
-function SupplierOrders({ product, rows }: { product: Product; rows: QueryRow[] }) {
-  const arriving = rows.reduce(
-    (value, row) => value + numberValue(row.quantity) - numberValue(row.fulfilled),
-    0,
-  )
+function SupplierOrdersDialog({ panel, product, onOpenChange }: ProductQueryDialogProps) {
+  const [excludeFulfilled, setExcludeFulfilled] = useState(false)
+  const orders = useInfiniteQuery(productOrderListQueryOptions(product.id, "supplier-orders", excludeFulfilled))
+  const rows = orders.data?.pages.flatMap((page) => page.data.items) ?? []
+  const arriving = orders.data?.pages[0]?.data.supplierOrdersTotals?.remaining
   const stock = product.accumulated.currentStock
   return (
-    <>
-      <ProductQueryTable
-        className="h-[min(54vh,22rem)]"
-        columns={supplierOrderColumns}
-        rows={rows}
-        tableClassName="w-[70rem]"
-      />
-      <footer className="mt-1 flex items-end gap-8">
-        <QueryButtons labels={["Filtrar pedidos surtidos", "Coment"]} />
-        <div className="ml-auto grid grid-cols-3 gap-1">
-          <ErpDataMetric label="Stock" value={formatNumber(stock)} />
-          <ErpDataMetric label="Por llegar" value={formatNumber(arriving)} />
-          <ErpDataMetric label="Total" value={formatNumber(stock + arriving)} />
-        </div>
-      </footer>
-    </>
+    <ErpDataDialog
+      className="sm:max-w-[72rem]"
+      description={`${panel.label} del producto ${product.code}.`}
+      onOpenChange={onOpenChange}
+      title="Ordenado a proveedores"
+    >
+      <ErpDataDialogBody>
+        {orders.isPending ? (
+          <div className="flex min-h-48 items-center justify-center gap-1.5 border border-input bg-background text-muted-foreground">
+            <Spinner />
+            Cargando pedidos a proveedor…
+          </div>
+        ) : orders.isLoadingError ? (
+          <Alert className="min-h-48" variant="destructive">
+            <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} />
+            <AlertTitle>No fue posible cargar los pedidos</AlertTitle>
+            <AlertDescription>
+              {getApiErrorMessage(orders.error)}
+              <Button disabled={orders.isFetching} onClick={() => void orders.refetch()} size="sm" type="button" variant="outline">
+                Reintentar
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <ProductQueryTable
+            className="h-[min(54vh,22rem)]"
+            columns={supplierOrderColumns}
+            rows={rows}
+            tableClassName="w-[70rem]"
+          />
+        )}
+        <footer className="mt-1">
+          <div className="flex flex-wrap items-end gap-8">
+            <div className="flex flex-wrap gap-1">
+              <Button
+                className={compactButtonClass}
+                disabled={excludeFulfilled || orders.isPending}
+                onClick={() => setExcludeFulfilled(true)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Filtrar pedidos surtidos
+              </Button>
+              <Button className={compactButtonClass} disabled size="sm" type="button" variant="outline">
+                Coment
+              </Button>
+            </div>
+            <div className="ml-auto grid grid-cols-3 gap-1">
+              <ErpDataMetric label="Stock" value={stock.toFixed(3)} />
+              <ErpDataMetric label="Por llegar" value={arriving?.toFixed(3) ?? "—"} />
+              <ErpDataMetric label="Total" value={arriving === undefined ? "—" : (stock + arriving).toFixed(3)} />
+            </div>
+          </div>
+          {orders.hasNextPage && (
+            <div className="mt-1 flex justify-end">
+              <Button disabled={orders.isFetching} onClick={() => void orders.fetchNextPage()} size="sm" type="button" variant="outline">
+                {orders.isFetchingNextPage
+                  ? "Cargando pedidos…"
+                  : orders.isFetchNextPageError ? "Reintentar" : "Cargar más pedidos"}
+              </Button>
+            </div>
+          )}
+          {orders.isFetchNextPageError && (
+            <p className="mt-1 text-right text-destructive" role="alert">
+              {getApiErrorMessage(orders.error)}
+            </p>
+          )}
+        </footer>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
   )
 }
 
@@ -645,8 +713,6 @@ function availablePresentation(
         ),
       }
     }
-    case "supplier-orders":
-      return { title: "Ordenado a proveedores", className: "sm:max-w-[72rem]", body: <SupplierOrders product={product} rows={rows} /> }
     case "supplier-orders-ct":
       return {
         title: "Ordenado a proveedores",
@@ -743,9 +809,11 @@ function availablePresentation(
 
 export function ProductQueryDialog({ panel, product, onOpenChange }: ProductQueryDialogProps) {
   const props = { panel, product, onOpenChange }
-  return panel.key === "annual-sales" || panel.key === "annual-sales-summary"
-    ? <AnnualSalesDialog {...props} />
-    : <SinglePageProductQueryDialog {...props} />
+  if (panel.key === "annual-sales" || panel.key === "annual-sales-summary") {
+    return <AnnualSalesDialog {...props} />
+  }
+  if (panel.key === "supplier-orders") return <SupplierOrdersDialog {...props} />
+  return <SinglePageProductQueryDialog {...props} />
 }
 
 function SinglePageProductQueryDialog({ panel, product, onOpenChange }: ProductQueryDialogProps) {

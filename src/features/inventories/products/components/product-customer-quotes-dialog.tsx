@@ -4,7 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
 import { ProductQueryTable } from "@/features/inventories/products/components/product-query-table"
-import { productCustomerOrdersQueryOptions } from "@/features/inventories/products/logic"
+import { productOrderListQueryOptions } from "@/features/inventories/products/logic"
 import type { Product } from "@/features/inventories/products/model"
 import {
   formatDate,
@@ -47,7 +47,7 @@ export function ProductCustomerQuotesDialog({
   onOpenChange,
 }: ProductCustomerQuotesDialogProps) {
   const [excludeFulfilled, setExcludeFulfilled] = useState(false)
-  const quotes = useInfiniteQuery(productCustomerOrdersQueryOptions(product.id, excludeFulfilled, "customer-quotes"))
+  const quotes = useInfiniteQuery(productOrderListQueryOptions(product.id, "customer-quotes", excludeFulfilled))
   const rows = quotes.data?.pages.flatMap((page) => page.data.items) ?? []
   const total = quotes.data?.pages[0]?.data.customerOrdersTotals?.remaining
 
