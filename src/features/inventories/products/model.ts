@@ -316,7 +316,9 @@ export type ProductFormValues = z.infer<typeof productFormSchema>
 
 const editDecimal = z.string().trim().regex(/^-?(?:\d+(?:\.\d*)?|\.\d+)$/, "Captura un número válido")
   .transform(Number).pipe(z.number())
-const editInteger = editDecimal.pipe(z.number().int("Captura un entero").min(0).max(2_147_483_647))
+const nonnegativeEditInteger = z.number().int("Captura un entero").min(0)
+const editInteger = editDecimal.pipe(nonnegativeEditInteger.max(2_147_483_647))
+const editWarehouseLimit = editDecimal.pipe(nonnegativeEditInteger)
 const editAmountLimit = Number.MAX_SAFE_INTEGER / 10_000
 const editPrice = editDecimal.pipe(z.number().min(0).max(editAmountLimit).multipleOf(0.0001, "Captura hasta cuatro decimales"))
 const editCost = editDecimal.pipe(z.number().min(-editAmountLimit).max(editAmountLimit).multipleOf(0.0001, "Captura hasta cuatro decimales"))
@@ -336,8 +338,8 @@ export const productCatalogEditSchema = z.object({
     previousCost: editCost,
     costCurrency: editInteger,
     adValorem: editDecimal.pipe(z.number().min(0).multipleOf(0.01, "Captura hasta dos decimales")),
-    minimum: editDecimal.pipe(z.number().min(0)),
-    maximum: editDecimal.pipe(z.number().min(0)),
+    minimum: editWarehouseLimit,
+    maximum: editWarehouseLimit,
     location: z.string().trim().toUpperCase().max(30),
     ean: z.string().trim().toUpperCase().max(30),
     upc: z.string().trim().toUpperCase().max(13),
