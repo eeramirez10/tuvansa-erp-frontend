@@ -200,13 +200,6 @@ function SplitCtView({
   )
 }
 
-const salesColumns: QueryColumn[] = [
-  { key: "customerCode", label: "Código", width: "5rem" },
-  { key: "customerName", label: "Cliente", width: "12rem" },
-  numberColumn("quantity", "Cantidad", "5rem"),
-  moneyColumn("amount", "Importe", "6rem"),
-]
-
 function TotalsFooter({
   rows,
   quantityKey = "quantity",
@@ -593,12 +586,6 @@ function availablePresentation(
         title: "Pedidos por cliente",
         className: "sm:max-w-[64rem]",
         body: <SplitCtView buttons={["Pedido", "Surtido", "Resta", "Filtrar Tipo"]} columns={orderCtColumns} rows={rows} />,
-      }
-    case "customer-sales":
-      return {
-        title: "Ventas por cliente",
-        className: "sm:max-w-[31rem]",
-        body: <><ProductQueryTable axes="y" className="h-[min(52vh,20rem)]" columns={salesColumns} rows={rows} tableClassName="w-[28rem]" /><TotalsFooter rows={rows} /></>,
       }
     case "customer-sales-star":
       return { title: "Ventas por *", className: "sm:max-w-[32rem]", body: <CustomerSalesStar rows={rows} /> }

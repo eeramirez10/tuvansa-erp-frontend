@@ -180,12 +180,20 @@ con un guion. Omnis los deriva de la lista global `#L1` de pedidos, mientras
 que esta consulta sirve la lista local `LLISTA`. **Asignar**, **Traspasar** y el
 campo de destino se conservan deshabilitados.
 
+### Modal Ventas por cliente
+
+**Ventas por cliente** agrupa las ventas por código de cliente, como en
+`EINV#6/240`. La tabla muestra Código, Cliente, Cantidad e Importe. Los
+encabezados ordenan la consulta completa de forma ascendente y reproducen
+`EINV#6/5–8`. Al abrir se usa Código. Los dos valores del pie proceden de
+`data.customerSalesTotals` y abarcan todas las páginas. **Cargar más ventas**
+mantiene los acumulados y permite reintentar la página si falla.
+
 ### Modales restantes de Consultas
 
 | Botón visible | Título observado en OMNIS | Presentación reproducida |
 | --- | --- | --- |
 | Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
-| Ventas por cliente | Ventas por cliente | Acumulado por cliente con Cantidad e Importe |
 | Ventas por cliente · * | Ventas por * | Acumulado por cliente y matriz AGENTE/GIRO/SUCURSAL/FLETE/ORIGEN/PROYECTO |
 | Ventas por cliente · CT | Ventas por cliente | Acumulado por producto y panel CT lateral |
 | Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. |

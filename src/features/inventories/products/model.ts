@@ -142,6 +142,7 @@ export type ProductPanel = {
   items: Array<Record<string, unknown>>
   openingStock?: number
   customerOrdersTotals?: { assigned: number; remaining: number }
+  customerSalesTotals?: { quantity: number; amount: number }
   reason?: string
 }
 
@@ -197,6 +198,8 @@ export type ProductCustomerOrdersStarFilters = {
   classifier?: number
   sort: ProductCustomerOrdersStarSort
 }
+
+export type ProductCustomerSalesSort = "code" | "name" | "quantity" | "amount"
 
 export type ProductPanelDefinition = {
   key: ProductPanelKey

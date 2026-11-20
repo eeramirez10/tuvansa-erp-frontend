@@ -152,6 +152,7 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | Inventarios PT | Pedidos por * | Clasificador o encabezado | Clic | Mismo GET con `classifier=1..9`, `sort=code\|name\|order\|date`, `page` y `pageSize` | Clave de Pedidos por * con el clasificador y orden activos | Renglones clasificados y totales de toda la consulta |
 | Inventarios PT | Consultas | Cotizaciones por cliente | Abrir ventana o cargar más cotizaciones | `GET /inventories/products/:productId/queries/customer-quotes?page=:page&pageSize=500` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-quotes', 'pages', excludeFulfilled]` | Conserva el título Pedidos por cliente y muestra el Total de toda la consulta |
 | Inventarios PT | Cotizaciones por cliente | Filtrar pedidos surtidos | Clic | Mismo GET con `excludeFulfilled=true` | Clave de Cotizaciones por cliente con el filtro activo | Conserva partidas con `PLSURT < PLCANT` |
+| Inventarios PT | Consultas | Ventas por cliente | Abrir ventana, ordenar por encabezado o cargar más ventas | `GET /inventories/products/:productId/queries/customer-sales?page=:page&pageSize=500&sort=:orden` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-sales', 'pages', sort]` | Agrupa por cliente y muestra `data.customerSalesTotals` para toda la consulta |
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 

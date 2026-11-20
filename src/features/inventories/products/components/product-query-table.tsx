@@ -1,4 +1,5 @@
 import { cn } from "@/shared/utils/cn"
+import { Button } from "@/shared/ui/button"
 import { ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
 import type {
   QueryColumn,
@@ -13,6 +14,7 @@ type ProductQueryTableProps = {
   axes?: "xy" | "x" | "y"
   className?: string
   tableClassName?: string
+  sorting?: { key: string; onSort: (key: string) => void }
 }
 
 export function ProductQueryTable({
@@ -22,6 +24,7 @@ export function ProductQueryTable({
   axes = "xy",
   className,
   tableClassName,
+  sorting,
 }: ProductQueryTableProps) {
   return (
     <ErpDataTableViewport axes={axes} className={cn("h-64", className)}>
@@ -40,6 +43,7 @@ export function ProductQueryTable({
           <tr className="h-4 border-b border-input text-left font-normal">
             {columns.map((column) => (
               <th
+                aria-sort={sorting?.key === column.key ? "ascending" : undefined}
                 className={cn(
                   "whitespace-nowrap border-r border-input px-1 font-normal last:border-r-0",
                   column.align === "right" && "text-right",
@@ -47,7 +51,21 @@ export function ProductQueryTable({
                 )}
                 key={column.key}
               >
-                {column.label}
+                {sorting ? (
+                  <Button
+                    className={cn(
+                      "h-4 w-full justify-start rounded-none px-0 text-[9px] font-normal",
+                      column.align === "right" && "justify-end",
+                      column.align === "center" && "justify-center",
+                    )}
+                    onClick={() => sorting.onSort(column.key)}
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    {column.label}
+                  </Button>
+                ) : column.label}
               </th>
             ))}
           </tr>
