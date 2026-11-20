@@ -337,7 +337,7 @@ export function ProductCatalogPage() {
 
         <form
           aria-label={editing ? "Cambio de producto" : "Catálogo de productos"}
-          className="min-w-0 data-[editing=true]:[&_input[readonly]]:bg-muted"
+          className="min-w-0 data-[editing=true]:[&_input[readonly]]:bg-neutral-300 dark:data-[editing=true]:[&_input[readonly]]:bg-neutral-600"
           data-editing={Boolean(editing)}
           id={editFormId}
           onSubmit={saveEdit}
