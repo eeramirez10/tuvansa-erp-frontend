@@ -21,11 +21,13 @@ export type Product = {
       id: number
       code: string
       description: string
+      catalogOption?: { code: string; description: string } | null
     }
     usesColorAndSize: boolean
     hasPhoto: boolean
   }
   prices: {
+    hasActiveOffer?: boolean
     sale: [
       { amount: number; currencyId: number },
       { amount: number; currencyId: number },
@@ -66,6 +68,7 @@ export type Product = {
     previousQuantity: number
     accumulatedQuantity: number
     pieceStock: number
+    salesLastSixWeeks?: number
     salesLastSixMonths: number
     inventoryDays: number
   }

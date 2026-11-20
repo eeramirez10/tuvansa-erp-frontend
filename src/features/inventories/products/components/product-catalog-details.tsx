@@ -17,13 +17,24 @@ type ProductCatalogDetailsProps = {
   product: Product
 }
 
-const numberFormatter = new Intl.NumberFormat("es-MX", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
+function numberFormatter(fractionDigits: number) {
+  return new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })
+}
 
-function formatNumber(value: number) {
-  return numberFormatter.format(value)
+const wholeNumbers = numberFormatter(0)
+const quantities = numberFormatter(2)
+const stock = numberFormatter(3)
+const prices = numberFormatter(4)
+
+function formatUnit({ code, description, catalogOption }: Product["classification"]["unit"]) {
+  if (catalogOption === null) return code
+  if (catalogOption === undefined) return [code, description].filter(Boolean).join(" · ")
+
+  const optionCode = catalogOption.code === code ? "" : catalogOption.code
+  return [code, optionCode, catalogOption.description].filter(Boolean).join(" · ")
 }
 
 function formatDate(value: string | null) {
@@ -60,7 +71,7 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
             <ReadonlyProductField
               className="md:col-span-3"
               label="Unidad"
-              value={`${product.classification.unit.code} · ${product.classification.unit.description}`}
+              value={formatUnit(product.classification.unit)}
             />
             <ReadonlyProductField
               className="md:col-span-5"
@@ -126,6 +137,11 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
           <Card size="sm">
             <CardHeader className="border-b">
               <CardTitle>Precios de Venta</CardTitle>
+              {product.prices.hasActiveOffer && (
+                <CardAction>
+                  <span aria-label="Oferta vigente" role="img" title="Oferta vigente">*</span>
+                </CardAction>
+              )}
             </CardHeader>
             <CardContent>
               <FieldGroup className="grid grid-cols-[minmax(0,1fr)_5rem] gap-2">
@@ -134,7 +150,7 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
                     <ReadonlyProductField
                       inputMode="decimal"
                       label={`Precio ${index + 1}`}
-                      value={formatNumber(price.amount)}
+                      value={prices.format(price.amount)}
                     />
                     <ReadonlyProductField
                       inputMode="numeric"
@@ -156,17 +172,17 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
                 <ReadonlyProductField
                   inputMode="decimal"
                   label="Promedio 4"
-                  value={formatNumber(product.prices.costs.average)}
+                  value={prices.format(product.prices.costs.average)}
                 />
                 <ReadonlyProductField
                   inputMode="decimal"
                   label="Último 5"
-                  value={formatNumber(product.prices.costs.last)}
+                  value={prices.format(product.prices.costs.last)}
                 />
                 <ReadonlyProductField
                   inputMode="decimal"
                   label="Anterior 6"
-                  value={formatNumber(product.prices.costs.previous)}
+                  value={prices.format(product.prices.costs.previous)}
                 />
                 <ReadonlyProductField
                   inputMode="numeric"
@@ -176,7 +192,7 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
                 <ReadonlyProductField
                   inputMode="decimal"
                   label="Advalorem"
-                  value={formatNumber(product.prices.costs.adValorem)}
+                  value={quantities.format(product.prices.costs.adValorem)}
                 />
               </FieldGroup>
             </CardContent>
@@ -190,11 +206,11 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
               <FieldGroup className="grid gap-2 sm:grid-cols-2">
                 <ReadonlyProductField
                   label="Mínimo"
-                  value={formatNumber(product.warehouse.minimum)}
+                  value={quantities.format(product.warehouse.minimum)}
                 />
                 <ReadonlyProductField
                   label="Máximo"
-                  value={formatNumber(product.warehouse.maximum)}
+                  value={quantities.format(product.warehouse.maximum)}
                 />
                 <div className="sm:col-span-2">
                   <ReadonlyProductField
@@ -237,51 +253,51 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
               />
               <ReadonlyProductField
                 label="Asignado"
-                value={formatNumber(product.accumulated.assigned)}
+                value={quantities.format(product.accumulated.assigned)}
               />
               <ReadonlyProductField
                 label="Confirmado"
-                value={formatNumber(product.accumulated.confirmed)}
+                value={stock.format(product.accumulated.confirmed)}
               />
               <ReadonlyProductField
                 label="Pedido"
-                value={formatNumber(product.accumulated.customerOrders)}
+                value={quantities.format(product.accumulated.customerOrders)}
               />
               <ReadonlyProductField
                 label="Cot. cliente"
-                value={formatNumber(product.accumulated.customerQuotes)}
+                value={wholeNumbers.format(product.accumulated.customerQuotes)}
               />
               <ReadonlyProductField
                 label="Ordenado"
-                value={formatNumber(product.accumulated.supplierOrders)}
+                value={quantities.format(product.accumulated.supplierOrders)}
               />
               <ReadonlyProductField
                 label="Cot. proveedor"
-                value={formatNumber(product.accumulated.supplierQuotes)}
+                value={wholeNumbers.format(product.accumulated.supplierQuotes)}
               />
               <ReadonlyProductField
                 label="Stock actual"
-                value={formatNumber(product.accumulated.currentStock)}
+                value={stock.format(product.accumulated.currentStock)}
               />
               <ReadonlyProductField
                 label="Stock anterior"
-                value={formatNumber(product.accumulated.previousStock)}
+                value={stock.format(product.accumulated.previousStock)}
               />
               <ReadonlyProductField
                 label="Stock acumulado"
-                value={formatNumber(product.accumulated.accumulatedStock)}
+                value={stock.format(product.accumulated.accumulatedStock)}
               />
               <ReadonlyProductField
                 label="Cantidad anterior"
-                value={formatNumber(product.accumulated.previousQuantity)}
+                value={quantities.format(product.accumulated.previousQuantity)}
               />
               <ReadonlyProductField
                 label="Cantidad acumulada"
-                value={formatNumber(product.accumulated.accumulatedQuantity)}
+                value={quantities.format(product.accumulated.accumulatedQuantity)}
               />
               <ReadonlyProductField
                 label="Stk. pzas"
-                value={formatNumber(product.accumulated.pieceStock)}
+                value={wholeNumbers.format(product.accumulated.pieceStock)}
               />
               <ReadonlyProductField label="Alta" value={formatDate(product.createdAt)} />
               <ReadonlyProductField
@@ -290,7 +306,7 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
               />
               <ReadonlyProductField
                 label="Vta 6s"
-                value={formatNumber(product.accumulated.salesLastSixMonths)}
+                value={wholeNumbers.format(product.accumulated.salesLastSixWeeks ?? product.accumulated.salesLastSixMonths)}
               />
               <ReadonlyProductField
                 label="Días Inv."

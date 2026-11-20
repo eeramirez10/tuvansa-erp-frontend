@@ -17,6 +17,13 @@ Trazabilidad de la pantalla heredada de OMNIS/PROSCAI con la ruta web `/inventar
 
 La URL conserva el producto seleccionado para que navegación, recarga y enlaces directos muestren el mismo registro. Las consultas de detalle usan la clave `['inventories', 'products', 'detail', productId]`; búsqueda y paneles incluyen sus filtros o la clave visible del botón.
 
+La ficha muestra cuatro decimales en los precios 1–3 y costos 4–6, y tres
+en Confirmado y existencias. Las cotizaciones, el stock en piezas y **Vta 6s**
+(ventas de seis semanas) se muestran como enteros. **Precios de Venta** indica
+la oferta vigente con `*` cuando el detalle devuelve `prices.hasActiveOffer`
+en `true`. **Unidad** muestra el código enlazado y la opción que Omnis
+encuentra en el catálogo de unidades, cuando existe.
+
 ## Acciones
 
 | Botón visible en OMNIS | Método y endpoint |
