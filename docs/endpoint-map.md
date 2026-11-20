@@ -334,3 +334,11 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador. Las acciones internas Cambio, Confirmar e Imprimir de CT/Piezas quedan fuera de esta entrega.
 
 Comentarios reproduce la distribución de `EOC#6` de Omnis 7. Usa las etiquetas del tipo de movimiento para las cuatro líneas y el texto largo. El número del proveedor aparece en Número ellos y Pedido cliente, como en el formato nativo. OK y Cancelar cierran la ventana de consulta.
+
+| Editor de órdenes de compra | Endpoint relativo a `/api/purchasing/purchase-orders` |
+| --- | --- |
+| Lápiz / Cambio de orden de compra | `GET /:purchaseOrderId/edit` |
+| Producto / Validar código / Buscar producto | `GET /:purchaseOrderId/edit/products?q=...` |
+| OK y respuesta al aviso de cantidad cero | `PATCH /:purchaseOrderId` |
+
+El editor mantiene un borrador de partidas. Tab desde **Pzas.** en la última partida abre la siguiente. Cancelar descarta el borrador. OK pregunta si debe retirar partidas existentes de cantidad cero antes de guardar. Al guardar se actualiza la ficha y se invalidan los paneles vinculados a la orden y el catálogo de Inventarios.

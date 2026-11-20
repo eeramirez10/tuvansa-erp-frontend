@@ -5,6 +5,7 @@ import { paths } from "@/app/router/paths"
 import { PurchaseOrderActionButtons } from "@/features/purchasing/purchase-orders/components/purchase-order-action-buttons"
 import { PurchaseOrderActionDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-action-dialog"
 import { PurchaseOrderDetails } from "@/features/purchasing/purchase-orders/components/purchase-order-details"
+import { PurchaseOrderEditDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-edit-dialog"
 import { PurchaseOrderSearchDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-search-dialog"
 import { PurchaseOrderToolbar } from "@/features/purchasing/purchase-orders/components/purchase-order-toolbar"
 import { purchaseOrderActions } from "@/features/purchasing/purchase-orders/constants"
@@ -25,6 +26,7 @@ export function PurchaseOrderCatalogPage() {
   const { data: purchaseOrder } = useSuspenseQuery(purchaseOrderQueryOptions(id))
   const [searchOpen, setSearchOpen] = useState(false)
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseOrderActionWindow>()
+  const { windows: editWindows, openWindow: openEditWindow, closeWindow: closeEditWindow } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openPurchaseOrder = (next: PurchaseOrder) => {
@@ -44,6 +46,7 @@ export function PurchaseOrderCatalogPage() {
     <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
       <PurchaseOrderToolbar
         disabled={navigation.isPending}
+        onEdit={() => openEditWindow(`purchase-orders:${purchaseOrder.id}:edit`, purchaseOrder.id)}
         onNext={() => navigation.mutate("next")}
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
@@ -61,6 +64,7 @@ export function PurchaseOrderCatalogPage() {
         /></DesktopWindowIdentity>
       )}
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder} /></DesktopWindowIdentity>)}
+      {editWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderEditDialog id={window.payload} onClose={() => closeEditWindow(window.id)} /></DesktopWindowIdentity>)}
     </main>
   )
 }

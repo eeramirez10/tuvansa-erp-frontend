@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import type { PurchaseOrder, PurchaseOrderPanelKey } from "@/features/purchasing/purchase-orders/model"
 import {
   getPurchaseOrder,
+  getPurchaseOrderEditor,
   getPurchaseOrderPanel,
   searchPurchaseOrders,
   type PurchaseOrderSearchCriteria,
@@ -13,6 +14,7 @@ export const purchaseOrderKeys = {
   searches: () => [...purchaseOrderKeys.all, "search"] as const,
   search: (criteria: PurchaseOrderSearchCriteria) => [...purchaseOrderKeys.searches(), criteria] as const,
   panel: (id: number, key: PurchaseOrderPanelKey) => [...purchaseOrderKeys.detail(id), "panel", key] as const,
+  editor: (id: number) => [...purchaseOrderKeys.detail(id), "edit"] as const,
 }
 
 export const displayPurchaseOrderDate = (input: string | null) =>
@@ -37,4 +39,10 @@ export const purchaseOrderSearchQueryOptions = (criteria: PurchaseOrderSearchCri
 export const purchaseOrderPanelQueryOptions = (id: number, key: PurchaseOrderPanelKey) => queryOptions({
   queryKey: purchaseOrderKeys.panel(id, key),
   queryFn: ({ signal }) => getPurchaseOrderPanel(id, key, signal),
+})
+
+export const purchaseOrderEditorQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseOrderKeys.editor(id),
+  queryFn: ({ signal }) => getPurchaseOrderEditor(id, signal),
+  refetchOnMount: "always",
 })

@@ -79,6 +79,44 @@ export type PurchaseOrderClassificationPanel = Omit<PurchaseOrderPanel, "items" 
 
 export type PurchaseOrderClassificationUpdate = { current: string[]; revision: number }
 
+export type PurchaseOrderEditLine = {
+  id: number | null
+  productCode: string
+  quantity: number
+  unit: string
+  discount: number
+  price: number
+  branch: number
+  pieces: string
+}
+
+export type PurchaseOrderEditor = {
+  id: number
+  number: string
+  revision: number
+  legacyVersion: string
+  canWrite: boolean
+  priceLocked: boolean
+  supplierUnits: boolean
+  reason: string
+  lines: Array<PurchaseOrderEditLine & { description: string; factor: number }>
+}
+
+export type PurchaseOrderEdit = {
+  revision: number
+  legacyVersion: string
+  removeZero: boolean
+  lines: PurchaseOrderEditLine[]
+}
+
+export type PurchaseOrderEditProduct = {
+  code: string
+  description: string
+  defaultUnit: string
+  eligible: boolean
+  units: Array<{ code: string; factor: number; suggestedPrice: number | null }>
+}
+
 export type PurchaseOrderColorSizeGroup = {
   root: string
   description: string

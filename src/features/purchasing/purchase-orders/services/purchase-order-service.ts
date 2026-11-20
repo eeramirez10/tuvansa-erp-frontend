@@ -2,6 +2,9 @@ import type {
   PurchaseOrder,
   PurchaseOrderClassificationPanel,
   PurchaseOrderClassificationUpdate,
+  PurchaseOrderEdit,
+  PurchaseOrderEditor,
+  PurchaseOrderEditProduct,
   PurchaseOrderPanel,
   PurchaseOrderPanelKey,
   PurchaseOrderSearchResponse,
@@ -59,5 +62,22 @@ export async function updatePurchaseOrderClassifications(id: number, update: Pur
     `/purchasing/purchase-orders/${id}/${panelPaths.classifications}`,
     update,
   )
+  return response.data.data
+}
+
+export async function getPurchaseOrderEditor(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderEditor>>(`/purchasing/purchase-orders/${id}/edit`, { signal })
+  return response.data.data
+}
+
+export async function searchPurchaseOrderEditProducts(id: number, query: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderEditProduct[]>>(
+    `/purchasing/purchase-orders/${id}/edit/products`, { params: { q: query }, signal },
+  )
+  return response.data.data
+}
+
+export async function editPurchaseOrder(id: number, edit: PurchaseOrderEdit) {
+  const response = await apiClient.patch<ItemResponse<PurchaseOrder>>(`/purchasing/purchase-orders/${id}`, edit)
   return response.data.data
 }
