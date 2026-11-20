@@ -13,7 +13,8 @@ Trazabilidad de la pantalla heredada de OMNIS/PROSCAI con la ruta web `/inventar
 | Flecha derecha / Producto siguiente | Navegar al registro siguiente | `GET /inventories/products/:productId/next` | `product-toolbar.tsx` |
 | Papel / Nuevo producto | Crear un registro | `POST /inventories/products` | `product-form-dialog.tsx` |
 | Papel marcado / Eliminar producto | Eliminar o dar de baja el registro | `DELETE /inventories/products/:productId` | `product-catalog-page.tsx` |
-| Papel y lápiz / Editar producto | Modificar el registro | `PATCH /inventories/products/:productId` | `product-form-dialog.tsx` |
+| Papel y lápiz / Editar producto | Habilitar el cambio en la misma ficha | `GET /inventories/products/:productId/edit-options` | `product-catalog-page.tsx` |
+| Cambio de producto / OK y Cancelar | Guardar los datos modificados o descartar | `PATCH /inventories/products/:productId` al guardar | `product-catalog-details.tsx` y `product-catalog-page.tsx` |
 
 La URL conserva el producto seleccionado para que navegación, recarga y enlaces directos muestren el mismo registro. Las consultas de detalle usan la clave `['inventories', 'products', 'detail', productId]`; búsqueda y paneles incluyen sus filtros o la clave visible del botón.
 
@@ -23,6 +24,15 @@ en Confirmado y existencias. Las cotizaciones, el stock en piezas y **Vta 6s**
 la oferta vigente con `*` cuando el detalle devuelve `prices.hasActiveOffer`
 en `true`. **Unidad** muestra el código enlazado y la opción que Omnis
 encuentra en el catálogo de unidades, cuando existe.
+
+**Editar producto** transforma la ficha en **Cambio de producto**. Durante
+la edición se ocultan los botones de Acciones y Compras/Prod, y se bloquean
+la navegación del registro y las consultas. El detalle indica si el
+producto está habilitado y qué campos se pueden modificar. El código y la
+foto se muestran como datos de consulta. La unidad se elige de la lista del
+catálogo. **OK** guarda las modificaciones con la revisión de la ficha y
+actualiza los datos. **Cancelar** descarta las modificaciones locales. Un
+error de escritura conserva el borrador y muestra el mensaje de la API.
 
 ## Acciones
 

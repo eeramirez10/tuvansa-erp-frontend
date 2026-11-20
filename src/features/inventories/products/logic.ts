@@ -2,6 +2,8 @@ import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
 
 import type {
   Product,
+  ProductCatalogEditChanges,
+  ProductCatalogEditInput,
   ProductCustomerOrdersStarFilters,
   ProductCustomerSalesFilters,
   ProductCustomerSalesPanel,
@@ -13,6 +15,7 @@ import type {
 import {
   getProduct,
   getProductClassification,
+  getProductEditOptions,
   getFirstActiveProduct,
   getProductOtherData,
   getProductPanel,
@@ -24,6 +27,7 @@ export const productKeys = {
   all: ["inventories", "products"] as const,
   firstActive: () => [...productKeys.all, "first-active"] as const,
   detail: (productId: number) => [...productKeys.all, "detail", productId] as const,
+  editOptions: (productId: number) => [...productKeys.detail(productId), "edit-options"] as const,
   search: (criteria: ProductSearchCriteria) =>
     [...productKeys.all, "search", criteria] as const,
   panel: (productId: number, panel: ProductPanelKey) =>
@@ -34,6 +38,13 @@ export function productQueryOptions(productId: number) {
   return queryOptions({
     queryKey: productKeys.detail(productId),
     queryFn: ({ signal }) => getProduct(productId, signal),
+  })
+}
+
+export function productEditOptionsQueryOptions(productId: number) {
+  return queryOptions({
+    queryKey: productKeys.editOptions(productId),
+    queryFn: ({ signal }) => getProductEditOptions(productId, signal),
   })
 }
 
@@ -212,5 +223,54 @@ export function toProductMutationInput(
         costOfSales: values.costOfSalesAccount,
       },
     },
+  }
+}
+
+function hasEditValues(values: object) {
+  return Object.values(values).some((value) => value !== undefined)
+}
+
+export function toProductCatalogEditInput(
+  product: Product,
+  changes: ProductCatalogEditChanges,
+): ProductCatalogEditInput | null {
+  if (!product.editing?.writable) return null
+
+  const initial = {
+    ...getProductFormDefaults(product),
+    type: product.classification.type,
+    usesColorAndSize: product.classification.usesColorAndSize,
+    salesLastSixWeeks: product.accumulated.salesLastSixWeeks ?? product.accumulated.salesLastSixMonths,
+    inventoryDays: product.accumulated.inventoryDays,
+  }
+  const editable = new Set(product.editing.editableFields)
+  const changesOnly = Object.fromEntries(Object.entries(changes).filter(([name, value]) => (
+    editable.has(name) && value !== initial[name as keyof ProductCatalogEditChanges]
+  ))) as ProductCatalogEditChanges
+  if (!hasEditValues(changesOnly)) return null
+
+  const c = changesOnly
+  const classification = { type: c.type, unitId: c.unitId, familyCode: c.familyCode, usesColorAndSize: c.usesColorAndSize }
+  const sale: NonNullable<NonNullable<ProductCatalogEditInput["prices"]>["sale"]> = [
+    { amount: c.salePrice1, currencyId: c.saleCurrency1 },
+    { amount: c.salePrice2, currencyId: c.saleCurrency2 },
+    { amount: c.salePrice3, currencyId: c.saleCurrency3 },
+  ]
+  const costs = { average: c.averageCost, last: c.lastCost, previous: c.previousCost, currencyId: c.costCurrency, adValorem: c.adValorem }
+  const accounts = { primary: c.primaryAccount, secondary: c.secondaryAccount, costOfSales: c.costOfSalesAccount }
+  const warehouse = {
+    minimum: c.minimum, maximum: c.maximum, location: c.location, ean: c.ean, upc: c.upc,
+    accounts: hasEditValues(accounts) ? accounts : undefined,
+  }
+  const accumulated = { salesLastSixWeeks: c.salesLastSixWeeks, inventoryDays: c.inventoryDays }
+  const prices = { sale: sale.some(hasEditValues) ? sale : undefined, costs: hasEditValues(costs) ? costs : undefined }
+
+  return {
+    revision: product.editing.revision,
+    description: c.description,
+    classification: hasEditValues(classification) ? classification : undefined,
+    prices: hasEditValues(prices) ? prices : undefined,
+    warehouse: hasEditValues(warehouse) ? warehouse : undefined,
+    accumulated: hasEditValues(accumulated) ? accumulated : undefined,
   }
 }

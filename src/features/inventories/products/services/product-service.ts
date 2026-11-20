@@ -1,6 +1,8 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
   Product,
+  ProductCatalogEditInput,
+  ProductEditOptions,
   ProductClassificationResponse,
   ProductClassificationUpdate,
   ProductCustomerOrdersStarFilters,
@@ -129,11 +131,19 @@ export async function createProduct(input: ProductMutationInput) {
 
 export async function updateProduct(
   productId: number,
-  input: ProductMutationInput,
+  input: ProductCatalogEditInput,
 ) {
   const response = await apiClient.patch<ItemResponse<Product>>(
     `/inventories/products/${productId}`,
     input,
+  )
+  return response.data.data
+}
+
+export async function getProductEditOptions(productId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<ProductEditOptions>>(
+    `/inventories/products/${productId}/edit-options`,
+    { signal },
   )
   return response.data.data
 }

@@ -20,10 +20,7 @@ import {
   type Product,
   type ProductFormValues,
 } from "@/features/inventories/products/model"
-import {
-  createProduct,
-  updateProduct,
-} from "@/features/inventories/products/services/product-service"
+import { createProduct } from "@/features/inventories/products/services/product-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -43,10 +40,8 @@ import { ScrollArea } from "@/shared/ui/scroll-area"
 import { Spinner } from "@/shared/ui/spinner"
 
 type ProductFormDialogProps = {
-  mode: "create" | "edit"
-  product?: Product
   onOpenChange: (open: boolean) => void
-  onSaved: (product: Product, mode: "create" | "edit") => void
+  onSaved: (product: Product) => void
 }
 
 type ProductInputFieldProps = {
@@ -80,27 +75,20 @@ function ProductInputField({
 }
 
 export function ProductFormDialog({
-  mode,
-  product,
   onOpenChange,
   onSaved,
 }: ProductFormDialogProps) {
   const queryClient = useQueryClient()
   const form = useForm<ProductFormValues>({
-    defaultValues: getProductFormDefaults(product),
+    defaultValues: getProductFormDefaults(),
     resolver: zodResolver(productFormSchema),
   })
   const mutation = useMutation({
-    mutationFn: (values: ProductFormValues) => {
-      const input = toProductMutationInput(values)
-      return mode === "create"
-        ? createProduct(input)
-        : updateProduct(product!.id, input)
-    },
+    mutationFn: (values: ProductFormValues) => createProduct(toProductMutationInput(values)),
     onSuccess: async (savedProduct) => {
       queryClient.setQueryData(productKeys.detail(savedProduct.id), savedProduct)
       await queryClient.invalidateQueries({ queryKey: productKeys.all })
-      onSaved(savedProduct, mode)
+      onSaved(savedProduct)
     },
   })
 
@@ -109,7 +97,7 @@ export function ProductFormDialog({
       className="sm:max-w-5xl"
       description="Capture los campos de la ficha de Inventarios PT. Los acumulados se calculan en el ERP y son de consulta."
       onOpenChange={onOpenChange}
-      title={mode === "create" ? "Nuevo producto" : "Editar producto"}
+      title="Nuevo producto"
     >
       <ErpDataDialogBody className="p-3">
         <form

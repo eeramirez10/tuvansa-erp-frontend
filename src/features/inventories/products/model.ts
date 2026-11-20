@@ -14,6 +14,11 @@ export type Product = {
   description: string
   isActive: boolean
   deactivatedAt: string | null
+  editing?: {
+    writable: boolean
+    revision: string
+    editableFields: string[]
+  }
   classification: {
     type: ProductType
     familyCode: string
@@ -309,6 +314,47 @@ export const productFormSchema = z.object({
 
 export type ProductFormValues = z.infer<typeof productFormSchema>
 
+const editDecimal = z.string().trim().regex(/^-?(?:\d+(?:\.\d*)?|\.\d+)$/, "Captura un número válido")
+  .transform(Number).pipe(z.number())
+const editInteger = editDecimal.pipe(z.number().int("Captura un entero").min(0).max(2_147_483_647))
+const editAmountLimit = Number.MAX_SAFE_INTEGER / 10_000
+const editPrice = editDecimal.pipe(z.number().min(0).max(editAmountLimit).multipleOf(0.0001, "Captura hasta cuatro decimales"))
+const editCost = editDecimal.pipe(z.number().min(-editAmountLimit).max(editAmountLimit).multipleOf(0.0001, "Captura hasta cuatro decimales"))
+
+export const productCatalogEditSchema = z.object({
+  changes: productFormSchema.omit({ code: true, hasPhoto: true }).extend({
+    familyCode: z.string().trim().toUpperCase().max(16),
+    usesColorAndSize: z.boolean(),
+    salePrice1: editPrice,
+    salePrice2: editPrice,
+    salePrice3: editPrice,
+    saleCurrency1: editInteger,
+    saleCurrency2: editInteger,
+    saleCurrency3: editInteger,
+    averageCost: editCost,
+    lastCost: editCost,
+    previousCost: editCost,
+    costCurrency: editInteger,
+    adValorem: editDecimal.pipe(z.number().min(0).multipleOf(0.01, "Captura hasta dos decimales")),
+    minimum: editDecimal.pipe(z.number().min(0)),
+    maximum: editDecimal.pipe(z.number().min(0)),
+    location: z.string().trim().toUpperCase().max(30),
+    ean: z.string().trim().toUpperCase().max(30),
+    upc: z.string().trim().toUpperCase().max(13),
+    salesLastSixWeeks: editInteger,
+    inventoryDays: editInteger,
+  }).partial(),
+})
+
+export type ProductCatalogEditDraft = z.input<typeof productCatalogEditSchema>
+export type ProductCatalogEditValues = z.output<typeof productCatalogEditSchema>
+export type ProductCatalogEditChanges = ProductCatalogEditValues["changes"]
+export type ProductCatalogEditField = keyof ProductCatalogEditChanges
+
+export type ProductEditOptions = {
+  units: Array<Pick<Product["classification"]["unit"], "id" | "code" | "description">>
+}
+
 export type ProductMutationInput = {
   code: string
   description: string
@@ -344,4 +390,20 @@ export type ProductMutationInput = {
       costOfSales: string
     }
   }
+}
+
+type ProductEditSalePrice = Partial<ProductMutationInput["prices"]["sale"][number]>
+
+export type ProductCatalogEditInput = {
+  revision: string
+  description?: string
+  classification?: Partial<Omit<ProductMutationInput["classification"], "hasPhoto">> & { usesColorAndSize?: boolean }
+  prices?: {
+    sale?: [ProductEditSalePrice, ProductEditSalePrice, ProductEditSalePrice]
+    costs?: Partial<ProductMutationInput["prices"]["costs"]>
+  }
+  warehouse?: Partial<Omit<ProductMutationInput["warehouse"], "accounts">> & {
+    accounts?: Partial<ProductMutationInput["warehouse"]["accounts"]>
+  }
+  accumulated?: Partial<Pick<Product["accumulated"], "salesLastSixWeeks" | "inventoryDays">>
 }

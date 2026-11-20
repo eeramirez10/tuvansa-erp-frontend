@@ -1,5 +1,8 @@
+import { Controller } from "react-hook-form"
+
 import { productTypeLabels, productTypeOptions } from "@/features/inventories/products/constants"
 import type { Product } from "@/features/inventories/products/model"
+import { CatalogEditField, CatalogUnitField, type ProductCatalogEditor } from "@/features/inventories/products/components/product-catalog-edit-field"
 import { ReadonlyProductField } from "@/features/inventories/products/components/readonly-product-field"
 import { Badge } from "@/shared/ui/badge"
 import {
@@ -15,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group"
 
 type ProductCatalogDetailsProps = {
   product: Product
+  editor?: ProductCatalogEditor
 }
 
 function numberFormatter(fractionDigits: number) {
@@ -44,7 +48,29 @@ function formatDate(value: string | null) {
   )
 }
 
-export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
+export function ProductCatalogDetails({ product, editor }: ProductCatalogDetailsProps) {
+  const colorEditor = editor?.fields.has("usesColorAndSize") ? editor : undefined
+  const typeEditor = editor?.fields.has("type") ? editor : undefined
+  const renderTypes = (value: Product["classification"]["type"], onChange?: (value: string) => void) => {
+    const disabled = !typeEditor || typeEditor.disabled
+    return (
+      <RadioGroup
+        aria-label="Tipo de producto"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-5"
+        disabled={disabled}
+        onValueChange={onChange}
+        value={value}
+      >
+        {productTypeOptions.map((type) => (
+          <Field data-disabled={disabled || undefined} key={type.value} orientation="horizontal">
+            <RadioGroupItem disabled={disabled} id={`product-type-${type.value}`} value={type.value} />
+            <FieldLabel htmlFor={`product-type-${type.value}`}>{type.label}</FieldLabel>
+          </Field>
+        ))}
+      </RadioGroup>
+    )
+  }
+
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <Card size="sm">
@@ -63,31 +89,40 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
               label="Código"
               value={product.code}
             />
-            <ReadonlyProductField
+            <CatalogEditField
               className="md:col-span-9"
+              editor={editor}
               label="Descripción"
+              name="description"
               value={product.description}
             />
-            <ReadonlyProductField
+            <CatalogUnitField
               className="md:col-span-3"
-              label="Unidad"
+              editor={editor}
+              unit={product.classification.unit}
               value={formatUnit(product.classification.unit)}
             />
-            <ReadonlyProductField
+            <CatalogEditField
               className="md:col-span-5"
+              editor={editor}
               label="Familia"
+              name="familyCode"
               value={product.classification.familyCode}
             />
             <Field
               className="md:col-span-2 md:self-end"
-              data-disabled
+              data-disabled={!colorEditor || colorEditor.disabled || undefined}
               orientation="horizontal"
             >
-              <Checkbox
-                checked={product.classification.usesColorAndSize}
-                disabled
-                id="product-color-size"
-              />
+              {colorEditor ? (
+                <Controller
+                  control={colorEditor.control}
+                  name="changes.usesColorAndSize"
+                  render={({ field }) => (
+                    <Checkbox checked={field.value ?? product.classification.usesColorAndSize} disabled={colorEditor.disabled} id="product-color-size" onCheckedChange={field.onChange} />
+                  )}
+                />
+              ) : <Checkbox checked={product.classification.usesColorAndSize} disabled id="product-color-size" />}
               <FieldLabel htmlFor="product-color-size">Color y talla</FieldLabel>
             </Field>
             <Field
@@ -104,24 +139,13 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
             </Field>
             <Field className="md:col-span-12">
               <FieldLabel>Tipo de producto</FieldLabel>
-              <RadioGroup
-                className="grid grid-cols-2 gap-2 sm:grid-cols-5"
-                disabled
-                value={product.classification.type}
-              >
-                {productTypeOptions.map((type) => (
-                  <Field data-disabled key={type.value} orientation="horizontal">
-                    <RadioGroupItem
-                      disabled
-                      id={`product-type-${type.value}`}
-                      value={type.value}
-                    />
-                    <FieldLabel htmlFor={`product-type-${type.value}`}>
-                      {type.label}
-                    </FieldLabel>
-                  </Field>
-                ))}
-              </RadioGroup>
+              {typeEditor ? (
+                <Controller
+                  control={typeEditor.control}
+                  name="changes.type"
+                  render={({ field }) => renderTypes(field.value ?? product.classification.type, field.onChange)}
+                />
+              ) : renderTypes(product.classification.type)}
               {product.classification.type === "unknown" && (
                 <Badge variant="outline">
                   {productTypeLabels[product.classification.type]}
@@ -147,14 +171,18 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
               <FieldGroup className="grid grid-cols-[minmax(0,1fr)_5rem] gap-2">
                 {product.prices.sale.map((price, index) => (
                   <div className="contents" key={`sale-price-${index + 1}`}>
-                    <ReadonlyProductField
+                    <CatalogEditField
+                      editor={editor}
                       inputMode="decimal"
                       label={`Precio ${index + 1}`}
+                      name={`salePrice${(index + 1) as 1 | 2 | 3}`}
                       value={prices.format(price.amount)}
                     />
-                    <ReadonlyProductField
+                    <CatalogEditField
+                      editor={editor}
                       inputMode="numeric"
                       label="Moneda"
+                      name={`saleCurrency${(index + 1) as 1 | 2 | 3}`}
                       value={price.currencyId}
                     />
                   </div>
@@ -169,29 +197,39 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
             </CardHeader>
             <CardContent>
               <FieldGroup className="grid gap-2 sm:grid-cols-2">
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
                   inputMode="decimal"
                   label="Promedio 4"
+                  name="averageCost"
                   value={prices.format(product.prices.costs.average)}
                 />
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
                   inputMode="decimal"
                   label="Último 5"
+                  name="lastCost"
                   value={prices.format(product.prices.costs.last)}
                 />
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
                   inputMode="decimal"
                   label="Anterior 6"
+                  name="previousCost"
                   value={prices.format(product.prices.costs.previous)}
                 />
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
                   inputMode="numeric"
                   label="Moneda"
+                  name="costCurrency"
                   value={product.prices.costs.currencyId}
                 />
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
                   inputMode="decimal"
                   label="Advalorem"
+                  name="adValorem"
                   value={quantities.format(product.prices.costs.adValorem)}
                 />
               </FieldGroup>
@@ -204,32 +242,46 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
             </CardHeader>
             <CardContent>
               <FieldGroup className="grid gap-2 sm:grid-cols-2">
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
+                  inputMode="decimal"
                   label="Mínimo"
+                  name="minimum"
                   value={quantities.format(product.warehouse.minimum)}
                 />
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
+                  inputMode="decimal"
                   label="Máximo"
+                  name="maximum"
                   value={quantities.format(product.warehouse.maximum)}
                 />
                 <div className="sm:col-span-2">
-                  <ReadonlyProductField
+                  <CatalogEditField
+                    editor={editor}
                     label="Localización"
+                    name="location"
                     value={product.warehouse.location}
                   />
                 </div>
-                <ReadonlyProductField label="EAN" value={product.warehouse.ean} />
-                <ReadonlyProductField label="UPC" value={product.warehouse.upc} />
-                <ReadonlyProductField
+                <CatalogEditField editor={editor} label="EAN" name="ean" value={product.warehouse.ean} />
+                <CatalogEditField editor={editor} label="UPC" name="upc" value={product.warehouse.upc} />
+                <CatalogEditField
+                  editor={editor}
                   label="Cta. Primaria"
+                  name="primaryAccount"
                   value={product.warehouse.accounts.primary}
                 />
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
                   label="Cta. Sec."
+                  name="secondaryAccount"
                   value={product.warehouse.accounts.secondary}
                 />
-                <ReadonlyProductField
+                <CatalogEditField
+                  editor={editor}
                   label="Cta. Costo vts"
+                  name="costOfSalesAccount"
                   value={product.warehouse.accounts.costOfSales}
                 />
               </FieldGroup>
@@ -304,12 +356,18 @@ export function ProductCatalogDetails({ product }: ProductCatalogDetailsProps) {
                 label="Baja"
                 value={formatDate(product.deactivatedAt)}
               />
-              <ReadonlyProductField
+              <CatalogEditField
+                editor={editor}
+                inputMode="numeric"
                 label="Vta 6s"
+                name="salesLastSixWeeks"
                 value={wholeNumbers.format(product.accumulated.salesLastSixWeeks ?? product.accumulated.salesLastSixMonths)}
               />
-              <ReadonlyProductField
+              <CatalogEditField
+                editor={editor}
+                inputMode="numeric"
                 label="Días Inv."
+                name="inventoryDays"
                 value={product.accumulated.inventoryDays}
               />
             </FieldGroup>

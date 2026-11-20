@@ -17,6 +17,7 @@ import {
 
 type ProductToolbarProps = {
   disabled?: boolean
+  editDisabled?: boolean
   searchLabel?: string
   onCreate: () => void
   onDelete: () => void
@@ -68,6 +69,7 @@ function ToolbarButton({
 
 export function ProductToolbar({
   disabled,
+  editDisabled,
   searchLabel = "Buscar producto",
   onCreate,
   onDelete,
@@ -116,7 +118,7 @@ export function ProductToolbar({
           onClick={onDelete}
         />
         <ToolbarButton
-          disabled={disabled}
+          disabled={disabled || editDisabled}
           icon={Edit02Icon}
           label="Editar producto"
           onClick={onEdit}

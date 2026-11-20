@@ -10,12 +10,14 @@ import {
 type ProductPanelButtonsProps = {
   title: string
   panels: readonly ProductPanelDefinition[]
+  hideActions?: boolean
   onSelect: (panel: ProductPanelDefinition) => void
 }
 
 export function ProductPanelButtons({
   title,
   panels,
+  hideActions,
   onSelect,
 }: ProductPanelButtonsProps) {
   return (
@@ -23,10 +25,11 @@ export function ProductPanelButtons({
       <CardHeader className="border-b">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-0.5">
+      <CardContent aria-hidden={hideActions || undefined} className={hideActions ? "invisible grid gap-0.5" : "grid gap-0.5"}>
         {panels.map((panel) => (
           <Button
             className="w-full justify-start"
+            disabled={hideActions}
             key={panel.key}
             onClick={() => onSelect(panel)}
             size="xs"

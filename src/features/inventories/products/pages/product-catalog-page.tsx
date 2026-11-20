@@ -1,9 +1,12 @@
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon"
 import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon"
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import { isAxiosError } from "axios"
+import { useEffect, useId, useState } from "react"
+import { useForm } from "react-hook-form"
 import { useNavigate, useParams } from "react-router"
 
 import { paths } from "@/app/router/paths"
@@ -26,11 +29,12 @@ import { ProductQueriesPanel } from "@/features/inventories/products/components/
 import { ProductSearchDialog } from "@/features/inventories/products/components/product-search-dialog"
 import { ProductPanelButtons } from "@/features/inventories/products/components/product-side-panels"
 import { ProductToolbar } from "@/features/inventories/products/components/product-toolbar"
-import { productKeys, productQueryOptions } from "@/features/inventories/products/logic"
-import type { Product, ProductPanelDefinition } from "@/features/inventories/products/model"
+import { productEditOptionsQueryOptions, productKeys, productQueryOptions, toProductCatalogEditInput } from "@/features/inventories/products/logic"
+import { productCatalogEditSchema, type Product, type ProductCatalogEditDraft, type ProductCatalogEditInput, type ProductCatalogEditValues, type ProductPanelDefinition } from "@/features/inventories/products/model"
 import {
   deleteProduct,
   getAdjacentProduct,
+  updateProduct,
 } from "@/features/inventories/products/services/product-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import {
@@ -45,6 +49,7 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { Button } from "@/shared/ui/button"
 import { Spinner } from "@/shared/ui/spinner"
 import {
   DesktopWindowIdentity,
@@ -112,7 +117,8 @@ export function ProductCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [movementsOpen, setMovementsOpen] = useState(false)
   const [movementSearchOpen, setMovementSearchOpen] = useState(false)
-  const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editSnapshot, setEditSnapshot] = useState<Product | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const {
     windows: panelWindows,
@@ -120,6 +126,57 @@ export function ProductCatalogPage() {
     closeWindow: closePanelWindow,
   } = useDesktopWindowCollection<ProductPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const editing = editSnapshot?.id === product.id ? editSnapshot : null
+  const editFormId = useId()
+  const editForm = useForm<ProductCatalogEditDraft, unknown, ProductCatalogEditValues>({
+    defaultValues: { changes: {} },
+    resolver: zodResolver(productCatalogEditSchema),
+  })
+  const { setFocus: focusEditField } = editForm
+  const editOptions = useQuery({
+    ...productEditOptionsQueryOptions(product.id),
+    enabled: Boolean(editing?.editing?.editableFields.includes("unitId")),
+  })
+  const editMutation = useMutation({
+    mutationFn: ({ id, input }: { id: number; input: ProductCatalogEditInput }) => updateProduct(id, input),
+    onSuccess: (savedProduct) => {
+      queryClient.setQueryData(productKeys.detail(savedProduct.id), savedProduct)
+      setEditSnapshot(null)
+      setNotice({ kind: "success", title: "Producto actualizado", message: `${savedProduct.code} · ${savedProduct.description}` })
+      void queryClient.invalidateQueries({ queryKey: productKeys.all })
+    },
+    onError: (error, { id }) => {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: productKeys.detail(id), exact: true })
+      }
+    },
+  })
+  useEffect(() => {
+    if (editing?.editing?.editableFields.includes("description")) {
+      focusEditField("changes.description", { shouldSelect: true })
+    }
+  }, [editing, focusEditField])
+
+  function startEditing() {
+    if (!product.editing?.writable) return
+    editMutation.reset()
+    editForm.reset({ changes: {} })
+    setNotice(null)
+    setEditSnapshot(product)
+  }
+
+  function cancelEdit() {
+    editMutation.reset()
+    editForm.reset({ changes: {} })
+    setEditSnapshot(null)
+  }
+
+  const saveEdit = editForm.handleSubmit(({ changes }) => {
+    if (!editing || editMutation.isPending) return
+    const input = toProductCatalogEditInput(editing, changes)
+    if (input) editMutation.mutate({ id: editing.id, input })
+    else cancelEdit()
+  })
   const restoreWindow = useDesktopWindowStore(selectRestoreDesktopWindow)
   const documentSearchActive = useDesktopWindowStore(({ windows }) => {
     let active: DesktopWindowEntry | undefined
@@ -197,15 +254,16 @@ export function ProductCatalogPage() {
     },
   })
 
-  const controlsDisabled = navigationMutation.isPending || deleteMutation.isPending
+  const controlsDisabled = Boolean(editing) || navigationMutation.isPending || deleteMutation.isPending
 
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
       <ProductToolbar
         disabled={controlsDisabled}
-        onCreate={() => setFormMode("create")}
+        editDisabled={!product.editing?.writable}
+        onCreate={() => setCreateOpen(true)}
         onDelete={() => setDeleteOpen(true)}
-        onEdit={() => setFormMode("edit")}
+        onEdit={startEditing}
         onNext={() => navigationMutation.mutate("next")}
         onPrevious={() => navigationMutation.mutate("previous")}
         onSearch={documentSearchActive ? openMovementSearch : () => setSearchOpen(true)}
@@ -223,9 +281,29 @@ export function ProductCatalogPage() {
         </Alert>
       )}
 
+      {editing && (
+        <div className="grid gap-2">
+          <h2 className="border-b pb-1 text-xs font-semibold">Cambio de producto</h2>
+          {editMutation.isError && (
+            <Alert variant="destructive">
+              <AlertTitle>No fue posible guardar el producto</AlertTitle>
+              <AlertDescription>{getApiErrorMessage(editMutation.error)}</AlertDescription>
+            </Alert>
+          )}
+          {editOptions.isError && (
+            <Alert variant="destructive">
+              <AlertTitle>No fue posible cargar las unidades</AlertTitle>
+              <AlertDescription>{getApiErrorMessage(editOptions.error)}</AlertDescription>
+              <Button className="w-fit" onClick={() => void editOptions.refetch()} size="xs" type="button" variant="outline">Reintentar</Button>
+            </Alert>
+          )}
+        </div>
+      )}
+
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1">
           <ProductPanelButtons
+            hideActions={Boolean(editing)}
             onSelect={(panel) =>
               openPanelWindow(`inventory:${product.id}:${panel.key}`, {
                 panel,
@@ -236,6 +314,7 @@ export function ProductCatalogPage() {
             title="Acciones"
           />
           <ProductPanelButtons
+            hideActions={Boolean(editing)}
             onSelect={(panel) =>
               openPanelWindow(`inventory:${product.id}:${panel.key}`, {
                 panel,
@@ -245,12 +324,33 @@ export function ProductCatalogPage() {
             panels={purchasesProductionPanels}
             title="Compras/Prod"
           />
+          {editing && (
+            <div className="flex gap-1 sm:col-span-2 xl:col-span-1">
+              <Button disabled={editMutation.isPending} form={editFormId} size="sm" type="submit">
+                {editMutation.isPending && <Spinner data-icon="inline-start" />}
+                OK
+              </Button>
+              <Button disabled={editMutation.isPending} onClick={cancelEdit} size="sm" type="button" variant="outline">Cancelar</Button>
+            </div>
+          )}
         </aside>
 
-        <ProductCatalogDetails product={product} />
+        {editing ? (
+          <form aria-label="Cambio de producto" className="min-w-0" id={editFormId} onSubmit={saveEdit}>
+            <ProductCatalogDetails
+              editor={{
+                control: editForm.control,
+                disabled: editMutation.isPending,
+                fields: new Set(editing.editing?.editableFields),
+                units: editOptions.data?.units ?? [],
+              }}
+              product={editing}
+            />
+          </form>
+        ) : <ProductCatalogDetails product={product} />}
 
         <aside className="min-w-0">
-          <ProductQueriesPanel onSelect={openQueryPanel} />
+          <ProductQueriesPanel disabled={Boolean(editing)} onSelect={openQueryPanel} />
         </aside>
       </div>
 
@@ -281,24 +381,19 @@ export function ProductCatalogPage() {
         </DesktopWindowIdentity>
       )}
 
-      {formMode && (
-        <DesktopWindowIdentity id={`inventory:${formMode}:${formMode === "edit" ? product.id : "new"}`}>
+      {createOpen && (
+        <DesktopWindowIdentity id="inventory:create:new">
           <ProductFormDialog
-            key={`${formMode}-${product.id}`}
-            mode={formMode}
-            onOpenChange={(open) => {
-              if (!open) setFormMode(null)
-            }}
-            onSaved={(savedProduct, mode) => {
-              setFormMode(null)
+            onOpenChange={setCreateOpen}
+            onSaved={(savedProduct) => {
+              setCreateOpen(false)
               setNotice({
                 kind: "success",
-                title: mode === "create" ? "Producto creado" : "Producto actualizado",
+                title: "Producto creado",
                 message: `${savedProduct.code} · ${savedProduct.description}`,
               })
               openProduct(savedProduct)
             }}
-            product={formMode === "edit" ? product : undefined}
           />
         </DesktopWindowIdentity>
       )}

@@ -10,9 +10,10 @@ import {
 
 type ProductQueriesPanelProps = {
   onSelect: (panel: ProductPanelDefinition) => void
+  disabled?: boolean
 }
 
-export function ProductQueriesPanel({ onSelect }: ProductQueriesPanelProps) {
+export function ProductQueriesPanel({ onSelect, disabled }: ProductQueriesPanelProps) {
   return (
     <Card size="sm">
       <CardHeader className="border-b">
@@ -23,6 +24,7 @@ export function ProductQueriesPanel({ onSelect }: ProductQueriesPanelProps) {
           <div className="flex min-w-0 gap-0.5" key={row.primary.key}>
             <Button
               className="min-w-0 flex-1 justify-start"
+              disabled={disabled}
               onClick={() => onSelect(row.primary)}
               size="xs"
               variant="outline"
@@ -32,6 +34,7 @@ export function ProductQueriesPanel({ onSelect }: ProductQueriesPanelProps) {
             {row.shortcuts?.map((shortcut) => (
               <Button
                 aria-label={`${row.primary.label} ${shortcut.label}`}
+                disabled={disabled}
                 key={shortcut.key}
                 onClick={() => onSelect(shortcut)}
                 size="icon-xs"
