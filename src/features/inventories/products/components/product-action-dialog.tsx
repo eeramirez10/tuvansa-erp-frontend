@@ -84,14 +84,6 @@ function ReadonlyField({
   )
 }
 
-function SectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <div className="col-span-full h-4 bg-module-inventory px-1 text-[9px] leading-4 text-module-inventory-foreground">
-      {children}
-    </div>
-  )
-}
-
 function WarehousesView({ rows }: { rows: QueryRow[] }) {
   const totals: QueryRow = {
     id: "TOTAL",
@@ -201,65 +193,6 @@ function DiscountsView({ rows, supplier }: { rows: QueryRow[]; supplier?: boolea
         {supplier && <ActionButton className="min-w-6 px-1">I.</ActionButton>}
       </footer>
     </>
-  )
-}
-
-function OtherDataView({ product, row = {} }: { product: Product; row?: QueryRow }) {
-  return (
-    <ErpDataTableViewport axes="y" className="h-[min(70vh,33rem)] p-1">
-      <div className="grid min-w-[39rem] grid-cols-2 gap-x-3 gap-y-1 pr-2">
-        <SectionTitle>Dimensiones y empaque:</SectionTitle>
-        <ReadonlyField label="Volumen" value={row.volume} />
-        <ReadonlyField label="Peso" value={row.weight} />
-        <ReadonlyField label="Caja genérica" value={row.unitsPerBox} />
-        <ReadonlyField label="Empaque" value={row.packaging} />
-        <ReadonlyField label="Largo" value={row.length} />
-        <ReadonlyField label="Ancho" value={row.width} />
-        <ReadonlyField label="Alto" value={row.height} />
-        <ReadonlyField label="Localización" value={product.warehouse.location} />
-        <ReadonlyField label="Empaque EDI" value={row.ediPackaging} />
-        <ReadonlyField label="Cantidad EDI" value={row.ediQuantity} />
-        <ReadonlyField label="Peso K/M" value={row.weightPerMeter} />
-
-        <SectionTitle>Opciones Varias:</SectionTitle>
-        <ReadonlyField label="Composición" value={row.composition} />
-        <ReadonlyField label="Bodega" value={row.warehouse} />
-        <ReadonlyField label="Último cambio" value="" />
-        <ReadonlyField label="Próxima recepción" value="" />
-        <ReadonlyField label="Inactivo compras" value={row.inactiveForPurchases} />
-        <ReadonlyField label="Control por piezas" value={row.controlsPieces} />
-        <ReadonlyField label="Tránsito" value={row.inTransit} />
-        <ReadonlyField label="Físico inicial" value={row.initialPhysical} />
-        <ReadonlyField label="Pesos para punto" value={row.pointWeight} />
-        <ReadonlyField label="Renglón" value={row.rowCode} />
-        <ReadonlyField label="Raíz" value={row.rootCode} />
-        <ReadonlyField label="Color" value={row.externalColor} />
-
-        <SectionTitle>Precios:</SectionTitle>
-        <ReadonlyField label="Lista 1" value={product.prices.sale[0].amount} />
-        <ReadonlyField label="Moneda 1" value={product.prices.sale[0].currencyId} />
-        <ReadonlyField label="Lista 2" value={product.prices.sale[1].amount} />
-        <ReadonlyField label="Moneda 2" value={product.prices.sale[1].currencyId} />
-        <ReadonlyField label="Lista 3" value={product.prices.sale[2].amount} />
-        <ReadonlyField label="Moneda 3" value={product.prices.sale[2].currencyId} />
-        <ReadonlyField label="% Comisión" value="" />
-        <ReadonlyField label="% IEPS" value="" />
-
-        <SectionTitle>Datos de importación:</SectionTitle>
-        <ReadonlyField label="Pedimento" value={row.customsEntry} />
-        <ReadonlyField label="Fecha" value={formatDate(row.importDate)} />
-        <ReadonlyField label="Aduana" value={row.customsOffice} />
-        <ReadonlyField label="Arancel" value={row.tariff} />
-        <ReadonlyField label="% Aranc." value={row.tariffPercentage} />
-
-        <SectionTitle>Datos de producción:</SectionTitle>
-        <ReadonlyField label="Lote" value={row.lotControlled} />
-        <ReadonlyField label="Tiempo días" value={row.productionTime} />
-        <ReadonlyField label="Tipo tiempo" value={row.productionTimeType} />
-        <ReadonlyField label="Ensamble" value={formatDate(row.assemblyDate)} />
-        <div className="col-span-full"><ActionButton>Cambio</ActionButton></div>
-      </div>
-    </ErpDataTableViewport>
   )
 }
 
@@ -438,7 +371,6 @@ function actionTitle(key: ProductPanelKey) {
     "extended-description": "Descripción extendida",
     "customer-discounts": "Descuentos especiales",
     "supplier-discounts": "Descuentos especiales",
-    "other-data": "Otros",
     specifications: "Especificaciones",
     photo: "Foto",
     "ct-inventory": "Stock",
@@ -455,7 +387,6 @@ function actionClassName(key: ProductPanelKey) {
     "extended-description": "sm:max-w-[35rem]",
     "customer-discounts": "sm:max-w-[62rem]",
     "supplier-discounts": "sm:max-w-[62rem]",
-    "other-data": "sm:max-w-[43rem]",
     specifications: "sm:max-w-[28rem]",
     photo: "sm:max-w-[48rem]",
     "ct-inventory": "sm:max-w-[68rem]",
@@ -502,7 +433,6 @@ function ActionContent({ panel, product, rows, reason, onClose }: {
     case "extended-description": return <ExtendedDescriptionView product={product} row={rows[0]} />
     case "customer-discounts": return <DiscountsView rows={rows} />
     case "supplier-discounts": return <DiscountsView rows={rows} supplier />
-    case "other-data": return <OtherDataView product={product} row={rows[0]} />
     case "specifications": return <SpecificationsView rows={rows} />
     case "photo": return <PhotoView reason={reason} />
     case "ct-inventory": return <CtInventoryView rows={rows} />

@@ -19,6 +19,7 @@ import { ProductCustomerQuotesDialog } from "@/features/inventories/products/com
 import { ProductCustomerSalesDialog } from "@/features/inventories/products/components/product-customer-sales-dialog"
 import { ProductFormDialog } from "@/features/inventories/products/components/product-form-dialog"
 import { ProductLedgerDialog } from "@/features/inventories/products/components/product-ledger-dialog"
+import { ProductOtherDataDialog } from "@/features/inventories/products/components/product-other-data-dialog"
 import { ProductPurchasesProductionDialog } from "@/features/inventories/products/components/product-purchases-production-dialog"
 import { ProductQueryDialog } from "@/features/inventories/products/components/product-query-dialog"
 import { ProductQueriesPanel } from "@/features/inventories/products/components/product-queries-panel"
@@ -81,6 +82,8 @@ function OpenProductPanel({
     content = <ProductLedgerDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.key === "classifications") {
     content = <ProductClassificationsDialog onOpenChange={onOpenChange} product={product} />
+  } else if (panel.key === "other-data") {
+    content = <ProductOtherDataDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.key === "customer-orders") {
     content = <ProductCustomerOrdersDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.key === "customer-orders-star") {

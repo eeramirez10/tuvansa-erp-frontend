@@ -8,6 +8,8 @@ import type {
   ProductLedgerFilters,
   ProductMutationInput,
   ProductOrderListFilters,
+  ProductOtherDataResponse,
+  ProductOtherDataUpdate,
   ProductPanelKey,
   ProductPanelResponse,
   ProductSearchResponse,
@@ -159,6 +161,23 @@ export async function getProductClassification(productId: number, signal: AbortS
 export async function updateProductClassification(productId: number, input: ProductClassificationUpdate) {
   const response = await apiClient.patch<ProductClassificationResponse>(
     `/inventories/products/${productId}/${productPanelPaths.classifications}`,
+    input,
+  )
+  return response.data
+}
+
+export async function getProductOtherData(productId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ProductOtherDataResponse>(
+    `/inventories/products/${productId}/${productPanelPaths["other-data"]}`,
+    { signal },
+  )
+  if (!response.data.data.otherData) throw new Error("La API no devolvió los datos de Otros.")
+  return response.data
+}
+
+export async function updateProductOtherData(productId: number, input: ProductOtherDataUpdate) {
+  const response = await apiClient.patch<ProductOtherDataResponse>(
+    `/inventories/products/${productId}/${productPanelPaths["other-data"]}`,
     input,
   )
   return response.data

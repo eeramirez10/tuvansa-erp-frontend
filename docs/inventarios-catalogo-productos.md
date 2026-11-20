@@ -28,7 +28,7 @@ La URL conserva el producto seleccionado para que navegación, recarga y enlaces
 | Descr. ext. | `GET /inventories/products/:productId/actions/extended-description` |
 | % Descuentos clis | `GET /inventories/products/:productId/actions/discounts/customers` |
 | % Descuentos prv | `GET /inventories/products/:productId/actions/discounts/suppliers` |
-| Otros | `GET /inventories/products/:productId/actions/other-data` |
+| Otros | `GET` y `PATCH /inventories/products/:productId/actions/other-data` |
 | Especificaciones | `GET /inventories/products/:productId/actions/specifications` |
 | Foto | `GET /inventories/products/:productId/actions/photo` |
 | Inv. CT | `GET /inventories/products/:productId/actions/ct-inventory` |
@@ -286,7 +286,7 @@ scroll X, Y o XY según la ventana original.
 | Clasificar | La familia de la izquierda carga sus opciones a la derecha. `<` y el doble clic trasladan una opción. **Guardar** aplica los cambios y cierra la ventana |
 | Descr. ext. | Cuatro bloques de texto y Cambiar |
 | % Descuentos clis/prv | Filtros, tabla de vigencias/cantidades y scroll XY |
-| Otros | Formulario vertical por secciones de empaque, opciones, precios, importación y producción |
+| Otros | Ventana con Dimensiones y empaque, Opciones Varias, Precios, Datos de importación, Datos de producción, Información de compras y Varios |
 | Especificaciones | Lista vertical y Cambiar |
 | Foto | Visor y modos Normal/Boceto/Boceto 2/Color/Completo |
 | Inv. CT | Matriz por almacén y selector Stock/Pedido/Disponible/etc. |
@@ -299,6 +299,12 @@ cambios en la ventana hasta **Guardar** y descarta el borrador al cerrarla.
 El guardado actualiza el campo **Familia** de la ficha. La API indica si el
 producto está habilitado para editar su clasificación en PostgreSQL.
 **Mayús + Guardar** también solicita recalcular **Familia**, como en OMNIS.
+
+**Otros** entra en edición con **Cambio** y enfoca **Volumen**. **OK** aplica
+los campos modificados y vuelve a consulta. **Cancelar** restaura los valores
+previos en la misma ventana. La API determina qué productos y campos pueden
+editarse. Si el catálogo de aranceles ofrece una opción, seleccionarla carga
+el código y porcentaje correspondientes.
 
 `Yes` envía el PATCH de Bloquear y presenta cualquier error devuelto por la API.
 La conexión legacy utilizada en la validación actual es de sólo lectura, así que

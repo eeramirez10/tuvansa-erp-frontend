@@ -14,6 +14,7 @@ import {
   getProduct,
   getProductClassification,
   getFirstActiveProduct,
+  getProductOtherData,
   getProductPanel,
   searchProducts,
   type ProductSearchCriteria,
@@ -64,6 +65,13 @@ export function productClassificationQueryOptions(productId: number) {
   return queryOptions({
     queryKey: productKeys.panel(productId, "classifications"),
     queryFn: ({ signal }) => getProductClassification(productId, signal),
+  })
+}
+
+export function productOtherDataQueryOptions(productId: number) {
+  return queryOptions({
+    queryKey: productKeys.panel(productId, "other-data"),
+    queryFn: ({ signal }) => getProductOtherData(productId, signal),
   })
 }
 

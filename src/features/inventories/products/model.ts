@@ -193,6 +193,30 @@ export const productClassificationFormSchema = z.object({
 export type ProductClassificationForm = z.infer<typeof productClassificationFormSchema>
 export type ProductClassificationUpdate = ProductClassificationForm & { revision: number; rebuildFamily?: boolean }
 
+const productOtherDataValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()])
+
+export type ProductOtherDataValue = z.infer<typeof productOtherDataValueSchema>
+
+export const productOtherDataFormSchema = z.object({
+  changes: z.record(z.string(), productOtherDataValueSchema.optional()),
+})
+
+export type ProductOtherDataForm = z.infer<typeof productOtherDataFormSchema>
+export type ProductOtherDataUpdate = { revision: number; changes: Record<string, ProductOtherDataValue> }
+
+export type ProductOtherData = {
+  revision: number
+  writable: boolean
+  editableFields: string[]
+  values: Record<string, ProductOtherDataValue>
+  miscLabels: string[]
+  tariffs: Array<{ code: string; description: string; percentage: number | null }>
+}
+
+export type ProductOtherDataResponse = Omit<ProductPanelResponse, "data"> & {
+  data: ProductPanel & { otherData: ProductOtherData }
+}
+
 export type ProductLedgerFilters = {
   warehouse?: string
   movementType?: "R"
