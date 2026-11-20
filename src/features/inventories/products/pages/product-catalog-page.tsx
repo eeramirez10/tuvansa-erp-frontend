@@ -12,6 +12,7 @@ import { movementSearchWindowId, movementWindowId } from "@/features/inventories
 import { actionPanels, purchasesProductionPanels } from "@/features/inventories/products/constants"
 import { ProductActionDialog } from "@/features/inventories/products/components/product-action-dialog"
 import { ProductCatalogDetails } from "@/features/inventories/products/components/product-catalog-details"
+import { ProductClassificationsDialog } from "@/features/inventories/products/components/product-classifications-dialog"
 import { ProductCustomerOrdersDialog } from "@/features/inventories/products/components/product-customer-orders-dialog"
 import { ProductCustomerOrdersStarDialog } from "@/features/inventories/products/components/product-customer-orders-star-dialog"
 import { ProductCustomerQuotesDialog } from "@/features/inventories/products/components/product-customer-quotes-dialog"
@@ -78,6 +79,8 @@ function OpenProductPanel({
   let content
   if (panel.key === "ledger") {
     content = <ProductLedgerDialog onOpenChange={onOpenChange} product={product} />
+  } else if (panel.key === "classifications") {
+    content = <ProductClassificationsDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.key === "customer-orders") {
     content = <ProductCustomerOrdersDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.key === "customer-orders-star") {

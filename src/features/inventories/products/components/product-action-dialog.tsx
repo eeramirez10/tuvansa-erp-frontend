@@ -143,77 +143,6 @@ function WarehousesView({ rows }: { rows: QueryRow[] }) {
   )
 }
 
-const classificationNames = [
-  "PROVEEDOR",
-  "PRODUCTO",
-  "TIPO",
-  "MATERIAL",
-  "EXTREMOS",
-  "LIBRAJE",
-  "CEDULA",
-  "MEDIDA",
-  "OTROS",
-  "PROCEDENCIA",
-  "SATUV",
-  "RECUBRIMIENTO",
-  "SUCURSAL",
-]
-
-function ClassificationsView({ row }: { row?: QueryRow }) {
-  const values = [
-    row?.familyCode,
-    row?.level1,
-    row?.level2,
-    row?.level3,
-    row?.level4,
-    row?.level5,
-    row?.level6,
-    row?.level7,
-    row?.level8,
-    row?.level9,
-  ]
-  const selected = classificationNames.map((description, index) => ({
-    id: index,
-    flag: values[index] ? "✓" : "",
-    family: index + 1,
-    code: values[index] ?? "",
-    description,
-  }))
-
-  return (
-    <div className="grid min-h-[25rem] grid-cols-[1fr_2rem_1fr] gap-1">
-      <div>
-        <div className="h-5 text-center font-semibold leading-5">SELECCIONADOS</div>
-        <ProductQueryTable
-          axes="y"
-          className="h-[22rem]"
-          columns={[
-            { key: "flag", label: "F.", width: "2rem", align: "center" },
-            { key: "family", label: "Fam", width: "2.5rem" },
-            { key: "code", label: "Cod.", width: "4rem" },
-            { key: "description", label: "Descripción", width: "9rem" },
-          ]}
-          rows={selected}
-        />
-      </div>
-      <div className="flex items-center justify-center"><ActionButton className="min-w-6 px-1">&lt;</ActionButton></div>
-      <div className="flex flex-col">
-        <input className="mb-1 h-4 border border-input bg-background px-1 shadow-inner" />
-        <ProductQueryTable
-          axes="y"
-          className="h-[20.75rem]"
-          columns={[
-            { key: "family", label: "Fam", width: "3rem" },
-            { key: "description", label: "Descripción", width: "11rem" },
-          ]}
-          rows={[]}
-        />
-        <ActionButton className="mt-1 self-end">Guardar</ActionButton>
-      </div>
-    </div>
-  )
-}
-
 function ExtendedDescriptionView({ product, row }: { product: Product; row?: QueryRow }) {
   const values = [row?.description1 ?? product.description, row?.description2, row?.description3, row?.description4]
   return (
@@ -506,7 +435,6 @@ function actionTitle(key: ProductPanelKey) {
     warehouses: "Almacenes",
     "color-size-registration": "Aviso",
     "block-status": "Confirmación",
-    classifications: "Seleccion de parametros",
     "extended-description": "Descripción extendida",
     "customer-discounts": "Descuentos especiales",
     "supplier-discounts": "Descuentos especiales",
@@ -524,7 +452,6 @@ function actionTitle(key: ProductPanelKey) {
 function actionClassName(key: ProductPanelKey) {
   const widths: Partial<Record<ProductPanelKey, string>> = {
     warehouses: "sm:max-w-[72rem]",
-    classifications: "sm:max-w-[46rem]",
     "extended-description": "sm:max-w-[35rem]",
     "customer-discounts": "sm:max-w-[62rem]",
     "supplier-discounts": "sm:max-w-[62rem]",
@@ -572,7 +499,6 @@ function ActionContent({ panel, product, rows, reason, onClose }: {
       </div>
     )
     case "block-status": return <BlockView blocked={isBlocked} error={blockMutation.error} onClose={onClose} onConfirm={() => blockMutation.mutate()} pending={blockMutation.isPending} />
-    case "classifications": return <ClassificationsView row={rows[0]} />
     case "extended-description": return <ExtendedDescriptionView product={product} row={rows[0]} />
     case "customer-discounts": return <DiscountsView rows={rows} />
     case "supplier-discounts": return <DiscountsView rows={rows} supplier />

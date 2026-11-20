@@ -157,6 +157,42 @@ export type ProductPanelResponse = {
   }
 }
 
+export type ProductClassificationOption = {
+  id: number
+  code: string
+  number: string
+  description: string
+  parentCode: string
+}
+
+export type ProductClassificationGroup = {
+  key: string
+  label: string
+  selectedCode: string
+  selectedNumber: string
+  selectedDescription: string
+  selectedFlag: string
+  options: ProductClassificationOption[]
+}
+
+export type ProductClassification = {
+  revision: number
+  writable: boolean
+  familyCode: string
+  groups: ProductClassificationGroup[]
+}
+
+export type ProductClassificationResponse = Omit<ProductPanelResponse, "data"> & {
+  data: ProductPanel & { classification: ProductClassification }
+}
+
+export const productClassificationFormSchema = z.object({
+  changes: z.record(z.string().min(1), z.string().min(1)),
+})
+
+export type ProductClassificationForm = z.infer<typeof productClassificationFormSchema>
+export type ProductClassificationUpdate = ProductClassificationForm & { revision: number; rebuildFamily?: boolean }
+
 export type ProductLedgerFilters = {
   warehouse?: string
   movementType?: "R"

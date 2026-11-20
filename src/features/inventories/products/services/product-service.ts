@@ -1,6 +1,8 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
   Product,
+  ProductClassificationResponse,
+  ProductClassificationUpdate,
   ProductCustomerOrdersStarFilters,
   ProductCustomerSalesFilters,
   ProductLedgerFilters,
@@ -144,6 +146,22 @@ export async function setProductBlocked(productId: number, blocked: boolean) {
     { blocked },
   )
   return response.data.data
+}
+
+export async function getProductClassification(productId: number, signal: AbortSignal) {
+  const response = await apiClient.get<ProductClassificationResponse>(
+    `/inventories/products/${productId}/${productPanelPaths.classifications}`,
+    { signal },
+  )
+  return response.data
+}
+
+export async function updateProductClassification(productId: number, input: ProductClassificationUpdate) {
+  const response = await apiClient.patch<ProductClassificationResponse>(
+    `/inventories/products/${productId}/${productPanelPaths.classifications}`,
+    input,
+  )
+  return response.data
 }
 
 export async function getProductPanel(

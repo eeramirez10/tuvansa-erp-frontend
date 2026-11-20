@@ -24,7 +24,7 @@ La URL conserva el producto seleccionado para que navegación, recarga y enlaces
 | Almacenes | `GET /inventories/products/:productId/actions/warehouses` |
 | Alta CT | `GET /inventories/products/:productId/actions/color-size-registration` |
 | Bloquear | `GET /inventories/products/:productId/actions/block-status` |
-| Clasificar | `GET /inventories/products/:productId/actions/classifications` |
+| Clasificar | `GET` y `PATCH /inventories/products/:productId/actions/classifications` |
 | Descr. ext. | `GET /inventories/products/:productId/actions/extended-description` |
 | % Descuentos clis | `GET /inventories/products/:productId/actions/discounts/customers` |
 | % Descuentos prv | `GET /inventories/products/:productId/actions/discounts/suppliers` |
@@ -283,7 +283,7 @@ scroll X, Y o XY según la ventana original.
 | Almacenes | Tabla horizontal por almacén, fila TOTAL y controles inferiores |
 | Alta CT | Aviso literal de Color y Talla no incluido |
 | Bloquear | Confirmación No/Yes; Yes alterna el estado mediante PATCH |
-| Clasificar | Selector doble con familias seleccionadas |
+| Clasificar | La familia de la izquierda carga sus opciones a la derecha. `<` y el doble clic trasladan una opción. **Guardar** aplica los cambios y cierra la ventana |
 | Descr. ext. | Cuatro bloques de texto y Cambiar |
 | % Descuentos clis/prv | Filtros, tabla de vigencias/cantidades y scroll XY |
 | Otros | Formulario vertical por secciones de empaque, opciones, precios, importación y producción |
@@ -294,9 +294,11 @@ scroll X, Y o XY según la ventana original.
 | SKUs | Tabla L/SKU con Cancelar y Aceptar |
 | Prepacks | Matriz horizontal con OK, Cancelar y Reparte |
 
-Excepto el cierre, la selección de Bloquear y su PATCH, los botones internos
-son visuales en esta etapa. Sus escrituras se conectarán cuando se capture cada
-flujo de mantenimiento correspondiente.
+**Clasificar** filtra las opciones según el parámetro previo, conserva los
+cambios en la ventana hasta **Guardar** y descarta el borrador al cerrarla.
+El guardado actualiza el campo **Familia** de la ficha. La API indica si el
+producto está habilitado para editar su clasificación en PostgreSQL.
+**Mayús + Guardar** también solicita recalcular **Familia**, como en OMNIS.
 
 `Yes` envía el PATCH de Bloquear y presenta cualquier error devuelto por la API.
 La conexión legacy utilizada en la validación actual es de sólo lectura, así que

@@ -12,6 +12,7 @@ import type {
 } from "@/features/inventories/products/model"
 import {
   getProduct,
+  getProductClassification,
   getFirstActiveProduct,
   getProductPanel,
   searchProducts,
@@ -56,6 +57,13 @@ export function productPanelQueryOptions(
   return queryOptions({
     queryKey: productKeys.panel(productId, panel),
     queryFn: ({ signal }) => getProductPanel(productId, panel, signal),
+  })
+}
+
+export function productClassificationQueryOptions(productId: number) {
+  return queryOptions({
+    queryKey: productKeys.panel(productId, "classifications"),
+    queryFn: ({ signal }) => getProductClassification(productId, signal),
   })
 }
 
