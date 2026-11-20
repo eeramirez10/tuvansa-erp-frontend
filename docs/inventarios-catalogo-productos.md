@@ -204,7 +204,7 @@ paginación y los totales globales se comparten con **Ventas por cliente**.
 | --- | --- | --- |
 | Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
 | Ventas por cliente · CT | Ventas por cliente | Acumulado por cliente en Código, Descripción, Cantidad e Importe, con panel CT lateral |
-| Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. |
+| Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. El pie acumula la cantidad de toda la consulta. |
 | Ventas por sucursal | Producto vendidos por sucursal | Acumulado por sucursal y cliente con totales |
 | Ventas anuales | Ventas Anuales | Matriz cliente/año por los doce meses, renglón Totales y Documento |
 | Ventas anuales resumen | Ventas Anuales resumen anual | Matriz año/mes y gráfica inferior |

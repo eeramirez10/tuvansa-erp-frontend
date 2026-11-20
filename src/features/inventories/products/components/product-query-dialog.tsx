@@ -7,6 +7,7 @@ import type { ReactNode } from "react"
 import { productPanelQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
+  ProductPanel,
   ProductPanelDefinition,
   ProductPanelKey,
 } from "@/features/inventories/products/model"
@@ -190,7 +191,13 @@ const detailSalesColumns: QueryColumn[] = [
   moneyColumn("price", "Precio"),
   { key: "document", label: "Doc.", width: "6rem" },
   dateColumn("date", "Fecha"),
-  moneyColumn("otherAmount", "Precio US"),
+  {
+    key: "priceUsd",
+    label: "Precio US",
+    width: "5.2rem",
+    align: "right",
+    render: (row) => row.priceUsd == null ? "" : formatMoney(row.priceUsd),
+  },
   numberColumn("exchangeRate", "TC Dolar", "5rem", 4),
   numberColumn("discount", "% Desc", "4rem", 2),
   { key: "externalReference", label: "O.C.", width: "8rem" },
@@ -519,8 +526,9 @@ function DocumentsView({ rows }: { rows: QueryRow[] }) {
 function availablePresentation(
   key: ProductPanelKey,
   product: Product,
-  rows: QueryRow[],
+  data?: ProductPanel,
 ): DialogPresentation {
+  const rows = data?.items ?? []
   switch (key) {
     case "customer-orders-ct":
       return {
@@ -539,12 +547,24 @@ function availablePresentation(
           moneyColumn("amount", "Importe"),
         ]} rows={rows} totalKeys={["quantity", "amount"]} />,
       }
-    case "customer-sales-detail":
+    case "customer-sales-detail": {
+      const quantity = data?.customerSalesTotals?.quantity
       return {
         title: "Compras por cliente",
         className: "sm:max-w-[63rem]",
-        body: <><ProductQueryTable className="h-[min(50vh,19rem)]" columns={detailSalesColumns} rows={rows} tableClassName="w-[65rem]" /><footer className="mt-1 flex items-center gap-4"><QueryButtons labels={["Último"]} /><ErpDataMetric className="ml-auto min-w-56" label="" value={formatMoney(sum(rows, "otherAmount"))} /></footer></>,
+        body: (
+          <>
+            <ProductQueryTable className="h-[min(50vh,19rem)]" columns={detailSalesColumns} rows={rows} tableClassName="w-[65rem]" />
+            <footer className="mt-1 flex items-center gap-4">
+              <Button className={compactButtonClass} disabled size="sm" type="button" variant="outline">
+                Último
+              </Button>
+              <ErpDataMetric className="ml-auto min-w-56" label="" value={quantity === undefined ? "—" : formatNumber(quantity)} />
+            </footer>
+          </>
+        ),
       }
+    }
     case "sales-by-branch":
       return {
         title: "Producto vendidos por sucursal",
@@ -659,9 +679,8 @@ function availablePresentation(
 
 export function ProductQueryDialog({ panel, product, onOpenChange }: ProductQueryDialogProps) {
   const panelQuery = useQuery(productPanelQueryOptions(product.id, panel.key))
-  const rows = panelQuery.data?.data.items ?? []
   const unavailableReason = panelQuery.data?.data.reason
-  const presentation = availablePresentation(panel.key, product, rows)
+  const presentation = availablePresentation(panel.key, product, panelQuery.data?.data)
   const title = panel.key === "pieces" ? "Piezas" : presentation.title
 
   return (
