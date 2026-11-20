@@ -77,7 +77,7 @@ La URL conserva el producto seleccionado para que navegación, recarga y enlaces
 | W.I.P. · CT | `GET /inventories/products/:productId/queries/work-in-progress/ct` |
 | E.D.I. | `GET /inventories/products/:productId/queries/edi` |
 | Habilitaciones pendientes | `GET /inventories/products/:productId/queries/pending-enablements` |
-| Documentos | `GET /inventories/products/:productId/queries/documents` |
+| Documentos | `GET /inventories/movements`, `GET /inventories/movements/:id` y `DELETE /inventories/movements/:id` |
 
 Los botones de Acciones y Compras/Prod conservan el diálogo genérico. Todos los
 botones de Consultas usan el marco `ErpDataDialog` de shadcn/Base UI y una vista
@@ -228,6 +228,22 @@ cantidades base de toda la consulta. **Total** agrega el stock de la ficha.
 **Cargar más pedidos** conserva ambos valores mientras se recorren las
 páginas. **Coment** aparece deshabilitado.
 
+### Documentos
+
+**Documentos** abre **Consulta de movimientos de inventario** con la ficha
+vacía. La lupa de esa ventana y la lupa del módulo abren **Búsqueda**
+cuando Documentos está al frente. Al salir de un campo editado aparecen los
+resultados de Documento, Fecha, REF, REF2, Almacen, Proveedor y Cliente.
+**OK** o Enter con un código exacto y un único resultado abre la ficha
+directamente. También se puede seleccionar un resultado de la lista.
+**Cancelar** y Escape cierran Búsqueda y conservan el movimiento abierto.
+
+La consulta usa el ID del documento. Muestra su encabezado, todas sus
+partidas y los totales de entradas, salidas y costo con signo. **Cancelar** pide confirmación
+y solicita la cancelación cuando la API indica que está disponible. Una
+cancelación confirmada limpia la ficha y actualiza la caché de búsquedas y
+productos. **Imprimir**, **Comentarios** y **CT** se muestran deshabilitados.
+
 ### Modales restantes de Consultas
 
 | Botón visible | Título observado en OMNIS | Presentación reproducida |
@@ -248,12 +264,11 @@ páginas. **Coment** aparece deshabilitado.
 | W.I.P. · CT | Ordenado a Proveedores | Tabla de producción y panel CT inferior con filtros |
 | E.D.I. | Ventas anuales | Dos matrices mensuales: solicitado y surtido |
 | Habilitaciones pendientes | Habilitaciones pendientes | Documento, necesario, surtido y resta con tres totales |
-| Documentos | Consulta de movimientos de inventario | Cabecera de documento/cliente/fecha y detalle de entradas, salidas, U.M., costo, piezas y almacén |
 
 Las consultas agregadas se calculan en MySQL antes de paginar para que cada
 renglón coincida con la agrupación visible de OMNIS. El frontend solicita hasta
-500 renglones por página. `Documentos` ahora consulta movimientos del producto
-seleccionado; `Piezas` permanece intencionalmente no disponible porque así lo
+500 renglones por página. `Documentos` busca por el encabezado del movimiento.
+`Piezas` permanece intencionalmente no disponible porque así lo
 declara esta versión del ERP.
 
 ## Modales de Acciones

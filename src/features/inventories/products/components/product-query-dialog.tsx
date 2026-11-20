@@ -629,48 +629,6 @@ function EdiTables({ rows }: { rows: QueryRow[] }) {
   )
 }
 
-function DocumentsView({ rows }: { rows: QueryRow[] }) {
-  const selected = rows[0] ?? {}
-  const field = (label: string, value: unknown, wide = false) => (
-    <label className={cn("flex items-center gap-1", wide && "col-span-2")}>
-      <span className="w-16 text-right">{label}</span>
-      <output className="flex h-4 flex-1 items-center border border-input bg-background px-1 shadow-inner">
-        {textValue(value)}
-      </output>
-    </label>
-  )
-  return (
-    <>
-      <div className="mb-1 grid grid-cols-4 gap-1">
-        {field("Documento", selected.document)}
-        {field("Referencia", selected.reference)}
-        {field("", selected.documentType)}
-        {field("Cliente", selected.customerCode)}
-        {field("", selected.customerName, true)}
-        {field("", selected.warehouse)}
-        {field("Fecha", formatDate(selected.date))}
-      </div>
-      <ProductQueryTable
-        className="h-[min(48vh,20rem)]"
-        columns={[
-          { key: "productCode", label: "Producto", width: "6rem" },
-          { key: "productDescription", label: "Descripción", width: "14rem" },
-          numberColumn("incoming", "Entradas"),
-          numberColumn("outgoing", "Salidas"),
-          { key: "unit", label: "U.M.", width: "3rem" },
-          moneyColumn("cost", "Costo"),
-          numberColumn("pieces", "Pzas."),
-          { key: "warehouse", label: "Alm.", width: "3rem" },
-          { key: "document", label: "Documento", width: "6rem" },
-        ]}
-        rows={rows}
-        tableClassName="w-[55rem]"
-      />
-      <SummaryMetrics values={[sum(rows, "cost")]} />
-    </>
-  )
-}
-
 function availablePresentation(
   key: ProductPanelKey,
   product: Product,
@@ -800,8 +758,6 @@ function availablePresentation(
           numberColumn("fulfilled", "Surt"), numberColumn("remaining", "Resta"),
         ]} rows={rows} tableClassName="w-[25rem]" /><SummaryMetrics values={[sum(rows, "needed"), sum(rows, "fulfilled"), sum(rows, "remaining")]} /></>,
       }
-    case "documents":
-      return { title: "Consulta de movimientos de inventario", className: "sm:max-w-[60rem]", body: <DocumentsView rows={rows} /> }
     default:
       return { title: "Consulta", body: null }
   }

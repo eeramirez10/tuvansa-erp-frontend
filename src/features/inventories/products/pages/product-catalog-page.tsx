@@ -7,6 +7,8 @@ import { useState } from "react"
 import { useNavigate, useParams } from "react-router"
 
 import { paths } from "@/app/router/paths"
+import { InventoryMovementsDialog } from "@/features/inventories/movements/components/inventory-movements-dialog"
+import { movementSearchWindowId, movementWindowId } from "@/features/inventories/movements/model"
 import { actionPanels, purchasesProductionPanels } from "@/features/inventories/products/constants"
 import { ProductActionDialog } from "@/features/inventories/products/components/product-action-dialog"
 import { ProductCatalogDetails } from "@/features/inventories/products/components/product-catalog-details"
@@ -46,6 +48,7 @@ import {
   DesktopWindowIdentity,
   useDesktopWindowCollection,
 } from "@/shared/ui/desktop-window-context"
+import { selectRestoreDesktopWindow, useDesktopWindowStore, type DesktopWindowEntry } from "@/shared/ui/desktop-window-store"
 
 type Notice = {
   kind: "success" | "error"
@@ -101,6 +104,8 @@ export function ProductCatalogPage() {
   const queryClient = useQueryClient()
   const { data: product } = useSuspenseQuery(productQueryOptions(productId))
   const [searchOpen, setSearchOpen] = useState(false)
+  const [movementsOpen, setMovementsOpen] = useState(false)
+  const [movementSearchOpen, setMovementSearchOpen] = useState(false)
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const {
@@ -109,6 +114,33 @@ export function ProductCatalogPage() {
     closeWindow: closePanelWindow,
   } = useDesktopWindowCollection<ProductPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const restoreWindow = useDesktopWindowStore(selectRestoreDesktopWindow)
+  const documentSearchActive = useDesktopWindowStore(({ windows }) => {
+    let active: DesktopWindowEntry | undefined
+    for (const window of windows) {
+      if (!window.minimized && (active === undefined || active.zIndex < window.zIndex)) active = window
+    }
+    return active?.id === movementWindowId || active?.id === movementSearchWindowId
+  })
+
+  function openMovementSearch() {
+    restoreWindow(movementSearchWindowId)
+    setMovementSearchOpen(true)
+  }
+
+  function closeMovementSearch() {
+    setMovementSearchOpen(false)
+    restoreWindow(movementWindowId)
+  }
+
+  function openQueryPanel(panel: ProductPanelDefinition) {
+    if (panel.key === "documents") {
+      restoreWindow(movementWindowId)
+      setMovementsOpen(true)
+      return
+    }
+    openPanelWindow(`inventory:${product.id}:${panel.key}`, { panel, product })
+  }
 
   const openProduct = (nextProduct: Product) => {
     queryClient.setQueryData(productKeys.detail(nextProduct.id), nextProduct)
@@ -170,7 +202,8 @@ export function ProductCatalogPage() {
         onEdit={() => setFormMode("edit")}
         onNext={() => navigationMutation.mutate("next")}
         onPrevious={() => navigationMutation.mutate("previous")}
-        onSearch={() => setSearchOpen(true)}
+        onSearch={documentSearchActive ? openMovementSearch : () => setSearchOpen(true)}
+        searchLabel={documentSearchActive ? "Buscar documento" : "Buscar producto"}
       />
 
       {notice && (
@@ -211,16 +244,23 @@ export function ProductCatalogPage() {
         <ProductCatalogDetails product={product} />
 
         <aside className="min-w-0">
-          <ProductQueriesPanel
-            onSelect={(panel) =>
-              openPanelWindow(`inventory:${product.id}:${panel.key}`, {
-                panel,
-                product,
-              })
-            }
-          />
+          <ProductQueriesPanel onSelect={openQueryPanel} />
         </aside>
       </div>
+
+      {movementsOpen && (
+        <DesktopWindowIdentity id={movementWindowId}>
+          <InventoryMovementsDialog
+            onClose={() => {
+              setMovementsOpen(false)
+              setMovementSearchOpen(false)
+            }}
+            onCloseSearch={closeMovementSearch}
+            onSearch={openMovementSearch}
+            searchOpen={movementSearchOpen}
+          />
+        </DesktopWindowIdentity>
+      )}
 
       {searchOpen && (
         <DesktopWindowIdentity id="inventory:search">
