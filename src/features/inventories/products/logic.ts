@@ -2,11 +2,13 @@ import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
 
 import type {
   Product,
+  ProductCatalogDetailsData,
   ProductCatalogEditChanges,
   ProductCatalogEditInput,
   ProductCustomerOrdersStarFilters,
   ProductCustomerSalesFilters,
   ProductCustomerSalesPanel,
+  ProductEditOptions,
   ProductFormValues,
   ProductLedgerFilters,
   ProductMutationInput,
@@ -152,27 +154,28 @@ export function productAnnualSalesQueryOptions(productId: number, panel: "annual
   })
 }
 
-export function getProductFormDefaults(product?: Product): ProductFormValues {
+function getProductFormDefaults(product?: Product): ProductFormValues {
   return {
     code: product?.code ?? "",
     description: product?.description ?? "",
     type:
       product?.classification.type === "unknown"
         ? "finishedProduct"
-        : (product?.classification.type ?? "finishedProduct"),
+        : (product?.classification.type ?? "rawMaterial"),
     unitId: product?.classification.unit.id ?? 1,
     familyCode: product?.classification.familyCode ?? "",
     hasPhoto: product?.classification.hasPhoto ?? false,
+    usesColorAndSize: product?.classification.usesColorAndSize ?? false,
     salePrice1: product?.prices.sale[0].amount ?? 0,
     salePrice2: product?.prices.sale[1].amount ?? 0,
     salePrice3: product?.prices.sale[2].amount ?? 0,
-    saleCurrency1: product?.prices.sale[0].currencyId ?? 1,
+    saleCurrency1: product?.prices.sale[0].currencyId ?? 0,
     saleCurrency2: product?.prices.sale[1].currencyId ?? 0,
     saleCurrency3: product?.prices.sale[2].currencyId ?? 0,
     averageCost: product?.prices.costs.average ?? 0,
     lastCost: product?.prices.costs.last ?? 0,
     previousCost: product?.prices.costs.previous ?? 0,
-    costCurrency: product?.prices.costs.currencyId ?? 1,
+    costCurrency: product?.prices.costs.currencyId ?? 0,
     adValorem: product?.prices.costs.adValorem ?? 0,
     minimum: product?.warehouse.minimum ?? 0,
     maximum: product?.warehouse.maximum ?? 0,
@@ -182,10 +185,12 @@ export function getProductFormDefaults(product?: Product): ProductFormValues {
     primaryAccount: product?.warehouse.accounts.primary ?? "",
     secondaryAccount: product?.warehouse.accounts.secondary ?? "",
     costOfSalesAccount: product?.warehouse.accounts.costOfSales ?? "",
+    salesLastSixWeeks: product?.accumulated.salesLastSixWeeks ?? product?.accumulated.salesLastSixMonths ?? 0,
+    inventoryDays: product?.accumulated.inventoryDays ?? 0,
   }
 }
 
-export function toProductMutationInput(
+function toProductMutationInput(
   values: ProductFormValues,
 ): ProductMutationInput {
   return {
@@ -196,6 +201,7 @@ export function toProductMutationInput(
       unitId: values.unitId,
       familyCode: values.familyCode,
       hasPhoto: values.hasPhoto,
+      usesColorAndSize: values.usesColorAndSize,
     },
     prices: {
       sale: [
@@ -223,7 +229,58 @@ export function toProductMutationInput(
         costOfSales: values.costOfSalesAccount,
       },
     },
+    accumulated: {
+      salesLastSixWeeks: values.salesLastSixWeeks,
+      inventoryDays: values.inventoryDays,
+    },
   }
+}
+
+export function toProductCatalogCreateInput(code: string, changes: ProductCatalogEditChanges): ProductMutationInput {
+  const enteredValues = Object.fromEntries(Object.entries(changes).filter(([, value]) => value !== undefined))
+  return toProductMutationInput({ ...getProductFormDefaults(), ...enteredValues, code })
+}
+
+const newProduct = toProductCatalogCreateInput("", {})
+
+const newProductCatalog: ProductCatalogDetailsData = {
+  ...newProduct,
+  isActive: true,
+  createdAt: null,
+  deactivatedAt: null,
+  classification: {
+    type: newProduct.classification.type,
+    familyCode: newProduct.classification.familyCode,
+    hasPhoto: newProduct.classification.hasPhoto,
+    usesColorAndSize: newProduct.classification.usesColorAndSize,
+    unit: { id: newProduct.classification.unitId, code: "1", description: "" },
+  },
+  accumulated: {
+    ...newProduct.accumulated,
+    lastPurchaseAt: null,
+    lastSaleAt: null,
+    assigned: 0,
+    confirmed: 0,
+    customerOrders: 0,
+    customerQuotes: 0,
+    supplierOrders: 0,
+    supplierQuotes: 0,
+    currentStock: 0,
+    previousStock: 0,
+    accumulatedStock: 0,
+    previousQuantity: 0,
+    accumulatedQuantity: 0,
+    pieceStock: 0,
+    salesLastSixMonths: 0,
+  },
+}
+
+export function getNewProductCatalog(units: ProductEditOptions["units"]): ProductCatalogDetailsData {
+  const unit = units.find(({ code }) => code === "1")
+    ?? units.find(({ code }) => code === "UNO")
+    ?? units.find(({ id }) => id === newProductCatalog.classification.unit.id)
+
+  return unit ? { ...newProductCatalog, classification: { ...newProductCatalog.classification, unit } } : newProductCatalog
 }
 
 function hasEditValues(values: object) {
@@ -239,9 +296,6 @@ export function toProductCatalogEditInput(
   const initial = {
     ...getProductFormDefaults(product),
     type: product.classification.type,
-    usesColorAndSize: product.classification.usesColorAndSize,
-    salesLastSixWeeks: product.accumulated.salesLastSixWeeks ?? product.accumulated.salesLastSixMonths,
-    inventoryDays: product.accumulated.inventoryDays,
   }
   const editable = new Set(product.editing.editableFields)
   const changesOnly = Object.fromEntries(Object.entries(changes).filter(([name, value]) => (

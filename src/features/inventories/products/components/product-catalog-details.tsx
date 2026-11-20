@@ -1,7 +1,7 @@
 import { Controller } from "react-hook-form"
 
 import { productTypeLabels, productTypeOptions } from "@/features/inventories/products/constants"
-import type { Product } from "@/features/inventories/products/model"
+import type { Product, ProductCatalogDetailsData } from "@/features/inventories/products/model"
 import { CatalogEditField, CatalogUnitField, type ProductCatalogEditor } from "@/features/inventories/products/components/product-catalog-edit-field"
 import { ReadonlyProductField } from "@/features/inventories/products/components/readonly-product-field"
 import { Badge } from "@/shared/ui/badge"
@@ -17,7 +17,7 @@ import { Field, FieldGroup, FieldLabel } from "@/shared/ui/field"
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group"
 
 type ProductCatalogDetailsProps = {
-  product: Product
+  product: ProductCatalogDetailsData
   editor?: ProductCatalogEditor
 }
 
@@ -76,17 +76,21 @@ export function ProductCatalogDetails({ product, editor }: ProductCatalogDetails
       <Card size="sm">
         <CardHeader className="border-b">
           <CardTitle>Catálogo de productos</CardTitle>
-          <CardAction>
-            <Badge variant={product.isActive ? "secondary" : "destructive"}>
-              {product.isActive ? "Activo" : "Inactivo"}
-            </Badge>
-          </CardAction>
+          {product.code && (
+            <CardAction>
+              <Badge variant={product.isActive ? "secondary" : "destructive"}>
+                {product.isActive ? "Activo" : "Inactivo"}
+              </Badge>
+            </CardAction>
+          )}
         </CardHeader>
         <CardContent>
           <FieldGroup className="grid gap-2 md:grid-cols-12">
-            <ReadonlyProductField
+            <CatalogEditField
               className="md:col-span-3"
+              editor={editor}
               label="Código"
+              name="code"
               value={product.code}
             />
             <CatalogEditField

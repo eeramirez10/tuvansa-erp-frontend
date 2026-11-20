@@ -11,7 +11,8 @@ Trazabilidad de la pantalla heredada de OMNIS/PROSCAI con la ruta web `/inventar
 | Flecha izquierda / Producto anterior | Navegar al registro anterior | `GET /inventories/products/:productId/previous` | `product-toolbar.tsx` |
 | Buscador / Buscar producto | Buscar por código o descripción | `GET /inventories/products?q=:texto&status=active&page=:page&pageSize=25` | `product-search-dialog.tsx` |
 | Flecha derecha / Producto siguiente | Navegar al registro siguiente | `GET /inventories/products/:productId/next` | `product-toolbar.tsx` |
-| Papel / Nuevo producto | Crear un registro | `POST /inventories/products` | `product-form-dialog.tsx` |
+| Papel / Nuevo producto | Habilitar el alta en la misma ficha | `GET /inventories/products/:productId/edit-options` | `product-catalog-page.tsx` |
+| Alta de productos / OK y Cancelar | Crear el registro o descartar el borrador | `POST /inventories/products` al guardar | `product-catalog-details.tsx` y `product-catalog-page.tsx` |
 | Papel marcado / Eliminar producto | Eliminar o dar de baja el registro | `DELETE /inventories/products/:productId` | `product-catalog-page.tsx` |
 | Papel y lápiz / Editar producto | Habilitar el cambio en la misma ficha | `GET /inventories/products/:productId/edit-options` | `product-catalog-page.tsx` |
 | Cambio de producto / OK y Cancelar | Guardar los datos modificados o descartar | `PATCH /inventories/products/:productId` al guardar | `product-catalog-details.tsx` y `product-catalog-page.tsx` |
@@ -24,6 +25,13 @@ en Confirmado y existencias. Las cotizaciones, el stock en piezas y **Vta 6s**
 la oferta vigente con `*` cuando el detalle devuelve `prices.hasActiveOffer`
 en `true`. **Unidad** muestra el código enlazado y la opción que Omnis
 encuentra en el catálogo de unidades, cuando existe.
+
+**Nuevo producto** habilita **Alta de productos** en las mismas tarjetas.
+Se enfoca en Código y empieza con M.P., unidad UNO del catálogo y monedas en cero.
+Foto, fechas, existencias y demás acumulados calculados quedan en gris.
+Color y talla, Vta 6s y Días Inv. admiten captura.
+**OK** envía el alta y muestra el producto creado. **Cancelar** vuelve
+al registro que estaba visible.
 
 **Editar producto** habilita los controles dentro de las mismas tarjetas de
 la ficha **Cambio de producto**. Durante

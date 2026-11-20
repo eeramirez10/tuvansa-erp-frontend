@@ -4,9 +4,9 @@ import { Controller, type Control } from "react-hook-form"
 import { ReadonlyProductField } from "@/features/inventories/products/components/readonly-product-field"
 import type {
   Product,
-  ProductCatalogEditDraft,
+  ProductCatalogDraft,
   ProductCatalogEditField,
-  ProductCatalogEditValues,
+  ProductCatalogValues,
   ProductEditOptions,
 } from "@/features/inventories/products/model"
 import { Field, FieldError, FieldLabel } from "@/shared/ui/field"
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/shared/utils/cn"
 
 export type ProductCatalogEditor = {
-  control: Control<ProductCatalogEditDraft, unknown, ProductCatalogEditValues>
+  control: Control<ProductCatalogDraft, unknown, ProductCatalogValues>
   fields: ReadonlySet<string>
   units: ProductEditOptions["units"]
   disabled: boolean
@@ -23,7 +23,7 @@ export type ProductCatalogEditor = {
 
 export function CatalogEditField({ editor, name, ...props }: ComponentProps<typeof ReadonlyProductField> & {
   editor?: ProductCatalogEditor
-  name: Exclude<ProductCatalogEditField, "unitId" | "type" | "usesColorAndSize">
+  name: "code" | Exclude<ProductCatalogEditField, "unitId" | "type" | "usesColorAndSize">
 }) {
   const id = useId()
   if (!editor?.fields.has(name)) return <ReadonlyProductField {...props} />
@@ -34,14 +34,14 @@ export function CatalogEditField({ editor, name, ...props }: ComponentProps<type
   return (
     <Controller
       control={editor.control}
-      name={`changes.${name}`}
+      name={name === "code" ? name : `changes.${name}`}
       render={({ field, fieldState }) => (
         <Field className={cn("min-w-0 items-center gap-1", props.className)} data-invalid={fieldState.invalid} orientation="horizontal">
           <FieldLabel className="shrink-0 whitespace-nowrap" htmlFor={id}>{props.label}</FieldLabel>
           <div className="min-w-0 flex-1">
             <Input
               aria-invalid={fieldState.invalid}
-              className="h-5 min-w-0 px-1 text-[9px]/tight"
+              className={cn("h-5 min-w-0 px-1 text-[9px]/tight", name === "code" && "uppercase")}
               disabled={editor.disabled}
               id={id}
               inputMode={props.inputMode}

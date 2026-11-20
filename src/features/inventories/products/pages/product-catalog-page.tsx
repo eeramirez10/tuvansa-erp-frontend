@@ -20,7 +20,6 @@ import { ProductCustomerOrdersDialog } from "@/features/inventories/products/com
 import { ProductCustomerOrdersStarDialog } from "@/features/inventories/products/components/product-customer-orders-star-dialog"
 import { ProductCustomerQuotesDialog } from "@/features/inventories/products/components/product-customer-quotes-dialog"
 import { ProductCustomerSalesDialog } from "@/features/inventories/products/components/product-customer-sales-dialog"
-import { ProductFormDialog } from "@/features/inventories/products/components/product-form-dialog"
 import { ProductLedgerDialog } from "@/features/inventories/products/components/product-ledger-dialog"
 import { ProductOtherDataDialog } from "@/features/inventories/products/components/product-other-data-dialog"
 import { ProductPurchasesProductionDialog } from "@/features/inventories/products/components/product-purchases-production-dialog"
@@ -29,9 +28,26 @@ import { ProductQueriesPanel } from "@/features/inventories/products/components/
 import { ProductSearchDialog } from "@/features/inventories/products/components/product-search-dialog"
 import { ProductPanelButtons } from "@/features/inventories/products/components/product-side-panels"
 import { ProductToolbar } from "@/features/inventories/products/components/product-toolbar"
-import { productEditOptionsQueryOptions, productKeys, productQueryOptions, toProductCatalogEditInput } from "@/features/inventories/products/logic"
-import { productCatalogEditSchema, type Product, type ProductCatalogEditDraft, type ProductCatalogEditInput, type ProductCatalogEditValues, type ProductPanelDefinition } from "@/features/inventories/products/model"
 import {
+  getNewProductCatalog,
+  productEditOptionsQueryOptions,
+  productKeys,
+  productQueryOptions,
+  toProductCatalogCreateInput,
+  toProductCatalogEditInput,
+} from "@/features/inventories/products/logic"
+import {
+  productCatalogFormSchema,
+  productCreateFields,
+  type Product,
+  type ProductCatalogDraft,
+  type ProductCatalogEditInput,
+  type ProductCatalogValues,
+  type ProductMutationInput,
+  type ProductPanelDefinition,
+} from "@/features/inventories/products/model"
+import {
+  createProduct,
   deleteProduct,
   getAdjacentProduct,
   updateProduct,
@@ -67,6 +83,11 @@ type ProductPanelWindow = {
   panel: ProductPanelDefinition
   product: Product
 }
+
+type ProductCapture = { mode: "create"; fromProductId: number } | { mode: "edit"; product: Product }
+type SaveProduct =
+  | { mode: "create"; input: ProductMutationInput }
+  | { mode: "edit"; id: number; input: ProductCatalogEditInput }
 
 function OpenProductPanel({
   id,
@@ -117,8 +138,7 @@ export function ProductCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [movementsOpen, setMovementsOpen] = useState(false)
   const [movementSearchOpen, setMovementSearchOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
-  const [editSnapshot, setEditSnapshot] = useState<Product | null>(null)
+  const [capture, setCapture] = useState<ProductCapture | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const {
     windows: panelWindows,
@@ -126,56 +146,86 @@ export function ProductCatalogPage() {
     closeWindow: closePanelWindow,
   } = useDesktopWindowCollection<ProductPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
-  const editing = editSnapshot?.id === product.id ? editSnapshot : null
-  const editFormId = useId()
-  const editForm = useForm<ProductCatalogEditDraft, unknown, ProductCatalogEditValues>({
-    defaultValues: { changes: {} },
-    resolver: zodResolver(productCatalogEditSchema),
+  const creating = capture?.mode === "create" && capture.fromProductId === product.id
+  const editing = capture?.mode === "edit" && capture.product.id === product.id ? capture.product : null
+  const capturing = creating || Boolean(editing)
+  const captureTitle = creating ? "Alta de productos" : "Cambio de producto"
+  const formId = useId()
+  const form = useForm<ProductCatalogDraft, unknown, ProductCatalogValues>({
+    defaultValues: { mode: "edit", changes: {} },
+    resolver: zodResolver(productCatalogFormSchema),
   })
-  const { setFocus: focusEditField } = editForm
+  const { setFocus: focusField } = form
   const editOptions = useQuery({
     ...productEditOptionsQueryOptions(product.id),
-    enabled: Boolean(editing?.editing?.editableFields.includes("unitId")),
+    enabled: creating || Boolean(editing?.editing?.editableFields.includes("unitId")),
   })
-  const editMutation = useMutation({
-    mutationFn: ({ id, input }: { id: number; input: ProductCatalogEditInput }) => updateProduct(id, input),
-    onSuccess: (savedProduct) => {
+  const units = editOptions.data?.units ?? []
+  const newProduct = creating ? getNewProductCatalog(units) : null
+  const saveMutation = useMutation({
+    mutationFn: (operation: SaveProduct) => operation.mode === "create"
+      ? createProduct(operation.input)
+      : updateProduct(operation.id, operation.input),
+    onSuccess: (savedProduct, { mode }) => {
       queryClient.setQueryData(productKeys.detail(savedProduct.id), savedProduct)
-      setEditSnapshot(null)
-      setNotice({ kind: "success", title: "Producto actualizado", message: `${savedProduct.code} · ${savedProduct.description}` })
+      setCapture(null)
+      setNotice({
+        kind: "success",
+        title: mode === "create" ? "Producto creado" : "Producto actualizado",
+        message: `${savedProduct.code} · ${savedProduct.description}`,
+      })
+      if (mode === "create") void navigate(paths.inventoryProduct(savedProduct.id))
       void queryClient.invalidateQueries({ queryKey: productKeys.all })
     },
-    onError: (error, { id }) => {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        void queryClient.invalidateQueries({ queryKey: productKeys.detail(id), exact: true })
+    onError: (error, operation) => {
+      if (operation.mode === "edit" && isAxiosError(error) && error.response?.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: productKeys.detail(operation.id), exact: true })
       }
     },
   })
   useEffect(() => {
-    if (editing?.editing?.editableFields.includes("description")) {
-      focusEditField("changes.description", { shouldSelect: true })
+    if (creating) focusField("code")
+    else if (editing?.editing?.editableFields.includes("description")) {
+      focusField("changes.description", { shouldSelect: true })
     }
-  }, [editing, focusEditField])
+  }, [creating, editing, focusField])
+
+  function startCreating() {
+    saveMutation.reset()
+    form.reset({ mode: "create", changes: {} })
+    setNotice(null)
+    setCapture({ mode: "create", fromProductId: product.id })
+  }
 
   function startEditing() {
     if (!product.editing?.writable) return
-    editMutation.reset()
-    editForm.reset({ changes: {} })
+    saveMutation.reset()
+    form.reset({ mode: "edit", changes: {} })
     setNotice(null)
-    setEditSnapshot(product)
+    setCapture({ mode: "edit", product })
   }
 
-  function cancelEdit() {
-    editMutation.reset()
-    editForm.reset({ changes: {} })
-    setEditSnapshot(null)
+  function cancelCapture() {
+    saveMutation.reset()
+    form.reset({ mode: "edit", changes: {} })
+    setCapture(null)
   }
 
-  const saveEdit = editForm.handleSubmit(({ changes }) => {
-    if (!editing || editMutation.isPending) return
+  const saveDisabled = saveMutation.isPending || (creating && units.length === 0)
+  const saveCapture = form.handleSubmit(({ changes, code, mode }) => {
+    if (saveDisabled) return
+    if (newProduct && mode === "create" && code) {
+      const input = toProductCatalogCreateInput(code, {
+        ...changes,
+        unitId: changes.unitId ?? newProduct.classification.unit.id,
+      })
+      saveMutation.mutate({ mode, input })
+      return
+    }
+    if (!editing || mode !== "edit") return
     const input = toProductCatalogEditInput(editing, changes)
-    if (input) editMutation.mutate({ id: editing.id, input })
-    else cancelEdit()
+    if (input) saveMutation.mutate({ mode, id: editing.id, input })
+    else cancelCapture()
   })
   const restoreWindow = useDesktopWindowStore(selectRestoreDesktopWindow)
   const documentSearchActive = useDesktopWindowStore(({ windows }) => {
@@ -254,14 +304,14 @@ export function ProductCatalogPage() {
     },
   })
 
-  const controlsDisabled = Boolean(editing) || navigationMutation.isPending || deleteMutation.isPending
+  const controlsDisabled = capturing || navigationMutation.isPending || deleteMutation.isPending
 
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
       <ProductToolbar
         disabled={controlsDisabled}
         editDisabled={!product.editing?.writable}
-        onCreate={() => setCreateOpen(true)}
+        onCreate={startCreating}
         onDelete={() => setDeleteOpen(true)}
         onEdit={startEditing}
         onNext={() => navigationMutation.mutate("next")}
@@ -281,13 +331,13 @@ export function ProductCatalogPage() {
         </Alert>
       )}
 
-      {editing && (
+      {capturing && (
         <div className="grid gap-2">
-          <h2 className="border-b pb-1 text-xs font-semibold">Cambio de producto</h2>
-          {editMutation.isError && (
+          <h2 className="border-b pb-1 text-xs font-semibold">{captureTitle}</h2>
+          {saveMutation.isError && (
             <Alert variant="destructive">
               <AlertTitle>No fue posible guardar el producto</AlertTitle>
-              <AlertDescription>{getApiErrorMessage(editMutation.error)}</AlertDescription>
+              <AlertDescription>{getApiErrorMessage(saveMutation.error)}</AlertDescription>
             </Alert>
           )}
           {editOptions.isError && (
@@ -303,7 +353,7 @@ export function ProductCatalogPage() {
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1">
           <ProductPanelButtons
-            hideActions={Boolean(editing)}
+            hideActions={capturing}
             onSelect={(panel) =>
               openPanelWindow(`inventory:${product.id}:${panel.key}`, {
                 panel,
@@ -314,7 +364,7 @@ export function ProductCatalogPage() {
             title="Acciones"
           />
           <ProductPanelButtons
-            hideActions={Boolean(editing)}
+            hideActions={capturing}
             onSelect={(panel) =>
               openPanelWindow(`inventory:${product.id}:${panel.key}`, {
                 panel,
@@ -324,37 +374,37 @@ export function ProductCatalogPage() {
             panels={purchasesProductionPanels}
             title="Compras/Prod"
           />
-          {editing && (
+          {capturing && (
             <div className="flex gap-1 sm:col-span-2 xl:col-span-1">
-              <Button disabled={editMutation.isPending} form={editFormId} size="sm" type="submit">
-                {editMutation.isPending && <Spinner data-icon="inline-start" />}
+              <Button disabled={saveDisabled} form={formId} size="sm" type="submit">
+                {saveMutation.isPending && <Spinner data-icon="inline-start" />}
                 OK
               </Button>
-              <Button disabled={editMutation.isPending} onClick={cancelEdit} size="sm" type="button" variant="outline">Cancelar</Button>
+              <Button disabled={saveMutation.isPending} onClick={cancelCapture} size="sm" type="button" variant="outline">Cancelar</Button>
             </div>
           )}
         </aside>
 
         <form
-          aria-label={editing ? "Cambio de producto" : "Catálogo de productos"}
+          aria-label={capturing ? captureTitle : "Catálogo de productos"}
           className="min-w-0 data-[editing=true]:[&_input[readonly]]:bg-neutral-300 dark:data-[editing=true]:[&_input[readonly]]:bg-neutral-600"
-          data-editing={Boolean(editing)}
-          id={editFormId}
-          onSubmit={saveEdit}
+          data-editing={capturing}
+          id={formId}
+          onSubmit={saveCapture}
         >
           <ProductCatalogDetails
-            editor={editing ? {
-              control: editForm.control,
-              disabled: editMutation.isPending,
-              fields: new Set(editing.editing?.editableFields),
-              units: editOptions.data?.units ?? [],
+            editor={capturing ? {
+              control: form.control,
+              disabled: saveMutation.isPending,
+              fields: creating ? productCreateFields : new Set(editing?.editing?.editableFields),
+              units,
             } : undefined}
-            product={editing ?? product}
+            product={newProduct ?? editing ?? product}
           />
         </form>
 
         <aside className="min-w-0">
-          <ProductQueriesPanel disabled={Boolean(editing)} onSelect={openQueryPanel} />
+          <ProductQueriesPanel disabled={capturing} onSelect={openQueryPanel} />
         </aside>
       </div>
 
@@ -380,23 +430,6 @@ export function ProductCatalogPage() {
               setSearchOpen(false)
               setNotice(null)
               openProduct(selectedProduct)
-            }}
-          />
-        </DesktopWindowIdentity>
-      )}
-
-      {createOpen && (
-        <DesktopWindowIdentity id="inventory:create:new">
-          <ProductFormDialog
-            onOpenChange={setCreateOpen}
-            onSaved={(savedProduct) => {
-              setCreateOpen(false)
-              setNotice({
-                kind: "success",
-                title: "Producto creado",
-                message: `${savedProduct.code} · ${savedProduct.description}`,
-              })
-              openProduct(savedProduct)
             }}
           />
         </DesktopWindowIdentity>
