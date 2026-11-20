@@ -25,7 +25,8 @@ la oferta vigente con `*` cuando el detalle devuelve `prices.hasActiveOffer`
 en `true`. **Unidad** muestra el código enlazado y la opción que Omnis
 encuentra en el catálogo de unidades, cuando existe.
 
-**Editar producto** transforma la ficha en **Cambio de producto**. Durante
+**Editar producto** habilita los controles dentro de las mismas tarjetas de
+la ficha **Cambio de producto**. Durante
 la edición se ocultan los botones de Acciones y Compras/Prod, y se bloquean
 la navegación del registro y las consultas. El detalle indica si el
 producto está habilitado y qué campos se pueden modificar. El código y la
@@ -33,6 +34,14 @@ foto se muestran como datos de consulta. La unidad se elige de la lista del
 catálogo. **OK** guarda las modificaciones con la revisión de la ficha y
 actualiza los datos. **Cancelar** descarta las modificaciones locales. Un
 error de escritura conserva el borrador y muestra el mensaje de la API.
+
+| Tarjeta | Controles que se habilitan en el piloto |
+| --- | --- |
+| Catálogo de productos | Descripción, Unidad, Familia, Color y talla y Tipo de producto |
+| Precios de Venta | Precio 1–3 y moneda de cada lista |
+| Costos | Promedio 4, Último 5, Anterior 6, moneda de Lista 6 y Advalorem, según configuración |
+| Cuentas / Info. Almacén | Mínimo, Máximo, Localización, EAN, UPC y las tres cuentas |
+| Acumulados | Vta 6s y Días Inv. |
 
 ## Acciones
 

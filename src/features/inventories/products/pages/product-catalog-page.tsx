@@ -335,19 +335,23 @@ export function ProductCatalogPage() {
           )}
         </aside>
 
-        {editing ? (
-          <form aria-label="Cambio de producto" className="min-w-0" id={editFormId} onSubmit={saveEdit}>
-            <ProductCatalogDetails
-              editor={{
-                control: editForm.control,
-                disabled: editMutation.isPending,
-                fields: new Set(editing.editing?.editableFields),
-                units: editOptions.data?.units ?? [],
-              }}
-              product={editing}
-            />
-          </form>
-        ) : <ProductCatalogDetails product={product} />}
+        <form
+          aria-label={editing ? "Cambio de producto" : "Catálogo de productos"}
+          className="min-w-0 data-[editing=true]:[&_input[readonly]]:bg-muted"
+          data-editing={Boolean(editing)}
+          id={editFormId}
+          onSubmit={saveEdit}
+        >
+          <ProductCatalogDetails
+            editor={editing ? {
+              control: editForm.control,
+              disabled: editMutation.isPending,
+              fields: new Set(editing.editing?.editableFields),
+              units: editOptions.data?.units ?? [],
+            } : undefined}
+            product={editing ?? product}
+          />
+        </form>
 
         <aside className="min-w-0">
           <ProductQueriesPanel disabled={Boolean(editing)} onSelect={openQueryPanel} />
