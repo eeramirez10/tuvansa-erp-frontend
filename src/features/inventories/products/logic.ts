@@ -3,7 +3,7 @@ import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
 import type {
   Product,
   ProductCustomerOrdersStarFilters,
-  ProductCustomerSalesSort,
+  ProductCustomerSalesFilters,
   ProductFormValues,
   ProductLedgerFilters,
   ProductMutationInput,
@@ -99,11 +99,15 @@ export function productCustomerOrdersStarQueryOptions(
   })
 }
 
-export function productCustomerSalesQueryOptions(productId: number, sort: ProductCustomerSalesSort) {
+export function productCustomerSalesQueryOptions(
+  productId: number,
+  panel: "customer-sales" | "customer-sales-star",
+  filters: ProductCustomerSalesFilters,
+) {
   return infiniteQueryOptions({
-    queryKey: [...productKeys.panel(productId, "customer-sales"), "pages", sort],
+    queryKey: [...productKeys.panel(productId, panel), "pages", filters],
     queryFn: ({ pageParam, signal }) =>
-      getProductPanel(productId, "customer-sales", signal, pageParam, { sort }),
+      getProductPanel(productId, panel, signal, pageParam, filters),
     initialPageParam: 1,
     getNextPageParam: ({ pagination }) =>
       pagination.returned === pagination.pageSize ? pagination.page + 1 : undefined,

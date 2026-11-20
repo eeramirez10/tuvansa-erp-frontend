@@ -3,9 +3,10 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
+import { ProductCustomerClassifiers } from "@/features/inventories/products/components/product-customer-classifiers"
 import { ProductQueryTable } from "@/features/inventories/products/components/product-query-table"
 import { productCustomerSalesQueryOptions } from "@/features/inventories/products/logic"
-import type { Product, ProductCustomerSalesSort } from "@/features/inventories/products/model"
+import type { Product, ProductCustomerSalesFilters, ProductCustomerSalesSort } from "@/features/inventories/products/model"
 import {
   formatMoney,
   formatNumber,
@@ -19,6 +20,7 @@ import { Spinner } from "@/shared/ui/spinner"
 
 type ProductCustomerSalesDialogProps = {
   product: Product
+  classified: boolean
   onOpenChange: (open: boolean) => void
 }
 
@@ -29,27 +31,35 @@ const salesColumns: (QueryColumn & { sort: ProductCustomerSalesSort })[] = [
   { key: "amount", label: "Importe", width: "6rem", align: "right", render: (row) => formatMoney(row.amount), sort: "amount" },
 ]
 
+const classifiedSalesColumns = salesColumns.map((column) =>
+  column.key === "customerName" ? { ...column, label: "Nombre" } : column,
+)
+
 export function ProductCustomerSalesDialog({
   product,
+  classified,
   onOpenChange,
 }: ProductCustomerSalesDialogProps) {
-  const [sort, setSort] = useState<ProductCustomerSalesSort>("code")
-  const sales = useInfiniteQuery(productCustomerSalesQueryOptions(product.id, sort))
+  const [filters, setFilters] = useState<ProductCustomerSalesFilters>({ sort: "code" })
+  const panel = classified ? "customer-sales-star" : "customer-sales"
+  const sales = useInfiniteQuery(productCustomerSalesQueryOptions(product.id, panel, filters))
   const rows = sales.data?.pages.flatMap((page) => page.data.items) ?? []
   const totals = sales.data?.pages[0]?.data.customerSalesTotals
+  const title = classified ? "Ventas por *" : "Ventas por cliente"
+  const columns = classified ? classifiedSalesColumns : salesColumns
 
   return (
     <ErpDataDialog
-      className="sm:max-w-[31rem]"
-      description={`Ventas por cliente del producto ${product.code}.`}
+      className={classified ? "sm:max-w-[32rem]" : "sm:max-w-[31rem]"}
+      description={`${title} del producto ${product.code}.`}
       onOpenChange={onOpenChange}
-      title="Ventas por cliente"
+      title={title}
     >
       <ErpDataDialogBody>
         {sales.isPending ? (
           <div className="flex h-64 items-center justify-center gap-1.5 border border-input bg-background text-muted-foreground">
             <Spinner />
-            Cargando ventas por cliente…
+            Cargando ventas…
           </div>
         ) : sales.isLoadingError ? (
           <Alert className="min-h-48" variant="destructive">
@@ -65,14 +75,17 @@ export function ProductCustomerSalesDialog({
         ) : (
           <ProductQueryTable
             axes="y"
-            className="h-[min(52vh,20rem)]"
-            columns={salesColumns}
+            className={classified ? "h-44" : "h-[min(52vh,20rem)]"}
+            columns={columns}
+            emptyMessage={classified && filters.classifier === undefined ? "" : undefined}
             rows={rows}
             sorting={{
-              key: salesColumns.find((column) => column.sort === sort)?.key ?? "customerCode",
-              onSort: (key) => setSort(salesColumns.find((column) => column.key === key)?.sort ?? "code"),
+              key: columns.find((column) => column.sort === filters.sort)?.key ?? "customerCode",
+              onSort: (key) => setFilters((current) => ({
+                ...current, sort: columns.find((column) => column.key === key)?.sort ?? "code",
+              })),
             }}
-            tableClassName="w-[28rem]"
+            tableClassName={classified ? "w-[29rem]" : "w-[28rem]"}
           />
         )}
         <footer className="mt-1">
@@ -81,6 +94,12 @@ export function ProductCustomerSalesDialog({
             <ErpDataMetric label="" value={totals === undefined ? "—" : formatMoney(totals.quantity)} />
             <ErpDataMetric label="" value={totals === undefined ? "—" : formatMoney(totals.amount)} />
           </div>
+          {classified && (
+            <ProductCustomerClassifiers
+              onSelect={(classifier) => setFilters({ classifier, sort: "code" })}
+              selected={filters.classifier}
+            />
+          )}
           {sales.hasNextPage && (
             <div className="mt-1 flex justify-end">
               <Button

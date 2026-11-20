@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
+import { ProductCustomerClassifiers } from "@/features/inventories/products/components/product-customer-classifiers"
 import { productCustomerOrdersStarQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
@@ -55,11 +56,6 @@ function formatDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
   return match ? `${match[3]}/${match[2]}/${match[1]}` : value
 }
-
-const filterButtons = [
-  "AGENTE", "GIRO O SECTOR", "SUCURSAL", "", "",
-  "", "FLETE", "ORIGEN", "PROYECTO",
-] as const
 
 const sortColumns = [
   { label: "Código", sort: "code" },
@@ -187,21 +183,10 @@ export function ProductCustomerOrdersStarDialog({
             <ErpDataMetric label="Total" value={totals?.remaining.toFixed(3) ?? "—"} />
             <ErpDataMetric label="Faltante" value={missing?.toFixed(3) ?? "—"} />
           </div>
-          <div className="mt-1 grid grid-cols-5 gap-0.5">
-            {filterButtons.map((label, index) => (
-              <Button
-                aria-label={label || `Clasificador ${index + 1}`}
-                aria-pressed={filters.classifier === index + 1}
-                className="h-6 px-1 text-[9px]"
-                key={index}
-                onClick={() => setFilters({ classifier: index + 1, sort: "date" })}
-                type="button"
-                variant={filters.classifier === index + 1 ? "secondary" : "outline"}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
+          <ProductCustomerClassifiers
+            onSelect={(classifier) => setFilters({ classifier, sort: "date" })}
+            selected={filters.classifier}
+          />
           {ordersQuery.hasNextPage && (
             <div className="mt-1 flex justify-end">
               <Button

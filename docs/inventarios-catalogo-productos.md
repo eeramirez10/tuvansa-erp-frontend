@@ -189,12 +189,20 @@ encabezados ordenan la consulta completa de forma ascendente y reproducen
 `data.customerSalesTotals` y abarcan todas las páginas. **Cargar más ventas**
 mantiene los acumulados y permite reintentar la página si falla.
 
+### Modal Ventas por *
+
+El botón pequeño `*` junto a **Ventas por cliente** abre **Ventas por ***,
+según `EINV#6BA`. La lista inicial está vacía hasta elegir uno de los nueve
+clasificadores. La consulta agrupa por el código y nombre del clasificador
+elegido. El encabezado de texto se muestra como **Nombre**. Al elegir un
+clasificador, la consulta vuelve al orden ascendente por Código. La
+paginación y los totales globales se comparten con **Ventas por cliente**.
+
 ### Modales restantes de Consultas
 
 | Botón visible | Título observado en OMNIS | Presentación reproducida |
 | --- | --- | --- |
 | Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
-| Ventas por cliente · * | Ventas por * | Acumulado por cliente y matriz AGENTE/GIRO/SUCURSAL/FLETE/ORIGEN/PROYECTO |
 | Ventas por cliente · CT | Ventas por cliente | Acumulado por producto y panel CT lateral |
 | Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. |
 | Ventas por sucursal | Producto vendidos por sucursal | Acumulado por sucursal y cliente con totales |

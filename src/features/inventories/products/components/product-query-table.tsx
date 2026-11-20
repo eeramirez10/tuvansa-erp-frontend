@@ -94,7 +94,7 @@ export function ProductQueryTable({
               ))}
             </tr>
           ))}
-          {rows.length === 0 && (
+          {rows.length === 0 && emptyMessage && (
             <tr>
               <td className="h-48 text-center text-muted-foreground" colSpan={columns.length}>
                 {emptyMessage}

@@ -81,8 +81,8 @@ function OpenProductPanel({
     content = <ProductCustomerOrdersStarDialog onOpenChange={onOpenChange} product={product} />
   } else if (panel.key === "customer-quotes") {
     content = <ProductCustomerQuotesDialog onOpenChange={onOpenChange} product={product} />
-  } else if (panel.key === "customer-sales") {
-    content = <ProductCustomerSalesDialog onOpenChange={onOpenChange} product={product} />
+  } else if (panel.key === "customer-sales" || panel.key === "customer-sales-star") {
+    content = <ProductCustomerSalesDialog classified={panel.key === "customer-sales-star"} onOpenChange={onOpenChange} product={product} />
   } else if (panel.section === "queries") {
     content = <ProductQueryDialog onOpenChange={onOpenChange} panel={panel} product={product} />
   } else if (panel.section === "actions") {

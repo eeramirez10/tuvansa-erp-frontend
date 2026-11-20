@@ -3,7 +3,7 @@ import type {
   Product,
   ProductCustomerOrdersFilters,
   ProductCustomerOrdersStarFilters,
-  ProductCustomerSalesSort,
+  ProductCustomerSalesFilters,
   ProductLedgerFilters,
   ProductMutationInput,
   ProductPanelKey,
@@ -151,7 +151,7 @@ export async function getProductPanel(
   panel: ProductPanelKey,
   signal?: AbortSignal,
   page = 1,
-  filters?: ProductLedgerFilters | ProductCustomerOrdersFilters | ProductCustomerOrdersStarFilters | { sort: ProductCustomerSalesSort },
+  filters?: ProductLedgerFilters | ProductCustomerOrdersFilters | ProductCustomerOrdersStarFilters | ProductCustomerSalesFilters,
 ) {
   const pageSize = 500
   const response = await apiClient.get<ProductPanelResponse>(

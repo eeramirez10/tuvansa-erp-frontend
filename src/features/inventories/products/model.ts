@@ -201,6 +201,11 @@ export type ProductCustomerOrdersStarFilters = {
 
 export type ProductCustomerSalesSort = "code" | "name" | "quantity" | "amount"
 
+export type ProductCustomerSalesFilters = {
+  classifier?: number
+  sort: ProductCustomerSalesSort
+}
+
 export type ProductPanelDefinition = {
   key: ProductPanelKey
   label: string

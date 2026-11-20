@@ -108,44 +108,6 @@ function BlankFilterPane({ count = 14, className }: { count?: number; className?
   )
 }
 
-const filterButtons = [
-  "AGENTE",
-  "GIRO O SECTOR",
-  "SUCURSAL",
-  "",
-  "",
-  "",
-  "FLETE",
-  "ORIGEN",
-  "PROYECTO",
-  "",
-] as const
-
-function ClassificationFilters() {
-  return (
-    <div className="mt-1 grid grid-cols-5 gap-0.5">
-      {filterButtons.map((label, index) =>
-        label ? (
-          <Button
-            className="h-6 px-1 text-[9px]"
-            key={`${label}-${index}`}
-            type="button"
-            variant="outline"
-          >
-            {label}
-          </Button>
-        ) : (
-          <span
-            aria-hidden
-            className="h-6 border border-input bg-background/50 shadow-inner"
-            key={index}
-          />
-        ),
-      )}
-    </div>
-  )
-}
-
 const orderCtColumns: QueryColumn[] = [
   { key: "productCode", label: "Código", width: "5rem" },
   { key: "customerName", label: "Descripción", width: "11rem" },
@@ -218,27 +180,6 @@ function TotalsFooter({
       <ErpDataMetric className="min-w-24" label="" value={formatMoney(sum(rows, amountKey))} />
       {children}
     </footer>
-  )
-}
-
-function CustomerSalesStar({ rows }: { rows: QueryRow[] }) {
-  return (
-    <>
-      <ProductQueryTable
-        axes="y"
-        className="h-44"
-        columns={[
-          { key: "customerCode", label: "Código", width: "5rem" },
-          { key: "customerName", label: "Nombre", width: "12rem" },
-          numberColumn("quantity", "Cantidad"),
-          moneyColumn("amount", "Importe"),
-        ]}
-        rows={rows}
-        tableClassName="w-[29rem]"
-      />
-      <TotalsFooter rows={rows} />
-      <ClassificationFilters />
-    </>
   )
 }
 
@@ -587,8 +528,6 @@ function availablePresentation(
         className: "sm:max-w-[64rem]",
         body: <SplitCtView buttons={["Pedido", "Surtido", "Resta", "Filtrar Tipo"]} columns={orderCtColumns} rows={rows} />,
       }
-    case "customer-sales-star":
-      return { title: "Ventas por *", className: "sm:max-w-[32rem]", body: <CustomerSalesStar rows={rows} /> }
     case "customer-sales-ct":
       return {
         title: "Ventas por cliente",
