@@ -154,6 +154,7 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | Inventarios PT | Cotizaciones por cliente | Filtrar pedidos surtidos | Clic | Mismo GET con `excludeFulfilled=true` | Clave de Cotizaciones por cliente con el filtro activo | Conserva partidas con `PLSURT < PLCANT` |
 | Inventarios PT | Consultas | Ventas por cliente | Abrir ventana, ordenar por encabezado o cargar más ventas | `GET /inventories/products/:productId/queries/customer-sales?page=:page&pageSize=500&sort=:orden` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-sales', 'pages', filters]` | Agrupa por cliente y muestra `data.customerSalesTotals` para toda la consulta |
 | Inventarios PT | Consultas | Ventas por cliente · `*` | Abrir ventana y elegir clasificador u orden | `GET /inventories/products/:productId/queries/customer-sales/star` con `classifier=1..9`, `sort`, `page` y `pageSize` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-sales-star', 'pages', filters]` | Lista vacía al abrir, ventas clasificadas y totales al elegir un botón |
+| Inventarios PT | Consultas | Ventas por cliente · CT | Abrir ventana | `GET /inventories/products/:productId/queries/customer-sales/ct` | `['inventories', 'products', 'detail', productId, 'panel', 'customer-sales-ct']` | La lista usa `customerCode` y `customerName` para Código y Descripción |
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 

@@ -203,7 +203,7 @@ paginación y los totales globales se comparten con **Ventas por cliente**.
 | Botón visible | Título observado en OMNIS | Presentación reproducida |
 | --- | --- | --- |
 | Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
-| Ventas por cliente · CT | Ventas por cliente | Acumulado por producto y panel CT lateral |
+| Ventas por cliente · CT | Ventas por cliente | Acumulado por cliente en Código, Descripción, Cantidad e Importe, con panel CT lateral |
 | Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. |
 | Ventas por sucursal | Producto vendidos por sucursal | Acumulado por sucursal y cliente con totales |
 | Ventas anuales | Ventas Anuales | Matriz cliente/año por los doce meses, renglón Totales y Documento |

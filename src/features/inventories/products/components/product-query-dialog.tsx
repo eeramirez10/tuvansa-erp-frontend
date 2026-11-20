@@ -533,8 +533,8 @@ function availablePresentation(
         title: "Ventas por cliente",
         className: "sm:max-w-[68rem]",
         body: <SplitCtView buttons={[]} columns={[
-          { key: "productCode", label: "Código", width: "6rem" },
-          { key: "productDescription", label: "Descripción", width: "13rem" },
+          { key: "customerCode", label: "Código", width: "6rem" },
+          { key: "customerName", label: "Descripción", width: "13rem" },
           numberColumn("quantity", "Cantidad"),
           moneyColumn("amount", "Importe"),
         ]} rows={rows} totalKeys={["quantity", "amount"]} />,
