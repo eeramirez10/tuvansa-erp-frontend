@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { PurchaseOrderPanelKey } from "@/features/purchasing/purchase-orders/model"
+import type { PurchaseOrder, PurchaseOrderPanelKey } from "@/features/purchasing/purchase-orders/model"
 import {
   getPurchaseOrder,
   getPurchaseOrderPanel,
@@ -10,8 +10,18 @@ import {
 export const purchaseOrderKeys = {
   all: ["purchasing", "purchase-orders"] as const,
   detail: (id: number) => [...purchaseOrderKeys.all, "detail", id] as const,
-  search: (criteria: PurchaseOrderSearchCriteria) => [...purchaseOrderKeys.all, "search", criteria] as const,
+  searches: () => [...purchaseOrderKeys.all, "search"] as const,
+  search: (criteria: PurchaseOrderSearchCriteria) => [...purchaseOrderKeys.searches(), criteria] as const,
   panel: (id: number, key: PurchaseOrderPanelKey) => [...purchaseOrderKeys.detail(id), "panel", key] as const,
+}
+
+export const displayPurchaseOrderDate = (input: string | null) =>
+  input ? input.slice(0, 10).split("-").reverse().join("/") : ""
+
+export const purchaseOrderKindLabel: Record<PurchaseOrder["documentKind"], string> = {
+  order: "PEDIDO",
+  quote: "COTIZACIÓN",
+  unknown: "",
 }
 
 export const purchaseOrderQueryOptions = (id: number) => queryOptions({

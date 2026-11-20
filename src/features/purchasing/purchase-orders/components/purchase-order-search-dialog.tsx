@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { purchaseOrderSearchQueryOptions } from "@/features/purchasing/purchase-orders/logic"
+import { displayPurchaseOrderDate, purchaseOrderKindLabel, purchaseOrderSearchQueryOptions } from "@/features/purchasing/purchase-orders/logic"
 import type { PurchaseOrder } from "@/features/purchasing/purchase-orders/model"
 import type { PurchaseOrderSearchCriteria } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
 import { Button } from "@/shared/ui/button"
@@ -45,8 +45,6 @@ function toCriteria(filters: Filters): Omit<PurchaseOrderSearchCriteria, "page" 
   if (filters.documentType) criteria.documentType = Number(filters.documentType)
   return criteria
 }
-
-const displayDate = (input: string | null) => input ? input.slice(0, 10).split("-").reverse().join("/") : ""
 
 export function PurchaseOrderSearchDialog({ onOpenChange, onSelect }: {
   onOpenChange: (open: boolean) => void
@@ -95,10 +93,10 @@ export function PurchaseOrderSearchDialog({ onOpenChange, onSelect }: {
                   <TableCell className="px-1 py-0.5">{purchaseOrder.supplierOrderNumber}</TableCell>
                   <TableCell className="px-1 py-0.5">{purchaseOrder.supplier.code}</TableCell>
                   <TableCell className="max-w-64 truncate px-1 py-0.5">{purchaseOrder.supplier.name}</TableCell>
-                  <TableCell className="whitespace-nowrap px-1 py-0.5">{displayDate(purchaseOrder.dates.orderedAt)}</TableCell>
-                  <TableCell className="whitespace-nowrap px-1 py-0.5">{displayDate(purchaseOrder.dates.dueAt)}</TableCell>
-                  <TableCell className="px-1 py-0.5">{purchaseOrder.documentKind === "quote" ? "COTIZ" : "PEDIDO"}</TableCell>
-                  <TableCell className="px-1 py-0.5">{purchaseOrder.status}</TableCell>
+                  <TableCell className="whitespace-nowrap px-1 py-0.5">{displayPurchaseOrderDate(purchaseOrder.dates.orderedAt)}</TableCell>
+                  <TableCell className="whitespace-nowrap px-1 py-0.5">{displayPurchaseOrderDate(purchaseOrder.dates.dueAt)}</TableCell>
+                  <TableCell className="px-1 py-0.5">{purchaseOrderKindLabel[purchaseOrder.documentKind]}</TableCell>
+                  <TableCell className="px-1 py-0.5">{purchaseOrder.classifications[0]}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

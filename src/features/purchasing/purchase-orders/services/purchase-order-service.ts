@@ -1,5 +1,7 @@
 import type {
   PurchaseOrder,
+  PurchaseOrderClassificationPanel,
+  PurchaseOrderClassificationUpdate,
   PurchaseOrderPanel,
   PurchaseOrderPanelKey,
   PurchaseOrderSearchResponse,
@@ -25,6 +27,8 @@ const panelPaths: Record<PurchaseOrderPanelKey, string> = {
   receipts: "actions/auxiliar",
   classifications: "actions/classifications",
   comments: "actions/comments",
+  ct: "actions/ct",
+  pieces: "actions/pieces",
 }
 
 export async function searchPurchaseOrders(criteria: PurchaseOrderSearchCriteria, signal?: AbortSignal) {
@@ -46,6 +50,14 @@ export async function getPurchaseOrderPanel(id: number, key: PurchaseOrderPanelK
   const response = await apiClient.get<ItemResponse<PurchaseOrderPanel>>(
     `/purchasing/purchase-orders/${id}/${panelPaths[key]}`,
     { signal },
+  )
+  return response.data.data
+}
+
+export async function updatePurchaseOrderClassifications(id: number, update: PurchaseOrderClassificationUpdate) {
+  const response = await apiClient.patch<ItemResponse<PurchaseOrderClassificationPanel>>(
+    `/purchasing/purchase-orders/${id}/${panelPaths.classifications}`,
+    update,
   )
   return response.data.data
 }

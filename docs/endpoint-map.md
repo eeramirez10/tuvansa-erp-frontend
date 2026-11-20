@@ -314,3 +314,21 @@ opciones de comparación sin lecturas adicionales. Detalle y Excel agregan
 entradas/salidas a su costo, netos por escenario, revaluaciones aparte y conteos
 de costo cero/ausente. Excel incluye Costos históricos. No se certifica aún el
 saldo contable conciliado ni se sustituye un costo faltante por el actual.
+
+### Órdenes de compra
+
+La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se usa para elegir un ID. La ficha carga su detalle con partidas. Las respuestas de las flechas ya incluyen las partidas.
+
+| Vista o botón | Endpoint relativo a `/api/purchasing/purchase-orders` |
+| --- | --- |
+| Buscar | `GET /` |
+| Ficha, partidas y totales | `GET /:purchaseOrderId` |
+| Anterior y siguiente | `GET /:purchaseOrderId/previous`, `GET /:purchaseOrderId/next` |
+| Auxiliar | `GET /:purchaseOrderId/actions/auxiliar` |
+| Clasificar / abrir | `GET /:purchaseOrderId/actions/classifications` |
+| Clasificar / Guardar | `PATCH /:purchaseOrderId/actions/classifications` |
+| Comentarios | `GET /:purchaseOrderId/actions/comments` |
+| CT | `GET /:purchaseOrderId/actions/ct` |
+| Piezas | `GET /:purchaseOrderId/actions/pieces` |
+
+Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador. Las acciones internas Cambio, Confirmar e Imprimir de CT/Piezas quedan fuera de esta entrega.

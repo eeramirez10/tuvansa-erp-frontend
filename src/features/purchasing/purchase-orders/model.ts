@@ -12,6 +12,7 @@ export type PurchaseOrderLine = {
   price: number
   discount: number
   currencyId: number
+  currencyName: string
   confirmed: boolean
   observations: string
   assigned: number
@@ -27,12 +28,15 @@ export type PurchaseOrder = {
   supplier: { id: number; code: string; name: string }
   documentKind: "order" | "quote" | "unknown"
   status: string
+  received: { quantity: number; pieces: number }
   branch: number
   department: string
   dates: { orderedAt: string | null; from: string | null; dueAt: string | null }
   warehouse: string
   initial: boolean
   taxPercentage: number
+  discountPercentages: [number, number, number]
+  otherLabel: string
   classifications: string[]
   totals: {
     assigned: number
@@ -56,21 +60,37 @@ export type PurchaseOrderSearchResponse = {
   pagination: { page: number; pageSize: number; total: number; pages: number }
 }
 
-export type PurchaseOrderPanelKey = "receipts" | "classifications" | "comments"
+export type PurchaseOrderPanelKey = "receipts" | "classifications" | "comments" | "ct" | "pieces"
 
 export type PurchaseOrderPanel = {
   purchaseOrder: { id: number; number: string }
   key: PurchaseOrderPanelKey
   section: "actions"
   button: string
-  source: "mysql"
+  source: "mysql" | "mysql+postgres"
   items: Array<Record<string, unknown>>
   summary?: Record<string, unknown>
+}
+
+export type PurchaseOrderClassificationPanel = Omit<PurchaseOrderPanel, "items" | "summary"> & {
+  items: Array<{ classifier: number; code: string; description: string; compositeCode: string }>
+  summary: { current: string[]; labels: string[]; canWrite: boolean; revision: number }
+}
+
+export type PurchaseOrderClassificationUpdate = { current: string[]; revision: number }
+
+export type PurchaseOrderColorSizeGroup = {
+  root: string
+  description: string
+  ordered: number
+  fulfilled: number
+  remaining: number
+  sizes: string[]
+  colors: Array<{ color: string; ordered: number[]; fulfilled: number[]; remaining: number[] }>
 }
 
 export type PurchaseOrderAction = {
   key: string
   label: string
   panelKey?: PurchaseOrderPanelKey
-  readOnly: boolean
 }
