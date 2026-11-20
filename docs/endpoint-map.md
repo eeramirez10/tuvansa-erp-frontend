@@ -332,3 +332,5 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 | Piezas | `GET /:purchaseOrderId/actions/pieces` |
 
 Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador. Las acciones internas Cambio, Confirmar e Imprimir de CT/Piezas quedan fuera de esta entrega.
+
+Comentarios reproduce la distribución de `EOC#6` de Omnis 7. Usa las etiquetas del tipo de movimiento para las cuatro líneas y el texto largo. El número del proveedor aparece en Número ellos y Pedido cliente, como en el formato nativo. OK y Cancelar cierran la ventana de consulta.

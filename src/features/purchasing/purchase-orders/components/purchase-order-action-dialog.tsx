@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { PurchaseOrderClassificationsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-classifications-dialog"
+import { PurchaseOrderCommentsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-comments-dialog"
 import { displayPurchaseOrderDate, purchaseOrderPanelQueryOptions } from "@/features/purchasing/purchase-orders/logic"
 import type { PurchaseOrder, PurchaseOrderAction, PurchaseOrderColorSizeGroup, PurchaseOrderPanel } from "@/features/purchasing/purchase-orders/model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
@@ -10,7 +11,6 @@ import { ErpDataDialog, ErpDataDialogBody, ErpDataTableViewport } from "@/shared
 import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
-import { Textarea } from "@/shared/ui/textarea"
 
 const text = (value: unknown) => value === null || value === undefined ? "" : String(value)
 const date = (value: unknown) => displayPurchaseOrderDate(text(value))
@@ -31,47 +31,6 @@ function Receipts({ panel }: { panel: PurchaseOrderPanel }) {
         </TableBody>
       </Table>
     </ErpDataTableViewport>
-  )
-}
-
-function Comments({ purchaseOrder, panel }: { purchaseOrder: PurchaseOrder; panel: PurchaseOrderPanel }) {
-  const comment = panel.items[0] ?? {}
-  const details = panel.summary ?? {}
-  const labels = Array.isArray(details.labels) ? details.labels : []
-  return (
-    <div className="grid gap-1">
-      <div className="grid grid-cols-12 gap-1">
-        <Field className="col-span-2" label="Desde" value={displayPurchaseOrderDate(purchaseOrder.dates.from)} />
-        <Field className="col-span-2" label="Hasta" value={displayPurchaseOrderDate(purchaseOrder.dates.dueAt)} />
-        <Field className="col-span-2" label="Plazo" value={details.terms} />
-        <Field className="col-span-4" label="Número ello" value={purchaseOrder.supplierOrderNumber} />
-        <Field className="col-span-2" label="Depto" value={purchaseOrder.department} />
-        {purchaseOrder.discountPercentages.map((percent, index) => <Field className="col-span-3" key={index} label={`Dto. ${index + 1} %`} value={percent} />)}
-        <Field className="col-span-3" label="Tipo de cambio" value={details.exchangeRate} />
-        <Field className="col-span-3" label="Alm" value={purchaseOrder.warehouse} />
-        <Field className="col-span-3" label="Moneda" value={details.currencyName || details.currencyId} />
-      </div>
-      {[comment.comments, comment.line2, comment.line3, comment.line4].map((line, index) => (
-        <Field key={index} label={text(labels[index]) || `Comentario ${index + 1}`} value={line} />
-      ))}
-      <div className="grid grid-cols-3 gap-1">
-        <Field label="Alta" value={details.createdBy} />
-        <Field label="Autorizó" value={details.authorizedBy} />
-        <Field label="Cambios" value={details.changesCount} />
-      </div>
-      <label className="grid gap-0.5 text-[9px]">
-        <span>{text(labels[4]) || "Comentarios"}</span>
-        <Textarea className="min-h-24 resize-y text-[9px]" readOnly value={text(comment.line5)} />
-      </label>
-      <Field label="Importe con letra" value={comment.amountInWords} />
-      <div className="grid grid-cols-3 gap-1">
-        <Field label="Flete" value={purchaseOrder.totals.freight} />
-        <Field label="Seguros" value={purchaseOrder.totals.insurance} />
-        <Field label={purchaseOrder.otherLabel || "Otros"} value={purchaseOrder.totals.other} />
-        <Field label="Fecha de alta" value={date(details.createdAt)} />
-        <Field label="Fecha de modificación" value={date(details.modifiedAt)} />
-      </div>
-    </div>
   )
 }
 
@@ -161,7 +120,6 @@ function ReadPanel({ purchaseOrder, action, onClose, panelKey }: {
         {query.isPending && <div className="grid min-h-48 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive"><AlertTitle>No fue posible cargar</AlertTitle><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>}
         {panel && panelKey === "receipts" && <Receipts panel={panel} />}
-        {panel && panelKey === "comments" && <Comments panel={panel} purchaseOrder={purchaseOrder} />}
         {panel && panelKey === "ct" && <ColorSize panel={panel} />}
         {panel && panelKey === "pieces" && <Pieces panel={panel} />}
         <footer className="flex justify-end gap-1"><Button onClick={onClose} size="sm">Cerrar</Button></footer>
@@ -176,6 +134,7 @@ export function PurchaseOrderActionDialog({ purchaseOrder, action, onClose }: {
   onClose: () => void
 }) {
   if (action.panelKey === "classifications") return <PurchaseOrderClassificationsDialog onClose={onClose} purchaseOrder={purchaseOrder} />
+  if (action.panelKey === "comments") return <PurchaseOrderCommentsDialog onClose={onClose} purchaseOrder={purchaseOrder} />
   if (action.panelKey) return <ReadPanel action={action} onClose={onClose} panelKey={action.panelKey} purchaseOrder={purchaseOrder} />
   return (
     <ErpDataDialog className="sm:max-w-[34rem]" description={`${action.label} de ${purchaseOrder.number}`} onOpenChange={(open) => !open && onClose()} title={action.label}>
