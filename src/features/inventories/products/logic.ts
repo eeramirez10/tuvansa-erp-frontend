@@ -115,6 +115,16 @@ export function productCustomerSalesQueryOptions(
   })
 }
 
+export function productAnnualSalesQueryOptions(productId: number, panel: "annual-sales" | "annual-sales-summary") {
+  return infiniteQueryOptions({
+    queryKey: [...productKeys.panel(productId, panel), "pages"],
+    queryFn: ({ pageParam, signal }) => getProductPanel(productId, panel, signal, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: ({ pagination }) =>
+      pagination.returned === pagination.pageSize ? pagination.page + 1 : undefined,
+  })
+}
+
 export function getProductFormDefaults(product?: Product): ProductFormValues {
   return {
     code: product?.code ?? "",

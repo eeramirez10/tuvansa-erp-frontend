@@ -143,6 +143,7 @@ export type ProductPanel = {
   openingStock?: number
   customerOrdersTotals?: { assigned: number; remaining: number }
   customerSalesTotals?: { quantity: number; amount: number }
+  annualSalesDetails?: { fromDate: string | null; totals: Record<string, number> }
   reason?: string
 }
 

@@ -1,10 +1,10 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import PrinterIcon from "@hugeicons/core-free-icons/PrinterIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import type { ReactNode } from "react"
 
-import { productPanelQueryOptions } from "@/features/inventories/products/logic"
+import { productAnnualSalesQueryOptions, productPanelQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
   ProductPanel,
@@ -219,21 +219,35 @@ const monthColumns = [
   ["december", "Dic"],
 ] as const
 
-function AnnualTable({ rows, entity }: { rows: QueryRow[]; entity: "customer" | "supplier" }) {
+function AnnualTable({
+  rows,
+  entity,
+  salesDetails,
+}: {
+  rows: QueryRow[]
+  entity: "customer" | "supplier"
+  salesDetails?: ProductPanel["annualSalesDetails"]
+}) {
   const codeKey = entity === "customer" ? "customerCode" : "supplierCode"
   const nameKey = entity === "customer" ? "customerName" : "supplierName"
-  const totals: QueryRow = {
+  const totals: QueryRow | undefined = entity === "customer" && salesDetails === undefined ? undefined : {
     id: "totals",
     [codeKey]: "Totales:",
     [nameKey]: "",
     year: "",
-    ...Object.fromEntries(monthColumns.map(([key]) => [key, sum(rows, key)])),
-    total: sum(rows, "total"),
+    ...(salesDetails?.totals ?? {
+      ...Object.fromEntries(monthColumns.map(([key]) => [key, sum(rows, key)])),
+      total: sum(rows, "total"),
+    }),
   }
+  const fromDate = entity === "supplier" ? "1900-12-31" : salesDetails?.fromDate
   const columns: QueryColumn[] = [
     { key: codeKey, label: "Código", width: "5rem" },
     { key: nameKey, label: "Nombre", width: "11rem" },
-    numberColumn("year", "Año", "3rem", 0),
+    {
+      ...numberColumn("year", "Año", "3rem", 0),
+      render: (row) => entity === "customer" && row.id === "totals" ? "" : formatNumber(row.year, 0),
+    },
     ...monthColumns.map(([key, label]) => numberColumn(key, label, "3rem")),
     numberColumn("total", "Total", "4rem"),
   ]
@@ -243,11 +257,11 @@ function AnnualTable({ rows, entity }: { rows: QueryRow[]; entity: "customer" | 
       <ProductQueryTable
         className="h-[min(46vh,19rem)]"
         columns={columns}
-        rows={[totals, ...rows]}
+        rows={totals ? [totals, ...rows] : rows}
         tableClassName="w-[58rem]"
       />
       <footer className="mt-1 flex h-7 items-center gap-8 px-2">
-        <span>Desde : 31/12/1900</span>
+        {fromDate && <span>Desde : {formatDate(fromDate)}</span>}
         <Button aria-label="Documento" size="icon-sm" title="Documento" type="button" variant="outline">
           <HugeiconsIcon icon={PrinterIcon} strokeWidth={2} />
         </Button>
@@ -256,10 +270,21 @@ function AnnualTable({ rows, entity }: { rows: QueryRow[]; entity: "customer" | 
   )
 }
 
-function AnnualSummary({ rows }: { rows: QueryRow[] }) {
+function AnnualSummary({
+  rows,
+  fromDate = "1900-12-31",
+  totals,
+}: {
+  rows: QueryRow[]
+  fromDate?: string | null
+  totals?: Record<string, number>
+}) {
   const max = Math.max(...rows.map((row) => numberValue(row.total)), 1)
   const columns: QueryColumn[] = [
-    numberColumn("year", "Año", "3.5rem", 0),
+    {
+      ...numberColumn("year", "Año", "3.5rem", 0),
+      render: (row) => row.id === "totals" ? "Totales:" : formatNumber(row.year, 0),
+    },
     ...monthColumns.map(([key, label]) => numberColumn(key, label, "3rem")),
     numberColumn("total", "Total", "4rem"),
   ]
@@ -271,10 +296,10 @@ function AnnualSummary({ rows }: { rows: QueryRow[] }) {
           axes="y"
           className="h-56 flex-1"
           columns={columns}
-          rows={rows}
+          rows={totals ? [...rows, { id: "totals", ...totals }] : rows}
           tableClassName="w-[44rem]"
         />
-        <span className="w-24 pt-2">Desde: 31/12/1900</span>
+        {fromDate && <span className="w-24 pt-2">Desde: {formatDate(fromDate)}</span>}
       </div>
       <div className="mt-1 flex h-36 items-end gap-3 overflow-x-auto border border-fuchsia-700 bg-black px-5 pt-3 pb-5 text-[8px] text-yellow-300">
         {rows.map((row) => (
@@ -289,6 +314,61 @@ function AnnualSummary({ rows }: { rows: QueryRow[] }) {
         ))}
       </div>
     </>
+  )
+}
+
+function AnnualSalesDialog({ panel, product, onOpenChange }: ProductQueryDialogProps) {
+  const key = panel.key === "annual-sales-summary" ? "annual-sales-summary" : "annual-sales"
+  const summary = key === "annual-sales-summary"
+  const sales = useInfiniteQuery(productAnnualSalesQueryOptions(product.id, key))
+  const rows = sales.data?.pages.flatMap((page) => page.data.items) ?? []
+  const details = sales.data?.pages[0]?.data.annualSalesDetails
+
+  return (
+    <ErpDataDialog
+      className={summary ? "sm:max-w-[66rem]" : "sm:max-w-[64rem]"}
+      description={`${panel.label} del producto ${product.code}.`}
+      onOpenChange={onOpenChange}
+      title={summary ? "Ventas Anuales resumen anual" : "Ventas Anuales"}
+    >
+      <ErpDataDialogBody>
+        {sales.isPending ? (
+          <div className="flex min-h-48 items-center justify-center gap-1.5 border border-input bg-background text-muted-foreground">
+            <Spinner />
+            Cargando {panel.label.toLowerCase()}…
+          </div>
+        ) : sales.isLoadingError ? (
+          <Alert className="min-h-48" variant="destructive">
+            <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} />
+            <AlertTitle>No fue posible cargar la consulta</AlertTitle>
+            <AlertDescription>
+              {getApiErrorMessage(sales.error)}
+              <Button disabled={sales.isFetching} onClick={() => void sales.refetch()} size="sm" type="button" variant="outline">
+                Reintentar
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : summary ? (
+          <AnnualSummary rows={rows} fromDate={details?.fromDate ?? null} totals={details?.totals} />
+        ) : (
+          <AnnualTable entity="customer" rows={rows} salesDetails={details} />
+        )}
+        {sales.hasNextPage && (
+          <div className="mt-1 flex justify-end">
+            <Button disabled={sales.isFetching} onClick={() => void sales.fetchNextPage()} size="sm" type="button" variant="outline">
+              {sales.isFetchingNextPage
+                ? "Cargando ventas…"
+                : sales.isFetchNextPageError ? "Reintentar" : "Cargar más ventas"}
+            </Button>
+          </div>
+        )}
+        {sales.isFetchNextPageError && (
+          <p className="mt-1 text-right text-destructive" role="alert">
+            {getApiErrorMessage(sales.error)}
+          </p>
+        )}
+      </ErpDataDialogBody>
+    </ErpDataDialog>
   )
 }
 
@@ -565,10 +645,6 @@ function availablePresentation(
         ),
       }
     }
-    case "annual-sales":
-      return { title: "Ventas Anuales", className: "sm:max-w-[64rem]", body: <AnnualTable entity="customer" rows={rows} /> }
-    case "annual-sales-summary":
-      return { title: "Ventas Anuales resumen anual", className: "sm:max-w-[66rem]", body: <AnnualSummary rows={rows} /> }
     case "supplier-orders":
       return { title: "Ordenado a proveedores", className: "sm:max-w-[72rem]", body: <SupplierOrders product={product} rows={rows} /> }
     case "supplier-orders-ct":
@@ -666,6 +742,13 @@ function availablePresentation(
 }
 
 export function ProductQueryDialog({ panel, product, onOpenChange }: ProductQueryDialogProps) {
+  const props = { panel, product, onOpenChange }
+  return panel.key === "annual-sales" || panel.key === "annual-sales-summary"
+    ? <AnnualSalesDialog {...props} />
+    : <SinglePageProductQueryDialog {...props} />
+}
+
+function SinglePageProductQueryDialog({ panel, product, onOpenChange }: ProductQueryDialogProps) {
   const panelQuery = useQuery(productPanelQueryOptions(product.id, panel.key))
   const unavailableReason = panelQuery.data?.data.reason
   const presentation = availablePresentation(panel.key, product, panelQuery.data?.data)

@@ -206,6 +206,16 @@ Código, Cliente, Cantidad e Importe. Se abre ordenada por Suc. y cada
 encabezado ordena toda la consulta de forma ascendente. Los dos campos al
 pie muestran los totales completos de Cantidad e Importe antes de paginar.
 
+### Ventas anuales y Ventas anuales resumen
+
+Las dos ventanas mantienen la matriz mensual de Omnis 7. **Ventas Anuales**
+presenta cliente y año con los totales al inicio. **Ventas Anuales resumen
+anual** presenta una fila por año, los totales al final de la tabla y la
+gráfica. Los acumulados de los meses y el total general vienen de
+`annualSalesDetails.totals`. **Desde** muestra la fecha que devuelve
+`annualSalesDetails.fromDate` en formato día/mes/año cuando está configurada.
+**Cargar más ventas** recorre las siguientes páginas con los mismos totales.
+
 ### Modales restantes de Consultas
 
 | Botón visible | Título observado en OMNIS | Presentación reproducida |
@@ -213,8 +223,6 @@ pie muestran los totales completos de Cantidad e Importe antes de paginar.
 | Pedidos por cliente · CT | Pedidos por cliente | Tabla de pedidos y panel CT lateral con filtros; totales y botones Pedido/Surtido/Resta/Filtrar Tipo |
 | Ventas por cliente · CT | Ventas por cliente | Acumulado por cliente en Código, Descripción, Cantidad e Importe, con panel CT lateral |
 | Ventas desglosadas | Compras por cliente | Detalle horizontal con documento, fecha, precios, tipo de cambio, descuento y O.C. El pie acumula la cantidad de toda la consulta. |
-| Ventas anuales | Ventas Anuales | Matriz cliente/año por los doce meses, renglón Totales y Documento |
-| Ventas anuales resumen | Ventas Anuales resumen anual | Matriz año/mes y gráfica inferior |
 | Ordenado a proveedor | Ordenado a proveedores | O.C., sucursal, unidad, pedido/surtido/resta, precio, fechas, almacén, observaciones y Stock/Por llegar/Total |
 | Ordenado a proveedor · CT | Ordenado a proveedores | Tabla y panel CT lateral con totales y botones Pedido/Surtido/Resta |
 | Cotizado a proveedores | Cotizado a proveedores | Pedido/surtido/resta y Stock/Por llegar/Total |
