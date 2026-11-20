@@ -12,6 +12,7 @@ Trazabilidad de la pantalla heredada de OMNIS/PROSCAI con la ruta web `/inventar
 | Buscador / Buscar producto | Buscar por código o descripción | `GET /inventories/products?q=:texto&status=active&page=:page&pageSize=25` | `product-search-dialog.tsx` |
 | Flecha derecha / Producto siguiente | Navegar al registro siguiente | `GET /inventories/products/:productId/next` | `product-toolbar.tsx` |
 | Papel / Nuevo producto | Habilitar el alta en la misma ficha | `GET /inventories/products/:productId/edit-options` | `product-catalog-page.tsx` |
+| Alta de productos / Código | Validar el código al salir del campo | `GET /inventories/products/code-availability?code=:code` | `product-catalog-page.tsx` |
 | Alta de productos / OK y Cancelar | Crear el registro o descartar el borrador | `POST /inventories/products` al guardar | `product-catalog-details.tsx` y `product-catalog-page.tsx` |
 | Papel marcado / Eliminar producto | Eliminar o dar de baja el registro | `DELETE /inventories/products/:productId` | `product-catalog-page.tsx` |
 | Papel y lápiz / Editar producto | Habilitar el cambio en la misma ficha | `GET /inventories/products/:productId/edit-options` | `product-catalog-page.tsx` |
@@ -30,6 +31,9 @@ encuentra en el catálogo de unidades, cuando existe.
 Se enfoca en Código y empieza con M.P., unidad UNO del catálogo y monedas en cero.
 Foto, fechas, existencias y demás acumulados calculados quedan en gris.
 Color y talla, Vta 6s y Días Inv. admiten captura.
+**Código** se captura manualmente. Al pulsar **Tab** o salir del campo,
+la ficha consulta si el código existe. Si está duplicado, muestra el
+aviso, limpia Código y devuelve el foco a ese campo.
 **OK** envía el alta y muestra el producto creado. **Cancelar** vuelve
 al registro que estaba visible.
 

@@ -121,6 +121,14 @@ export async function getAdjacentProduct(
   return response.data.data
 }
 
+export async function getProductCodeAvailability(code: string, signal?: AbortSignal) {
+  const { data } = await apiClient.get<ItemResponse<{ available: boolean }>>(
+    "/inventories/products/code-availability",
+    { params: { code }, signal },
+  )
+  return data.data.available
+}
+
 export async function createProduct(input: ProductMutationInput) {
   const response = await apiClient.post<ItemResponse<Product>>(
     "/inventories/products",

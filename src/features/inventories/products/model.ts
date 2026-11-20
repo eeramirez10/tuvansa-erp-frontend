@@ -284,8 +284,10 @@ export type ProductPanelDefinition = {
   section: ProductPanelSection
 }
 
+export const productCodeSchema = z.string().trim().toUpperCase().min(1, "El código es obligatorio").max(13)
+
 const productFormSchema = z.object({
-  code: z.string().trim().min(1, "El código es obligatorio").max(13),
+  code: productCodeSchema,
   description: z.string().trim().min(1, "La descripción es obligatoria").max(60),
   type: z.enum(["rawMaterial", "finishedProduct", "set", "assembly", "service"]),
   unitId: z.number().int().positive("La unidad debe ser mayor que cero"),
@@ -352,7 +354,7 @@ export const productCreateFields = new Set(["code", ...Object.keys(productCatalo
 
 export const productCatalogFormSchema = z.object({
   mode: z.enum(["create", "edit"]),
-  code: productFormSchema.shape.code.toUpperCase().optional(),
+  code: productCodeSchema.optional(),
   changes: productCatalogChangesSchema,
 }).superRefine(({ mode, code, changes }, context) => {
   if (mode !== "create") return

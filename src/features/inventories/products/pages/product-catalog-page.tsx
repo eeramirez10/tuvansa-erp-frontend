@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
-import { useEffect, useId, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useEffect, useId, useRef, useState } from "react"
+import { useForm, type SubmitHandler } from "react-hook-form"
 import { useNavigate, useParams } from "react-router"
 
 import { paths } from "@/app/router/paths"
@@ -30,6 +30,7 @@ import { ProductPanelButtons } from "@/features/inventories/products/components/
 import { ProductToolbar } from "@/features/inventories/products/components/product-toolbar"
 import {
   getNewProductCatalog,
+  productCodeAvailabilityQueryOptions,
   productEditOptionsQueryOptions,
   productKeys,
   productQueryOptions,
@@ -38,6 +39,7 @@ import {
 } from "@/features/inventories/products/logic"
 import {
   productCatalogFormSchema,
+  productCodeSchema,
   productCreateFields,
   type Product,
   type ProductCatalogDraft,
@@ -151,11 +153,47 @@ export function ProductCatalogPage() {
   const capturing = creating || Boolean(editing)
   const captureTitle = creating ? "Alta de productos" : "Cambio de producto"
   const formId = useId()
+  const codeValidationRequest = useRef(0)
   const form = useForm<ProductCatalogDraft, unknown, ProductCatalogValues>({
     defaultValues: { mode: "edit", changes: {} },
     resolver: zodResolver(productCatalogFormSchema),
   })
   const { setFocus: focusField } = form
+  useEffect(() => () => { codeValidationRequest.current += 1 }, [productId])
+
+  function resetCodeValidation() {
+    codeValidationRequest.current += 1
+    if (form.getFieldState("code").error?.type === "availability") form.clearErrors("code")
+  }
+
+  function rejectDuplicateCode(code: string) {
+    form.setValue("code", "", { shouldDirty: true })
+    form.setError("code", {
+      type: "availability",
+      message: `El código ${code} ya existe. Captura otro código.`,
+    }, { shouldFocus: true })
+  }
+
+  async function validateNewCode(value: string) {
+    const parsed = productCodeSchema.safeParse(value)
+    if (!parsed.success) return false
+    const request = ++codeValidationRequest.current
+    try {
+      const available = await queryClient.fetchQuery(productCodeAvailabilityQueryOptions(parsed.data))
+      if (request !== codeValidationRequest.current) return false
+      if (!available) rejectDuplicateCode(parsed.data)
+      return available
+    } catch {
+      if (request === codeValidationRequest.current) {
+        form.setError("code", {
+          type: "availability",
+          message: "No fue posible validar el código. Inténtalo de nuevo.",
+        }, { shouldFocus: true })
+      }
+      return false
+    }
+  }
+
   const editOptions = useQuery({
     ...productEditOptionsQueryOptions(product.id),
     enabled: creating || Boolean(editing?.editing?.editableFields.includes("unitId")),
@@ -181,6 +219,11 @@ export function ProductCatalogPage() {
       if (operation.mode === "edit" && isAxiosError(error) && error.response?.status === 409) {
         void queryClient.invalidateQueries({ queryKey: productKeys.detail(operation.id), exact: true })
       }
+      if (operation.mode === "create" &&
+        isAxiosError<{ error?: { code?: string } }>(error) &&
+        error.response?.data.error?.code === "PRODUCT_CODE_EXISTS") {
+        rejectDuplicateCode(operation.input.code)
+      }
     },
   })
   useEffect(() => {
@@ -191,6 +234,7 @@ export function ProductCatalogPage() {
   }, [creating, editing, focusField])
 
   function startCreating() {
+    resetCodeValidation()
     saveMutation.reset()
     form.reset({ mode: "create", changes: {} })
     setNotice(null)
@@ -206,15 +250,17 @@ export function ProductCatalogPage() {
   }
 
   function cancelCapture() {
+    resetCodeValidation()
     saveMutation.reset()
     form.reset({ mode: "edit", changes: {} })
     setCapture(null)
   }
 
   const saveDisabled = saveMutation.isPending || (creating && units.length === 0)
-  const saveCapture = form.handleSubmit(({ changes, code, mode }) => {
+  const saveCapture: SubmitHandler<ProductCatalogValues> = async ({ changes, code, mode }) => {
     if (saveDisabled) return
     if (newProduct && mode === "create" && code) {
+      if (!(await validateNewCode(code))) return
       const input = toProductCatalogCreateInput(code, {
         ...changes,
         unitId: changes.unitId ?? newProduct.classification.unit.id,
@@ -226,7 +272,7 @@ export function ProductCatalogPage() {
     const input = toProductCatalogEditInput(editing, changes)
     if (input) saveMutation.mutate({ mode, id: editing.id, input })
     else cancelCapture()
-  })
+  }
   const restoreWindow = useDesktopWindowStore(selectRestoreDesktopWindow)
   const documentSearchActive = useDesktopWindowStore(({ windows }) => {
     let active: DesktopWindowEntry | undefined
@@ -390,7 +436,7 @@ export function ProductCatalogPage() {
           className="min-w-0 data-[editing=true]:[&_input[readonly]]:bg-neutral-300 dark:data-[editing=true]:[&_input[readonly]]:bg-neutral-600"
           data-editing={capturing}
           id={formId}
-          onSubmit={saveCapture}
+          onSubmit={(event) => { void form.handleSubmit(saveCapture)(event) }}
         >
           <ProductCatalogDetails
             editor={capturing ? {
@@ -398,6 +444,10 @@ export function ProductCatalogPage() {
               disabled: saveMutation.isPending,
               fields: creating ? productCreateFields : new Set(editing?.editing?.editableFields),
               units,
+              codeValidation: creating ? {
+                onBlur: (value) => { void validateNewCode(value) },
+                onChange: resetCodeValidation,
+              } : undefined,
             } : undefined}
             product={newProduct ?? editing ?? product}
           />

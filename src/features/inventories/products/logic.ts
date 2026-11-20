@@ -16,6 +16,7 @@ import type {
 } from "@/features/inventories/products/model"
 import {
   getProduct,
+  getProductCodeAvailability,
   getProductClassification,
   getProductEditOptions,
   getFirstActiveProduct,
@@ -30,6 +31,7 @@ export const productKeys = {
   firstActive: () => [...productKeys.all, "first-active"] as const,
   detail: (productId: number) => [...productKeys.all, "detail", productId] as const,
   editOptions: (productId: number) => [...productKeys.detail(productId), "edit-options"] as const,
+  codeAvailability: (code: string) => [...productKeys.all, "code-availability", code] as const,
   search: (criteria: ProductSearchCriteria) =>
     [...productKeys.all, "search", criteria] as const,
   panel: (productId: number, panel: ProductPanelKey) =>
@@ -47,6 +49,15 @@ export function productEditOptionsQueryOptions(productId: number) {
   return queryOptions({
     queryKey: productKeys.editOptions(productId),
     queryFn: ({ signal }) => getProductEditOptions(productId, signal),
+  })
+}
+
+export function productCodeAvailabilityQueryOptions(code: string) {
+  return queryOptions({
+    queryKey: productKeys.codeAvailability(code),
+    queryFn: ({ signal }) => getProductCodeAvailability(code, signal),
+    staleTime: 0,
+    retry: false,
   })
 }
 

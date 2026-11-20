@@ -19,6 +19,10 @@ export type ProductCatalogEditor = {
   fields: ReadonlySet<string>
   units: ProductEditOptions["units"]
   disabled: boolean
+  codeValidation?: {
+    onBlur: (value: string) => void
+    onChange: () => void
+  }
 }
 
 export function CatalogEditField({ editor, name, ...props }: ComponentProps<typeof ReadonlyProductField> & {
@@ -29,6 +33,7 @@ export function CatalogEditField({ editor, name, ...props }: ComponentProps<type
   if (!editor?.fields.has(name)) return <ReadonlyProductField {...props} />
 
   const numeric = props.inputMode === "decimal" || props.inputMode === "numeric"
+  const codeValidation = name === "code" ? editor.codeValidation : undefined
   const initialValue = String(props.value ?? "")
   const initial = numeric ? initialValue.replaceAll(",", "") : initialValue
   return (
@@ -46,8 +51,14 @@ export function CatalogEditField({ editor, name, ...props }: ComponentProps<type
               id={id}
               inputMode={props.inputMode}
               name={field.name}
-              onBlur={field.onBlur}
-              onChange={(event) => field.onChange(event.target.value)}
+              onBlur={(event) => {
+                field.onBlur()
+                codeValidation?.onBlur(event.currentTarget.value)
+              }}
+              onChange={(event) => {
+                codeValidation?.onChange()
+                field.onChange(event.target.value)
+              }}
               ref={field.ref}
               value={field.value ?? initial}
             />
