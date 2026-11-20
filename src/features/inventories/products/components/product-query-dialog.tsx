@@ -565,18 +565,6 @@ function availablePresentation(
         ),
       }
     }
-    case "sales-by-branch":
-      return {
-        title: "Producto vendidos por sucursal",
-        className: "sm:max-w-[41rem]",
-        body: <><ProductQueryTable axes="y" className="h-[min(44vh,17rem)]" columns={[
-          { key: "branch", label: "Suc.", width: "3rem" },
-          { key: "customerCode", label: "Código", width: "5rem" },
-          { key: "customerName", label: "Cliente", width: "13rem" },
-          numberColumn("quantity", "Cantidad"),
-          moneyColumn("amount", "Importe", "7rem"),
-        ]} rows={rows} tableClassName="w-[38rem]" /><TotalsFooter rows={rows} /></>,
-      }
     case "annual-sales":
       return { title: "Ventas Anuales", className: "sm:max-w-[64rem]", body: <AnnualTable entity="customer" rows={rows} /> }
     case "annual-sales-summary":

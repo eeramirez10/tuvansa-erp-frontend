@@ -6,7 +6,12 @@ import { useState } from "react"
 import { ProductCustomerClassifiers } from "@/features/inventories/products/components/product-customer-classifiers"
 import { ProductQueryTable } from "@/features/inventories/products/components/product-query-table"
 import { productCustomerSalesQueryOptions } from "@/features/inventories/products/logic"
-import type { Product, ProductCustomerSalesFilters, ProductCustomerSalesSort } from "@/features/inventories/products/model"
+import type {
+  Product,
+  ProductCustomerSalesFilters,
+  ProductCustomerSalesPanel,
+  ProductCustomerSalesSort,
+} from "@/features/inventories/products/model"
 import {
   formatMoney,
   formatNumber,
@@ -20,7 +25,7 @@ import { Spinner } from "@/shared/ui/spinner"
 
 type ProductCustomerSalesDialogProps = {
   product: Product
-  classified: boolean
+  panel: ProductCustomerSalesPanel
   onOpenChange: (open: boolean) => void
 }
 
@@ -35,22 +40,54 @@ const classifiedSalesColumns = salesColumns.map((column) =>
   column.key === "customerName" ? { ...column, label: "Nombre" } : column,
 )
 
+const branchSalesColumns: typeof salesColumns = [
+  { key: "branch", label: "Suc.", width: "3rem", sort: "branch" },
+  ...salesColumns,
+]
+
+const salesViews = {
+  "customer-sales": {
+    title: "Ventas por cliente",
+    columns: salesColumns,
+    defaultSort: "code",
+    dialogClassName: "sm:max-w-[31rem]",
+    viewportClassName: "h-[min(52vh,20rem)]",
+    tableClassName: "w-[28rem]",
+  },
+  "customer-sales-star": {
+    title: "Ventas por *",
+    columns: classifiedSalesColumns,
+    defaultSort: "code",
+    dialogClassName: "sm:max-w-[32rem]",
+    viewportClassName: "h-44",
+    tableClassName: "w-[29rem]",
+  },
+  "sales-by-branch": {
+    title: "Producto vendidos por sucursal",
+    columns: branchSalesColumns,
+    defaultSort: "branch",
+    dialogClassName: "sm:max-w-[41rem]",
+    viewportClassName: "h-[min(44vh,17rem)]",
+    tableClassName: "w-[38rem]",
+  },
+} as const
+
 export function ProductCustomerSalesDialog({
   product,
-  classified,
+  panel,
   onOpenChange,
 }: ProductCustomerSalesDialogProps) {
-  const [filters, setFilters] = useState<ProductCustomerSalesFilters>({ sort: "code" })
-  const panel = classified ? "customer-sales-star" : "customer-sales"
+  const view = salesViews[panel]
+  const [filters, setFilters] = useState<ProductCustomerSalesFilters>({ sort: view.defaultSort })
   const sales = useInfiniteQuery(productCustomerSalesQueryOptions(product.id, panel, filters))
   const rows = sales.data?.pages.flatMap((page) => page.data.items) ?? []
   const totals = sales.data?.pages[0]?.data.customerSalesTotals
-  const title = classified ? "Ventas por *" : "Ventas por cliente"
-  const columns = classified ? classifiedSalesColumns : salesColumns
+  const { title, columns, defaultSort } = view
+  const classified = panel === "customer-sales-star"
 
   return (
     <ErpDataDialog
-      className={classified ? "sm:max-w-[32rem]" : "sm:max-w-[31rem]"}
+      className={view.dialogClassName}
       description={`${title} del producto ${product.code}.`}
       onOpenChange={onOpenChange}
       title={title}
@@ -75,28 +112,28 @@ export function ProductCustomerSalesDialog({
         ) : (
           <ProductQueryTable
             axes="y"
-            className={classified ? "h-44" : "h-[min(52vh,20rem)]"}
+            className={view.viewportClassName}
             columns={columns}
             emptyMessage={classified && filters.classifier === undefined ? "" : undefined}
             rows={rows}
             sorting={{
-              key: columns.find((column) => column.sort === filters.sort)?.key ?? "customerCode",
+              key: columns.find((column) => column.sort === filters.sort)?.key ?? "",
               onSort: (key) => setFilters((current) => ({
-                ...current, sort: columns.find((column) => column.key === key)?.sort ?? "code",
+                ...current, sort: columns.find((column) => column.key === key)?.sort ?? defaultSort,
               })),
             }}
-            tableClassName={classified ? "w-[29rem]" : "w-[28rem]"}
+            tableClassName={view.tableClassName}
           />
         )}
         <footer className="mt-1">
           <div className="flex items-end justify-end gap-1">
-            <span className="mr-6">Total</span>
+            {panel !== "sales-by-branch" && <span className="mr-6">Total</span>}
             <ErpDataMetric label="" value={totals === undefined ? "—" : formatMoney(totals.quantity)} />
             <ErpDataMetric label="" value={totals === undefined ? "—" : formatMoney(totals.amount)} />
           </div>
           {classified && (
             <ProductCustomerClassifiers
-              onSelect={(classifier) => setFilters({ classifier, sort: "code" })}
+              onSelect={(classifier) => setFilters({ classifier, sort: defaultSort })}
               selected={filters.classifier}
             />
           )}

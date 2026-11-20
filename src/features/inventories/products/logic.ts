@@ -4,6 +4,7 @@ import type {
   Product,
   ProductCustomerOrdersStarFilters,
   ProductCustomerSalesFilters,
+  ProductCustomerSalesPanel,
   ProductFormValues,
   ProductLedgerFilters,
   ProductMutationInput,
@@ -101,7 +102,7 @@ export function productCustomerOrdersStarQueryOptions(
 
 export function productCustomerSalesQueryOptions(
   productId: number,
-  panel: "customer-sales" | "customer-sales-star",
+  panel: ProductCustomerSalesPanel,
   filters: ProductCustomerSalesFilters,
 ) {
   return infiniteQueryOptions({

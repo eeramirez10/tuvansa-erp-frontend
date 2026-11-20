@@ -199,7 +199,9 @@ export type ProductCustomerOrdersStarFilters = {
   sort: ProductCustomerOrdersStarSort
 }
 
-export type ProductCustomerSalesSort = "code" | "name" | "quantity" | "amount"
+export type ProductCustomerSalesPanel = "customer-sales" | "customer-sales-star" | "sales-by-branch"
+
+export type ProductCustomerSalesSort = "branch" | "code" | "name" | "quantity" | "amount"
 
 export type ProductCustomerSalesFilters = {
   classifier?: number
