@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useId, useRef, useState, type FormEvent } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { purchaseOrderAuthorizationSupplierQueryOptions } from "@/features/purchasing/purchase-orders/logic"
-import type { PurchaseOrder, PurchaseOrderAuthorization, PurchaseOrderSupplierSearch } from "@/features/purchasing/purchase-orders/model"
+import { purchaseOrderAuthorizationSupplierQueryOptions, purchaseOrderSupplierActionQueryOptions, refreshPurchaseOrder } from "@/features/purchasing/purchase-orders/logic"
+import type { PurchaseOrder, PurchaseOrderSupplierChangeMode, PurchaseOrderSupplierChangeState, PurchaseOrderSupplierSearch } from "@/features/purchasing/purchase-orders/model"
 import { replacePurchaseOrderSupplier } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
@@ -19,8 +19,9 @@ import { Table, TableBody, TableCell, TableRow } from "@/shared/ui/table"
 type Supplier = PurchaseOrder["supplier"]
 const supplierCodeSchema = z.object({ supplierCode: z.string().trim().min(1, "Ingresa el código del proveedor.").max(20).toUpperCase() })
 
-function SupplierSearch({ initial, onSelect, onClose }: {
+function SupplierSearch({ initial, description, onSelect, onClose }: {
   initial: PurchaseOrderSupplierSearch
+  description: string
   onSelect: (supplier: Supplier) => void
   onClose: () => void
 }) {
@@ -32,7 +33,7 @@ function SupplierSearch({ initial, onSelect, onClose }: {
   const query = useQuery(purchaseOrderAuthorizationSupplierQueryOptions(submitted))
 
   return (
-    <ErpDataDialog defaultWidth={520} title="Buscar proveedor" description="Cambia proveedor" tone="sales"
+    <ErpDataDialog defaultWidth={520} title="Buscar proveedor" description={description} tone="sales"
       onOpenChange={(open) => { if (!open) onClose() }}>
       <ErpDataDialogBody className="grid gap-1.5">
         <form className="grid grid-cols-[minmax(4rem,1fr)_minmax(6rem,3fr)_auto] items-end gap-1" onSubmit={(event) => {
@@ -80,11 +81,15 @@ function SupplierSearch({ initial, onSelect, onClose }: {
   )
 }
 
-export function PurchaseOrderSupplierChangeDialog({ state, onChange, onClose }: {
-  state: PurchaseOrderAuthorization
+export function PurchaseOrderSupplierChangeDialog({ state: initialState, mode, onChange, onClose }: {
+  state: PurchaseOrderSupplierChangeState
+  mode: PurchaseOrderSupplierChangeMode
   onChange: (order: PurchaseOrder) => void
   onClose: () => void
 }) {
+  const title = mode === "action" ? "Cambia Prv" : "Cambia proveedor"
+  const [state] = useState(initialState)
+  const queryClient = useQueryClient()
   const codeId = useId()
   const keyId = useId()
   const credentialInput = useRef<HTMLInputElement>(null)
@@ -93,23 +98,27 @@ export function PurchaseOrderSupplierChangeDialog({ state, onChange, onClose }: 
   const searchWindow = useDesktopWindowCollection<PurchaseOrderSupplierSearch>()
   const { register, handleSubmit, setValue, getValues, setError, clearErrors, formState: { errors } } = useForm({
     resolver: zodResolver(supplierCodeSchema),
-    defaultValues: { supplierCode: state.supplierChange.supplier.code },
+    defaultValues: { supplierCode: state.supplier.code },
   })
   const change = useMutation({
     networkMode: "always",
     mutationFn: (supplierCode: string) => {
       const key = credential.current
       credential.current = ""
-      return replacePurchaseOrderSupplier(state.id, supplierCode, state, key)
+      return replacePurchaseOrderSupplier(mode, supplierCode, state, key)
         .catch((error: unknown) => { throw new Error(getApiErrorMessage(error)) })
     },
-    onSuccess: onChange,
+    onSuccess: async (order) => {
+      await refreshPurchaseOrder(queryClient, order)
+      void queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
+      onChange(order)
+    },
   })
   const cancel = () => { if (!change.isPending) onClose() }
   function submit(event: FormEvent<HTMLFormElement>) {
     void handleSubmit(({ supplierCode }) => {
       change.reset()
-      if (supplierCode === state.supplierChange.supplier.code) {
+      if (mode === "authorization" && supplierCode === state.supplier.code) {
         setError("supplierCode", { message: "Selecciona un proveedor distinto de COMPRA." }, { shouldFocus: true })
         return
       }
@@ -128,14 +137,14 @@ export function PurchaseOrderSupplierChangeDialog({ state, onChange, onClose }: 
   const code = register("supplierCode", { onChange: () => setSelected(null) })
   const openSearch = () => {
     const value = getValues("supplierCode").trim().toUpperCase()
-    searchWindow.openWindow(`purchase-orders:${state.id}:authorization:supplier-search`, {
-      code: value === state.supplierChange.supplier.code ? "" : value, name: "",
+    searchWindow.openWindow(`purchase-orders:${state.id}:${mode}:supplier-search`, {
+      code: value === state.supplier.code ? "" : value, name: "",
     })
   }
   const error = errors.supplierCode?.message || errors.root?.message || change.error?.message
 
   return <>
-    <ErpDataDialog defaultWidth={430} title="Cambia proveedor" description={state.number} tone="sales"
+    <ErpDataDialog defaultWidth={430} title={title} description={state.number} tone="sales"
       onOpenChange={(open) => { if (!open) cancel() }}>
       <ErpDataDialogBody>
         <form className="grid gap-2" onSubmit={submit}>
@@ -163,7 +172,7 @@ export function PurchaseOrderSupplierChangeDialog({ state, onChange, onClose }: 
     </ErpDataDialog>
     {searchWindow.windows.map(({ id, payload }) => (
       <DesktopWindowIdentity key={id} id={id}>
-        <SupplierSearch initial={payload} onClose={() => searchWindow.closeWindow(id)} onSelect={(supplier) => {
+        <SupplierSearch initial={payload} description={title} onClose={() => searchWindow.closeWindow(id)} onSelect={(supplier) => {
           setSelected(supplier)
           setValue("supplierCode", supplier.code, { shouldValidate: true })
           change.reset()
@@ -172,4 +181,25 @@ export function PurchaseOrderSupplierChangeDialog({ state, onChange, onClose }: 
       </DesktopWindowIdentity>
     ))}
   </>
+}
+
+export function PurchaseOrderSupplierActionDialog({ purchaseOrder, onClose }: {
+  purchaseOrder: PurchaseOrder
+  onClose: () => void
+}) {
+  const query = useQuery(purchaseOrderSupplierActionQueryOptions(purchaseOrder.id))
+  if (query.data?.canWrite && (query.isFetchedAfterMount || !query.isFetching)) {
+    return <PurchaseOrderSupplierChangeDialog mode="action" state={query.data} onChange={onClose} onClose={onClose} />
+  }
+  return (
+    <ErpDataDialog defaultWidth={430} title="Cambia Prv" description={purchaseOrder.number} tone="sales"
+      onOpenChange={(open) => { if (!open) onClose() }}>
+      <ErpDataDialogBody className="grid gap-2">
+        {query.isFetching && <Spinner aria-label="Cargando estado del proveedor" />}
+        {query.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>}
+        {query.data && !query.data.canWrite && <Alert><AlertDescription>{query.data.reason}</AlertDescription></Alert>}
+        <div className="flex justify-end"><Button onClick={onClose} size="sm" variant="outline">Cancelar</Button></div>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
+  )
 }

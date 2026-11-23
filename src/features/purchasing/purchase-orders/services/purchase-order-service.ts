@@ -1,4 +1,6 @@
 import type {
+  PurchaseOrderSupplierChangeMode,
+  PurchaseOrderSupplierChangeState,
   PurchaseOrderSupplierSearch,
   PurchaseOrder,
   PurchaseOrderAuthorization,
@@ -116,12 +118,21 @@ export async function searchAuthorizationSuppliers({ code, name }: PurchaseOrder
   return response.data.data
 }
 
+export async function getPurchaseOrderSupplierAction(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderSupplierChangeState>>(
+    `/purchasing/purchase-orders/${id}/actions/change-supplier`, { signal },
+  )
+  return response.data.data
+}
+
 export async function replacePurchaseOrderSupplier(
-  id: number, supplierCode: string, { revision, classificationRevision, legacyVersion }: PurchaseOrderAuthorization, key: string,
+  mode: PurchaseOrderSupplierChangeMode, supplierCode: string,
+  { id, revision, classificationRevision, supplierRevision, legacyVersion }: PurchaseOrderSupplierChangeState, key: string,
 ) {
+  const endpoint = mode === "action" ? "change-supplier" : "authorization/supplier"
   const response = await apiClient.patch<ItemResponse<PurchaseOrder>>(
-    `/purchasing/purchase-orders/${id}/actions/authorization/supplier`,
-    { supplierCode, revision, classificationRevision, legacyVersion },
+    `/purchasing/purchase-orders/${id}/actions/${endpoint}`,
+    { supplierCode, revision, classificationRevision, supplierRevision, legacyVersion },
     { headers: { Authorization: `Bearer ${key}` } },
   )
   return response.data.data

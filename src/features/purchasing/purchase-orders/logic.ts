@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query"
+import { queryOptions, type QueryClient } from "@tanstack/react-query"
 import type { PurchaseOrder, PurchaseOrderPanelKey, PurchaseOrderSupplierSearch } from "@/features/purchasing/purchase-orders/model"
 import {
   getPurchaseOrder,
@@ -7,6 +7,7 @@ import {
   getPurchaseOrderEditor,
   getPurchaseOrderPanel,
   getPurchaseOrderRemoval,
+  getPurchaseOrderSupplierAction,
   searchAuthorizationSuppliers,
   searchPurchaseOrders,
   type PurchaseOrderSearchCriteria,
@@ -22,6 +23,7 @@ export const purchaseOrderKeys = {
   removal: (id: number) => [...purchaseOrderKeys.detail(id), "removal"] as const,
   confirmation: (id: number) => [...purchaseOrderKeys.detail(id), "confirmation"] as const,
   authorization: (id: number) => [...purchaseOrderKeys.detail(id), "authorization"] as const,
+  supplierAction: (id: number) => [...purchaseOrderKeys.detail(id), "supplier-action"] as const,
   authorizationSuppliers: (filters: PurchaseOrderSupplierSearch) => [...purchaseOrderKeys.all, "authorization", "suppliers", filters] as const,
 }
 
@@ -81,3 +83,18 @@ export const purchaseOrderAuthorizationSupplierQueryOptions = (filters: Purchase
   queryFn: ({ signal }) => searchAuthorizationSuppliers(filters, signal),
   enabled: Boolean(filters.code || filters.name),
 })
+
+export const purchaseOrderSupplierActionQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseOrderKeys.supplierAction(id),
+  queryFn: ({ signal }) => getPurchaseOrderSupplierAction(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+})
+
+export async function refreshPurchaseOrder(queryClient: QueryClient, order: PurchaseOrder) {
+  const detail = purchaseOrderKeys.detail(order.id)
+  await queryClient.cancelQueries({ queryKey: detail })
+  queryClient.setQueryData(detail, order)
+  await queryClient.invalidateQueries({ queryKey: detail, predicate: (entry) => entry.queryKey.length > detail.length })
+  void queryClient.invalidateQueries({ queryKey: purchaseOrderKeys.searches() })
+}

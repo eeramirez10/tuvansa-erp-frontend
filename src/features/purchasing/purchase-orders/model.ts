@@ -26,6 +26,7 @@ export type PurchaseOrder = {
   number: string
   supplierOrderNumber: string
   supplier: { id: number; code: string; name: string }
+  supplierParameter?: string
   documentKind: "order" | "quote" | "unknown"
   status: string
   received: { quantity: number; pieces: number }
@@ -153,9 +154,21 @@ export type PurchaseOrderAuthorization = {
   canWrite: boolean
   reason: string
   options: Array<{ level: PurchaseOrderAuthorizationLevel; canApprove: boolean; canRevoke: boolean }>
-  supplierChange: { canWrite: boolean; reason: string; supplier: PurchaseOrder["supplier"] }
+  supplierChange: Pick<PurchaseOrderSupplierChangeState, "canWrite" | "reason" | "supplier" | "supplierRevision">
 }
 
+export type PurchaseOrderSupplierChangeMode = "action" | "authorization"
+export type PurchaseOrderSupplierChangeState = {
+  id: number
+  number: string
+  revision: number
+  classificationRevision: number
+  supplierRevision: number
+  legacyVersion: string
+  supplier: PurchaseOrder["supplier"]
+  canWrite: boolean
+  reason: string
+}
 export type PurchaseOrderSupplierSearch = { code: string; name: string }
 
 export type PurchaseOrderEditProduct = {

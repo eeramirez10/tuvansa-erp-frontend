@@ -336,12 +336,16 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 | O.K. A–F / autorizar o revertir | `PATCH /:purchaseOrderId/actions/authorization` |
 | Autoriza O.C. / Cambia proveedor / Buscar | `GET /authorization/suppliers?code=…&name=…` |
 | Autoriza O.C. / Cambia proveedor / OK | `PATCH /:purchaseOrderId/actions/authorization/supplier` |
+| Acciones / Cambia Prv | `GET /:purchaseOrderId/actions/change-supplier` |
+| Acciones / Cambia Prv / OK | `PATCH /:purchaseOrderId/actions/change-supplier` |
 
 **Confirmar todo** pide confirmación antes de asignar el saldo pendiente. **Shift + clic** o **Desconfirmar todo** dentro del diálogo permiten retirar las asignaciones. El servidor valida la revisión. Al terminar se refrescan las partidas y **Asignado**, los paneles de la orden e Inventarios.
 
 **Autorizar** abre **Autoriza O.C.** con los niveles **O.K. A–F**. Se firma con la clave personal de Compras. **Shift + clic** o **Desautorizar** revierten un nivel. La clave se envía en el encabezado `Authorization` y se vacía del formulario al firmar. La operación actualiza **Autorización** de la ficha y su historial en **Comentarios**.
 
 **Cambia proveedor** se habilita en estado `9A` con proveedor `COMPRA` y con el permiso configurado. Abre una ventana con captura por código y un buscador separado por código o nombre. **OK** guarda con la clave personal de Compras y actualiza el proveedor de la ficha y las consultas dependientes.
+
+**Cambia Prv** en Acciones usa el mismo selector y su propio permiso. La ventana precarga el proveedor actual y permite varios cambios consecutivos con revisiones actualizadas. Al guardar actualiza la ficha, el buscador, Comentarios e Inventarios.
 
 Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador. Las acciones internas Cambio, Confirmar e Imprimir de CT/Piezas quedan fuera de esta entrega.
 
