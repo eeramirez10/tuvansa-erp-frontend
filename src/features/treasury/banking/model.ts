@@ -48,7 +48,7 @@ export type BankAccountSearchResponse = {
 }
 
 export type BankAccountFormFields = Pick<BankAccount,
-  "code" | "family" | "accountNumber" | "branch" | "name" | "nature" | "systemType" | "control" | "prorationPercentages"
+  "code" | "family" | "accountNumber" | "branch" | "name" | "nature" | "systemType" | "control" | "prorationPercentages" | "fiscalReports"
 > & { currencyId: number }
 
 export type BankAccountFormPreview = {

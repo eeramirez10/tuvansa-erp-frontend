@@ -4,18 +4,20 @@
 
 | Control | Evento | Método y endpoint relativo a `/api` | Query key / archivo |
 | --- | --- | --- | --- |
-| Alta | Abrir ficha de nueva cuenta | GET `/treasury/bank-accounts/create` | `bankAccountKeys.form(null)` |
+| Alta | Habilitar captura en la ficha de Bancos y enfocar Código | GET `/treasury/bank-accounts/create` | `bankAccountKeys.form(null)` |
 | Alta → OK | Guardar y abrir la nueva cuenta | POST `/treasury/bank-accounts` | `bank-account-service.ts` |
-| Cambio | Consultar ficha y revisión editable | GET `/treasury/bank-accounts/:bankAccountId/edit` | `bankAccountKeys.form(accountId)` |
+| Cambio | Habilitar la ficha de la cuenta abierta y enfocar Familia | GET `/treasury/bank-accounts/:bankAccountId/edit` | `bankAccountKeys.form(accountId)` |
 | Cambio → OK | Guardar la cuenta | PATCH `/treasury/bank-accounts/:bankAccountId` | `bank-account-service.ts` |
 | Baja | Consultar si la cuenta admite la baja y obtener su revisión | GET `/treasury/bank-accounts/:bankAccountId/edit` | `bankAccountKeys.form(accountId)` |
 | Dar de baja | Confirmar la baja con la revisión consultada | DELETE `/treasury/bank-accounts/:bankAccountId` | `bank-account-removal-dialog.tsx` |
 | Traspasos entre Cuentas | Consultar el destino, las cuentas de origen y la fecha | GET `/treasury/bank-accounts/:bankAccountId/actions/transfer/capture` | `bankAccountKeys.transfer(accountId)` |
 | Traspasos → OK | Registrar el traspaso a la cuenta abierta | POST `/treasury/bank-accounts/:bankAccountId/actions/transfer` | `bank-transfer-dialog.tsx` |
 
-Las fichas muestran los saldos para consulta. El catálogo indica los campos
-editables según la cuenta y la operación. Cancelar o pulsar Escape descarta la
-captura. El traspaso actualiza ambas cuentas y muestra el folio y la póliza.
+En Alta y Cambio, **Acciones** muestra **OK** y **Cancelar** en la misma ficha.
+Las casillas de Control y las fiscales se capturan junto con el tipo de cuenta
+y los consecutivos. Sub ctas, Movs y los saldos son de consulta. Cancelar o
+pulsar Escape descarta la captura. El traspaso actualiza ambas cuentas y muestra
+el folio y la póliza.
 Al confirmar **Baja**, el catálogo abre su primera cuenta disponible.
 
 ## Bancos · Presupuesto, clasificadores, revisión y gastos

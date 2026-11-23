@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useId, useMemo, useRef } from "react"
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { Controller, useForm, useWatch, type FieldPathByValue } from "react-hook-form"
 import { z } from "zod"
 
-import { BankAccountBalances, BankAccountFiscalSettings } from "@/features/treasury/banking/components/bank-account-details"
+import { BankAccountBalances } from "@/features/treasury/banking/components/bank-account-balances"
 import { bankAccountFormQueryOptions, bankAccountKeys } from "@/features/treasury/banking/logic"
 import type { BankAccount, BankAccountFormFields, BankAccountFormPreview, CreateBankAccountInput, UpdateBankAccountInput } from "@/features/treasury/banking/model"
 import { createBankAccount, updateBankAccount } from "@/features/treasury/banking/services/bank-account-service"
@@ -13,32 +13,54 @@ import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Checkbox } from "@/shared/ui/checkbox"
-import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Spinner } from "@/shared/ui/spinner"
 
 type TextField = FieldPathByValue<BankAccountFormFields, string>
 type NumberField = FieldPathByValue<BankAccountFormFields, number>
 type BooleanField = FieldPathByValue<BankAccountFormFields, boolean>
-type EditorProps = { onClose: () => void; onSaved: (account: BankAccount) => void } & (
-  | { mode: "create"; account?: never }
-  | { mode: "edit"; account: BankAccount }
-)
+type EditorProps = {
+  mode?: "create" | "edit"
+  account?: BankAccount
+  actions?: ReactNode
+  onClose: () => void
+  onSaved: (account: BankAccount) => void
+}
 
-const emptyBalances = { current: 0, bank: 0, previous: 0, inTransit: 0 }
-const emptyCurrencyBalances = { current: 0, month12: 0, previous: 0 }
 const emptyFiscalSettings = { annualInflationAdjustment: 0, deductibleIetu: false, nonDeductibleVat: false }
 const compactInput = "h-6 min-w-0 px-1 text-[10px]"
+const viewOptions: BankAccountFormPreview["options"] = {
+  codeLengths: [],
+  currencies: [{ id: 0, name: "Pesos" }, { id: 1, name: "Pesos" }, { id: 2, name: "Dólares" }],
+  natures: [{ id: "debtor", name: "Deudora" }, { id: "creditor", name: "Acreedora" }],
+  systemTypes: [{ id: "bank", name: "Banco" }, { id: "expense", name: "Gasto" }, { id: "other", name: "Otro" }],
+}
+const fiscalOptions = [{ id: 0, name: "No" }, { id: 1, name: "Créditos" }, { id: 2, name: "Débitos" }]
+const blankFields: BankAccountFormFields = {
+  code: "", family: "", accountNumber: "", branch: "", name: "", nature: "debtor", systemType: "other", currencyId: 0,
+  control: {
+    manager: "", phone: "", customerNumber: "0", controlEnabled: false, nextCheckNumber: 0, nextDepositNumber: 0,
+    nextTransferNumber: 0, subAccounts: false, preventJournalEntries: false, format: "", movements: false,
+    budgetable: false, company: 0, deposits: false, payments: false, multiCompany: 0,
+  },
+  prorationPercentages: { sales: 0, inventory: 0, distribution: 0, advance: 0 },
+  fiscalReports: emptyFiscalSettings,
+}
+
+function fieldsForAccount(account?: BankAccount): BankAccountFormFields {
+  if (!account) return blankFields
+  const { code, family, accountNumber, branch, name, nature, systemType, currency, control, prorationPercentages, fiscalReports } = account
+  return { code, family, accountNumber, branch, name, nature, systemType, currencyId: currency.id, control, prorationPercentages, fiscalReports }
+}
 
 const fieldLengths = {
   family: 13, accountNumber: 25, branch: 4, name: 40,
   "control.manager": 30, "control.phone": 20, "control.customerNumber": 18, "control.format": 15,
 } satisfies Partial<Record<TextField, number>>
 
-function formSchema(preview: BankAccountFormPreview, editable: ReadonlySet<string>) {
+function formSchema(options: BankAccountFormPreview["options"], editable: ReadonlySet<string>) {
   const text = (name: keyof typeof fieldLengths) => z.string()
     .transform((value) => editable.has(name) ? value.trim() : value)
     .refine((value) => !editable.has(name) || value.length <= fieldLengths[name], {
@@ -51,8 +73,8 @@ function formSchema(preview: BankAccountFormPreview, editable: ReadonlySet<strin
 
   return z.object({
     code: z.string().transform((value) => editable.has("code") ? value.trim() : value)
-      .refine((value) => !editable.has("code") || (/^\d+$/.test(value) && preview.options.codeLengths.includes(value.length)), {
-        error: `La cuenta debe tener ${preview.options.codeLengths.join(", ")} dígitos.`,
+      .refine((value) => !editable.has("code") || (/^\d+$/.test(value) && options.codeLengths.includes(value.length)), {
+        error: `La cuenta debe tener ${options.codeLengths.join(", ")} dígitos.`,
       }),
     family: text("family"),
     accountNumber: text("accountNumber"),
@@ -61,7 +83,7 @@ function formSchema(preview: BankAccountFormPreview, editable: ReadonlySet<strin
     nature: z.enum(["debtor", "creditor"]),
     systemType: z.enum(["bank", "expense", "other"]),
     currencyId: z.number().refine(
-      (value) => !editable.has("currencyId") || preview.options.currencies.some(({ id }) => id === value),
+      (value) => !editable.has("currencyId") || options.currencies.some(({ id }) => id === value),
       { error: "Selecciona una moneda." },
     ),
     control: z.object({
@@ -93,25 +115,41 @@ function formSchema(preview: BankAccountFormPreview, editable: ReadonlySet<strin
       distribution: integer("prorationPercentages.distribution", 100),
       advance: integer("prorationPercentages.advance", 100),
     }),
+    fiscalReports: z.object({
+      annualInflationAdjustment: integer("fiscalReports.annualInflationAdjustment", 2),
+      deductibleIetu: z.boolean(),
+      nonDeductibleVat: z.boolean(),
+    }),
   })
 }
 
-function BankAccountDraft({ account, preview, pending, onSave, onClose }: {
+function BankAccountSheet({ account, initialPreview, pending, actions, notice, onSave, onClose, focusField }: {
   account?: BankAccount
-  preview: BankAccountFormPreview
+  initialPreview?: BankAccountFormPreview
   pending: boolean
-  onSave: (fields: BankAccountFormFields) => void
+  actions: ReactNode
+  notice: ReactNode
+  onSave: (fields: BankAccountFormFields, revision: string | null) => void
   onClose: () => void
+  focusField?: "code" | "family"
 }) {
   const prefix = useId()
-  const editable = useMemo(() => new Set(preview.editableFields), [preview.editableFields])
+  const [preview] = useState(initialPreview)
+  const options = preview?.options ?? viewOptions
+  const editable = useMemo(() => new Set(preview?.editableFields), [preview?.editableFields])
+  const values = fieldsForAccount(account)
   const form = useForm<BankAccountFormFields>({
-    defaultValues: preview.fields,
-    resolver: zodResolver(formSchema(preview, editable)),
+    defaultValues: preview?.fields ?? values,
+    values: preview ? undefined : values,
+    resolver: zodResolver(formSchema(options, editable)),
   })
+  const { setFocus } = form
+  useEffect(() => {
+    if (focusField && editable.has(focusField)) setFocus(focusField)
+  }, [editable, focusField, setFocus])
   const currencyId = useWatch({ control: form.control, name: "currencyId" })
-  const currencyItems = preview.options.currencies.map(({ id, name }) => ({ value: String(id), label: name }))
-  const currencyName = preview.options.currencies.find(({ id }) => id === currencyId)?.name ?? account?.currency.name ?? ""
+  const currencyName = currencyId === account?.currency.id ? account.currency.name
+    : currencyId === 0 ? "Pesos" : options.currencies.find(({ id }) => id === currencyId)?.name ?? ""
   const labelClass = "truncate text-[9px]"
 
   function input(name: TextField | NumberField, label: string, className: string, { numeric = false, maxLength }: {
@@ -132,41 +170,52 @@ function BankAccountDraft({ account, preview, pending, onSave, onClose }: {
   function check(name: BooleanField, label: string, className = "") {
     const id = `${prefix}-${name}`
     return <Controller control={form.control} name={name} render={({ field }) => (
-      <Label className={`flex h-6 items-center gap-1 text-[9px] ${className}`} htmlFor={id}>
-        <Checkbox checked={field.value} disabled={pending || !editable.has(name)} id={id}
-          onCheckedChange={(checked) => field.onChange(checked === true)} />
-        {label}
-      </Label>
+      <div className={`flex min-h-6 items-center gap-1 ${className}`}>
+        <Checkbox aria-labelledby={`${id}-label`} checked={field.value} className="after:inset-0"
+          disabled={pending || !editable.has(name)} id={id} inputRef={field.ref} name={field.name}
+          onBlur={field.onBlur} onCheckedChange={(checked) => field.onChange(checked)} />
+        <Label className="text-[9px]" htmlFor={id} id={`${id}-label`}>{label}</Label>
+      </div>
     )} />
   }
 
-  function choice(name: "nature" | "systemType", label: string, items: ReadonlyArray<{ id: string; name: string }>) {
+  function choice(name: "nature" | "systemType" | "fiscalReports.annualInflationAdjustment", label: string,
+    items: ReadonlyArray<{ id: string | number; name: string }>) {
     return <Controller control={form.control} name={name} render={({ field }) => (
-      <RadioGroup aria-label={label} className="flex flex-wrap gap-2"
-        disabled={pending || !editable.has(name)} value={field.value} onValueChange={field.onChange}>
+      <RadioGroup aria-label={label} className="flex flex-wrap gap-2" name={field.name}
+        disabled={pending || !editable.has(name)} value={String(field.value)}
+        onValueChange={(value) => field.onChange(name === "fiscalReports.annualInflationAdjustment" ? Number(value) : value)}>
         {items.map((item) => (
-          <Label className="flex items-center gap-1 text-[9px]" htmlFor={`${prefix}-${item.id}`} key={item.id}>
-            <RadioGroupItem id={`${prefix}-${item.id}`} value={item.id} />
-            {item.name}
-          </Label>
+          <div className="flex items-center gap-1" key={item.id}>
+            <RadioGroupItem className="after:inset-0" id={`${prefix}-${name}-${item.id}`} value={String(item.id)} />
+            <Label className="text-[9px]" htmlFor={`${prefix}-${name}-${item.id}`}>{item.name}</Label>
+          </div>
         ))}
       </RadioGroup>
     )} />
   }
 
-  return <form className="grid gap-2" noValidate onSubmit={form.handleSubmit(onSave)}>
-    <fieldset className="grid min-w-0 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,0.38fr)]" disabled={pending}>
+  return <form aria-label="Ficha de Bancos" className="grid min-w-0 gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]" noValidate
+    onKeyDown={(event) => {
+      if (!focusField || event.key !== "Escape" || event.defaultPrevented) return
+      event.preventDefault()
+      event.stopPropagation()
+      onClose()
+    }} onSubmit={form.handleSubmit((fields) => { if (preview) onSave(fields, preview.revision) })}>
+    <aside className="flex min-w-0 flex-col">{actions}</aside>
+    <fieldset className="grid min-w-0 items-start gap-2 sm:grid-cols-[minmax(0,1.7fr)_minmax(11rem,0.8fr)]" disabled={pending}>
+      {notice}
       <div className="grid min-w-0 gap-2">
         <Card size="sm"><CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Datos de la cuenta</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-12 gap-1.5 py-1">
-            {input("code", "Código", "col-span-6", { maxLength: Math.max(...preview.options.codeLengths) })}
+            {input("code", "Código", "col-span-6", { maxLength: options.codeLengths.at(-1) ?? 16 })}
             {input("family", "Familia", "col-span-6", { maxLength: fieldLengths.family })}
             {input("accountNumber", "Número", "col-span-8", { maxLength: fieldLengths.accountNumber })}
             {input("branch", "Sucursal", "col-span-4", { maxLength: fieldLengths.branch })}
             {input("name", "Nombre", "col-span-full", { maxLength: fieldLengths.name })}
             <div className="col-span-full flex flex-wrap justify-between gap-1 py-1">
-              {choice("nature", "Naturaleza", preview.options.natures)}
-              {choice("systemType", "Tipo de cuenta", preview.options.systemTypes)}
+              {choice("nature", "Naturaleza", options.natures)}
+              {choice("systemType", "Tipo de cuenta", options.systemTypes)}
             </div>
           </CardContent>
         </Card>
@@ -179,20 +228,7 @@ function BankAccountDraft({ account, preview, pending, onSave, onClose }: {
             {input("control.nextCheckNumber", "Nº Cheque", "col-span-4", { numeric: true })}
             {input("control.nextDepositNumber", "Nº Depósito", "col-span-4", { numeric: true })}
             {input("control.nextTransferNumber", "Nº Transf.", "col-span-4", { numeric: true })}
-            <div className="col-span-6 grid gap-0.5">
-              <Label className={labelClass} htmlFor={`${prefix}-currency`}>Moneda</Label>
-              <Controller control={form.control} name="currencyId" render={({ field, fieldState }) => (
-                <>
-                  <Select disabled={pending || !editable.has("currencyId")} items={currencyItems} value={String(field.value)}
-                    onValueChange={(value) => { if (value !== null) field.onChange(Number(value)) }}>
-                    <SelectTrigger aria-invalid={Boolean(fieldState.error)} className="w-full" id={`${prefix}-currency`} ref={field.ref}
-                      size="sm" onBlur={field.onBlur}><SelectValue /></SelectTrigger>
-                    <SelectContent>{currencyItems.map(({ value, label }) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
-                  </Select>
-                  {fieldState.error && <span className="text-destructive" role="alert">{fieldState.error.message}</span>}
-                </>
-              )} />
-            </div>
+            {input("currencyId", "Moneda", "col-span-6", { numeric: true })}
             {input("control.format", "Formato", "col-span-6", { maxLength: fieldLengths["control.format"] })}
             {input("control.company", "Cia", "col-span-6", { numeric: true })}
             {input("control.multiCompany", "Multicia Cia", "col-span-6", { numeric: true })}
@@ -204,28 +240,35 @@ function BankAccountDraft({ account, preview, pending, onSave, onClose }: {
               {check("control.deposits", "Depósitos")}
               {check("control.payments", "Pagos")}
             </div>
-            {input("prorationPercentages.sales", "% Vta.", "col-span-3", { numeric: true })}
-            {input("prorationPercentages.inventory", "% Inv.", "col-span-3", { numeric: true })}
-            {input("prorationPercentages.distribution", "% Dist.", "col-span-3", { numeric: true })}
-            {input("prorationPercentages.advance", "% Anti.", "col-span-3", { numeric: true })}
+            <div className="col-span-full grid grid-cols-[repeat(4,minmax(0,1fr))_auto] gap-1.5">
+              {input("prorationPercentages.sales", "% Vta.", "", { numeric: true })}
+              {input("prorationPercentages.inventory", "% Inv.", "", { numeric: true })}
+              {input("prorationPercentages.distribution", "% Dist.", "", { numeric: true })}
+              {input("prorationPercentages.advance", "% Anti.", "", { numeric: true })}
+              <span className="self-end pb-1 text-[9px]">=100%</span>
+            </div>
           </CardContent>
         </Card>
-        <BankAccountFiscalSettings reports={account?.fiscalReports ?? emptyFiscalSettings} />
+        <Card size="sm">
+          <CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Información para reportes Fiscales:</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-x-3 py-1">
+            <span>Ajuste anual por inflación</span>
+            {choice("fiscalReports.annualInflationAdjustment", "Ajuste anual por inflación", fiscalOptions)}
+            {check("fiscalReports.deductibleIetu", "Deducible IETU")}
+            {check("fiscalReports.nonDeductibleVat", "No Deducible IVA")}
+          </CardContent>
+        </Card>
       </div>
-      <BankAccountBalances balances={account?.balances ?? emptyBalances} currencyBalances={account?.currencyBalances ?? emptyCurrencyBalances}
+      <BankAccountBalances balances={account?.balances} currencyBalances={account?.currencyBalances}
         createdAt={account?.createdAt ?? null} currencyName={currencyName} />
     </fieldset>
-    <footer className="flex justify-end gap-1">
-      <Button disabled={pending} onClick={onClose} size="sm" type="button" variant="outline">Cancelar</Button>
-      <Button disabled={pending} size="sm" type="submit">{pending && <Spinner />}OK</Button>
-    </footer>
   </form>
 }
 
-export function BankAccountFormDialog({ mode, account, onClose, onSaved }: EditorProps) {
+export function BankAccountForm({ mode, account, actions, onClose, onSaved }: EditorProps) {
   const queryClient = useQueryClient()
   const id = account?.id ?? null
-  const query = useQuery(bankAccountFormQueryOptions(id))
+  const query = useQuery({ ...bankAccountFormQueryOptions(id), enabled: Boolean(mode) })
   const inFlight = useRef(false)
   const requestKeys = useRef(new Map<string, string>())
   const save = useMutation({
@@ -242,20 +285,19 @@ export function BankAccountFormDialog({ mode, account, onClose, onSaved }: Edito
     },
     onSettled: () => { inFlight.current = false },
   })
-  const preview = query.data
-  const ready = preview?.canWrite && (mode === "create" || Boolean(preview.revision)) && !query.isFetching && !query.isError
+  const preview = mode && query.isFetchedAfterMount ? query.data : undefined
+  const ready = preview?.canWrite && (mode === "create" || Boolean(preview.revision))
 
   function close() {
     if (!inFlight.current) onClose()
   }
 
-  function submit(fields: BankAccountFormFields) {
-    if (!ready || !preview || inFlight.current) return
-
+  function submit(fields: BankAccountFormFields, revision: string | null) {
+    if (!mode || inFlight.current) return
     if (mode === "edit") {
-      if (!preview.revision) return
+      if (!account || !revision) return
       inFlight.current = true
-      save.mutate({ id: account.id, fields, revision: preview.revision })
+      save.mutate({ id: account.id, fields, revision })
       return
     }
 
@@ -266,27 +308,29 @@ export function BankAccountFormDialog({ mode, account, onClose, onSaved }: Edito
     save.mutate({ fields, requestKey })
   }
 
-  const title = mode === "create" ? "Alta" : "Cambia datos de banco"
-  return <ErpDataDialog defaultWidth={800} description={mode === "create" ? "Alta de cuenta bancaria" : `Cambio de ${account.code}`}
-    onOpenChange={(open) => { if (!open) close() }} title={title} tone="banking">
-    <ErpDataDialogBody className="grid gap-2" onKeyDown={(event) => {
-      if (event.key === "Escape" && !event.defaultPrevented) {
-        event.preventDefault()
-        event.stopPropagation()
-        close()
-      }
-    }}>
-      {query.isFetching && <div className="grid min-h-16 place-items-center"><Spinner /></div>}
-      {query.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>}
-      {!query.isFetching && preview && !ready && <Alert><AlertDescription>{preview.reason || "No se pudo preparar el cambio."}</AlertDescription></Alert>}
-      {save.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(save.error)}</AlertDescription></Alert>}
-      {ready && preview ? <BankAccountDraft account={account} preview={preview} key={preview.revision ?? "create"}
-        onClose={close} onSave={submit} pending={save.isPending} /> : (
-        <div className="flex justify-end gap-1">
-          <Button onClick={close} size="sm" type="button" variant="outline">Cancelar</Button>
-          {query.isError && <Button disabled={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button">Reintentar</Button>}
+  const notice = !mode ? null : save.isError
+    ? <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(save.error)}</AlertDescription></Alert>
+    : !preview && query.isFetching
+      ? <p className="flex items-center gap-1" role="status"><Spinner /> Cargando ficha</p>
+      : !preview && query.isError
+        ? <Alert variant="destructive"><AlertDescription className="flex flex-wrap items-center gap-2">
+          {getApiErrorMessage(query.error)}
+          <Button onClick={() => void query.refetch()} size="sm" type="button">Reintentar</Button>
+        </AlertDescription></Alert>
+        : preview && !ready ? <Alert><AlertDescription>{preview.reason || "No se pudo preparar la ficha."}</AlertDescription></Alert> : null
+
+  return <BankAccountSheet account={account} initialPreview={ready ? preview : undefined}
+    key={ready ? "editable" : "read-only"} onClose={close} onSave={submit} pending={save.isPending}
+    focusField={mode === "create" ? "code" : mode === "edit" ? "family" : undefined}
+    actions={mode ? <Card className="flex h-full min-h-28 flex-col" size="sm">
+      <CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Acciones</CardTitle></CardHeader>
+      <CardContent className="flex flex-1 flex-col justify-between gap-2 py-1">
+        <p className="text-muted-foreground" role="status">{mode === "create" ? "Alta" : "Cambia datos de banco"}</p>
+        <div className="flex flex-wrap gap-1">
+          <Button disabled={!ready || save.isPending} size="sm" type="submit">{save.isPending && <Spinner />}OK</Button>
+          <Button disabled={save.isPending} onClick={close} size="sm" type="button" variant="outline">Cancelar</Button>
         </div>
-      )}
-    </ErpDataDialogBody>
-  </ErpDataDialog>
+      </CardContent>
+    </Card> : actions}
+    notice={notice && <div className="sm:col-span-2">{notice}</div>} />
 }
