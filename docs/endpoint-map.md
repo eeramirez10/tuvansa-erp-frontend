@@ -1,5 +1,25 @@
 # Mapa de vistas, controles y endpoints
 
+## Cuentas por cobrar · Saldo y Cobrar
+
+En **Clientes → Saldo**, **Cobrar** aparece en las remisiones web FAW con
+saldo positivo. La consulta prepara un depósito total o parcial con cuenta
+bancaria, fecha, importe, referencia bancaria y concepto.
+
+| Control | Evento | Método y endpoint relativo a `/api` | Query key / archivo |
+| --- | --- | --- | --- |
+| Saldo / Movimientos → Anterior, Siguiente, Última | Consultar otra página | GET `/accounts-receivable/clients/:clientId/balance` o `/movements` con `page` y `pageSize` | `clientKeys.panel`, página |
+| Cobrar | Consultar saldo y cuentas para una remisión | GET `/accounts-receivable/clients/:clientId/collections/:remissionId` | `clientKeys.collection` |
+| OK | Registrar el depósito | POST en la misma ruta | `client-collection-dialog.tsx` |
+| Cancelar / Escape | Cerrar la captura | Sin petición de escritura | `client-collection-dialog.tsx` |
+| Bancos → Depósitos | Consultar los depósitos de la cuenta | GET `/treasury/bank-accounts/:bankAccountId/actions/deposits` | `bank-panel-dialog.tsx` |
+| Facturación → Auxiliar | Consultar el cargo y los abonos de la remisión | GET `/sales/invoices/:invoiceId/actions/auxiliary` | `invoice-panel-dialog.tsx` |
+| Cobro registrado → Ver póliza / Póliza en Movimientos, Depósitos o Auxiliar | Abrir la póliza de ingresos | GET `/accounting/policies/:policyId` | `/contabilidad/polizas/:policyId` |
+
+Al registrar el depósito se actualizan Clientes, Facturación, Bancos y
+Contabilidad. El aviso muestra el folio del cobro, el recibo y la póliza de
+ingresos.
+
 ## Cuentas por pagar · Saldo y Paga
 
 **Paga** se habilita al seleccionar una recepción web con saldo pendiente en

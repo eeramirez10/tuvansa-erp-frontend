@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
+import { Link } from "react-router"
 
-import { clientPanelQueryOptions } from "@/features/accounts-receivable/clients/logic"
+import { paths } from "@/app/router/paths"
+import { ClientCollectionDialog } from "@/features/accounts-receivable/clients/components/client-collection-dialog"
+import { clientPanelQueryOptions, collectionRemissionId } from "@/features/accounts-receivable/clients/logic"
 import type {
   Client,
   ClientColumnFormat,
@@ -9,6 +13,7 @@ import type {
 } from "@/features/accounts-receivable/clients/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
+import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import {
   ErpDataDialog,
   ErpDataDialogBody,
@@ -51,29 +56,53 @@ function displayValue(value: unknown, format: ClientColumnFormat = "text") {
   return String(value)
 }
 
-function ClientDataTable({ rows, columns, emptyMessage = "Sin registros para este cliente" }: {
+function ClientDataTable({ rows, columns, emptyMessage = "Sin registros para este cliente", collection, linkPolicies = false }: {
   rows: Array<Record<string, unknown>>
   columns: readonly ClientPanelColumn[]
   emptyMessage?: string
+  collection?: { disabled: boolean; open: (remissionId: number, row: Record<string, unknown>) => void }
+  linkPolicies?: boolean
 }) {
+  const collectionIds = collection ? rows.map(collectionRemissionId) : []
+  const showCollection = collectionIds.some((id) => id !== null)
+
   return (
     <ErpDataTableViewport className="h-[20rem]" axes="xy">
       <table className="w-max min-w-full table-fixed border-collapse text-[9px]/none tabular-nums">
-        <colgroup>{columns.map((column) => <col key={column.key} style={{ width: column.width ?? "6rem" }} />)}</colgroup>
+        <colgroup>
+          {showCollection && <col className="w-14" />}
+          {columns.map((column) => <col key={column.key} style={{ width: column.width ?? "6rem" }} />)}
+        </colgroup>
         <thead className="sticky top-0 z-10 bg-background">
           <tr className="h-4 border-b border-input">
+            {showCollection && <th className="border-r px-1 text-left font-normal" scope="col">Cobro</th>}
             {columns.map((column) => <th className={cn("whitespace-nowrap border-r px-1 text-left font-normal last:border-r-0", column.align === "right" && "text-right", column.align === "center" && "text-center")} key={column.key}>{column.label}</th>)}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => (
-            <tr className={cn("h-4 hover:bg-muted/50", index === 0 && "bg-module-receivable text-module-receivable-foreground")} key={String(row.id ?? index)}>
-              {columns.map((column) => {
-                const value = displayValue(pathValue(row, column.key), column.format)
-                return <td className={cn("truncate border-r px-1 last:border-r-0", column.align === "right" && "text-right", column.align === "center" && "text-center")} key={column.key} title={value}>{value}</td>
-              })}
-            </tr>
-          ))}
+          {rows.map((row, index) => {
+            const remissionId = collectionIds[index]
+            const policyId = typeof row.policyId === "number" && Number.isSafeInteger(row.policyId) && row.policyId > 0 ? row.policyId : null
+            return (
+              <tr className={cn("h-4 hover:bg-muted/50", index === 0 && "bg-module-receivable text-module-receivable-foreground")} key={String(row.id ?? index)}>
+                {showCollection && <td className="border-r px-1">
+                  {collection && remissionId != null && (
+                    <Button aria-label={`Cobrar ${displayValue(row.number)}`} disabled={collection.disabled}
+                      onClick={() => collection.open(remissionId, row)} size="xs" type="button" variant="outline">Cobrar</Button>
+                  )}
+                </td>}
+                {columns.map((column) => {
+                  const value = displayValue(pathValue(row, column.key), column.format)
+                  return <td className={cn("truncate border-r px-1 last:border-r-0", column.align === "right" && "text-right", column.align === "center" && "text-center")}
+                    key={column.key} title={value}>
+                    {linkPolicies && value && column.key === "policy" && policyId !== null
+                      ? <Link className="underline" to={paths.accountingPolicy(policyId)}>{value}</Link>
+                      : value}
+                  </td>
+                })}
+              </tr>
+            )
+          })}
           {rows.length === 0 && <tr><td className="h-64 text-center text-muted-foreground" colSpan={Math.max(columns.length, 1)}>{emptyMessage}</td></tr>}
         </tbody>
       </table>
@@ -117,23 +146,41 @@ function DetailPanel({ detail }: { detail: Record<string, unknown> }) {
 }
 
 function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDialogProps) {
-  const query = useQuery(clientPanelQueryOptions(client.id, panel))
+  const [page, setPage] = useState(1)
+  const [activeCollection, setActiveCollection] = useState<{ id: number; number: string; date?: string } | null>(null)
+  const query = useQuery(clientPanelQueryOptions(client.id, panel, page))
   const result = query.data
+  const rows = result?.data.items ?? []
+  const pagination = result?.pagination
+  const pageCount = pagination ? Math.max(1, Math.ceil(pagination.total / pagination.pageSize)) : page
+  const paginated = panel.key === "balance" || panel.key === "movements"
+
+  function close(open: boolean) {
+    if (!activeCollection) onOpenChange(open)
+  }
+
+  function openCollection(id: number, row: Record<string, unknown>) {
+    const date = displayValue(row.date).slice(0, 10)
+    setActiveCollection({ id, number: displayValue(row.number), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined })
+  }
 
   return (
-    <ErpDataDialog className="sm:max-w-[62rem]" description={`${panel.title} para ${client.code}.`} onOpenChange={onOpenChange} title={panel.title} tone="receivable">
+    <>
+    <ErpDataDialog className="sm:max-w-[62rem]" description={`${panel.title} para ${client.code}.`} onOpenChange={close} title={panel.title} tone="receivable">
       <ErpDataDialogBody>
         <div className="mb-1 grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)_8rem]">
           <ErpDataMetric label="Cliente" value={client.code} />
           <label className="grid gap-0.5"><span className="px-1">Razón social</span><output className="flex h-4 items-center border border-input bg-background px-1 shadow-inner">{client.name}</output></label>
-          <ErpDataMetric label="Saldo" value={moneyFormatter.format(client.totals.currentBalance)} />
+          <ErpDataMetric label="Saldo" value={moneyFormatter.format(result?.data.client.currentBalance ?? client.totals.currentBalance)} />
         </div>
 
         {query.isLoading && <div className="grid h-80 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive"><AlertTitle>No fue posible abrir la consulta</AlertTitle><AlertDescription>La API no devolvió información para este botón.</AlertDescription></Alert>}
         {result?.data.unavailableReason && <Alert><AlertTitle>Opción sin origen de datos</AlertTitle><AlertDescription>{result.data.unavailableReason}</AlertDescription></Alert>}
         {result?.data.detail && !result.data.unavailableReason && panel.columns.length === 0 && <DetailPanel detail={result.data.detail} />}
-        {result && panel.columns.length > 0 && <ClientDataTable columns={panel.columns} rows={result.data.items} />}
+        {result && panel.columns.length > 0 && <ClientDataTable columns={panel.columns} rows={rows}
+          collection={panel.key === "balance" ? { disabled: Boolean(activeCollection) || query.isFetching, open: openCollection } : undefined}
+          linkPolicies={panel.key === "movements"} />}
 
         {result?.data.secondaryItems && (
           <div className="mt-1">
@@ -150,12 +197,29 @@ function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDi
           </div>
         )}
 
-        <div className="mt-1 flex justify-between">
-          <span className="self-center px-1 text-muted-foreground">{result?.pagination ? `${result.pagination.total} registro(s)` : ""}</span>
-          <Button onClick={() => onOpenChange(false)} size="xs" variant="outline">✓ OK</Button>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-1">
+          <span className="px-1 text-muted-foreground">{pagination ? `${pagination.total} registro(s)` : ""}</span>
+          {paginated && (pageCount > 1 || page > 1) && <div className="flex items-center gap-1">
+            <Button disabled={page <= 1 || query.isFetching || Boolean(activeCollection)} onClick={() => setPage(page - 1)}
+              size="xs" type="button" variant="outline">Anterior</Button>
+            <span>Página {page} de {Math.max(page, pageCount)}</span>
+            <Button disabled={page >= pageCount || query.isFetching || Boolean(activeCollection)} onClick={() => setPage(page + 1)}
+              size="xs" type="button" variant="outline">Siguiente</Button>
+            {pageCount > 2 && <Button disabled={page >= pageCount || query.isFetching || Boolean(activeCollection)}
+              onClick={() => setPage(pageCount)} size="xs" type="button" variant="outline">Última</Button>}
+          </div>}
+          <Button disabled={Boolean(activeCollection)} onClick={() => close(false)} size="xs" variant="outline">✓ OK</Button>
         </div>
       </ErpDataDialogBody>
     </ErpDataDialog>
+    {activeCollection && <DesktopWindowIdentity id={`clients:${client.id}:collections:${activeCollection.id}`}>
+      <ClientCollectionDialog clientId={client.id} remissionId={activeCollection.id} remissionNumber={activeCollection.number}
+        remissionDate={activeCollection.date} onClose={() => setActiveCollection(null)} onSaved={({ remaining }) => {
+          setActiveCollection(null)
+          if (remaining === 0 && page > 1 && rows.length === 1) setPage(page - 1)
+        }} />
+    </DesktopWindowIdentity>}
+    </>
   )
 }
 

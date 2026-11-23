@@ -1,7 +1,9 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "react-router"
 
+import { paths } from "@/app/router/paths"
 import { invoiceKeys, invoicePanelQueryOptions } from "@/features/sales/invoicing/logic"
 import type { Invoice, InvoicePanel, InvoicePanelDefinition, StampingSimulation } from "@/features/sales/invoicing/model"
 import { simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
@@ -38,6 +40,8 @@ const date = (value: unknown) => {
   const [year, month, day] = raw.slice(0, 10).split("-")
   return year && month && day ? `${day}/${month}/${year}` : raw
 }
+const validPolicyId = (value: unknown): value is number =>
+  typeof value === "number" && Number.isSafeInteger(value) && value > 0
 
 function Field({ label, value, className = "" }: { label: string; value: unknown; className?: string }) {
   return (
@@ -72,14 +76,16 @@ function DataTable({
         <TableBody>
           {rows.map((row, rowIndex) => (
             <TableRow key={text(row.id ?? row.lineId ?? rowIndex)}>
-              {columns.map((column) => (
-                <TableCell
-                  className={`whitespace-nowrap px-1 py-0.5 ${column.numeric ? "text-right tabular-nums" : ""}`}
-                  key={column.key}
-                >
-                  {column.format ? column.format(row[column.key]) : text(row[column.key])}
-                </TableCell>
-              ))}
+              {columns.map((column) => {
+                const value = column.format ? column.format(row[column.key]) : text(row[column.key])
+                return (
+                  <TableCell className={`whitespace-nowrap px-1 py-0.5 ${column.numeric ? "text-right tabular-nums" : ""}`} key={column.key}>
+                    {column.key === "policyNumber" && value && validPolicyId(row.policyId)
+                      ? <Link className="text-primary underline" to={paths.accountingPolicy(row.policyId)}>{value}</Link>
+                      : value}
+                  </TableCell>
+                )
+              })}
             </TableRow>
           ))}
         </TableBody>
@@ -90,6 +96,7 @@ function DataTable({
 }
 
 function Auxiliary({ data }: { data: InvoicePanel }) {
+  const showPolicy = data.source === "postgres" && data.items.some(({ policyId }) => validPolicyId(policyId))
   return (
     <div className="grid gap-1">
       <DataTable
@@ -97,6 +104,7 @@ function Auxiliary({ data }: { data: InvoicePanel }) {
           { label: "Fecha", key: "date", format: date },
           { label: "T.M.", key: "movementType" },
           { label: "Referencia", key: "reference" },
+          ...(showPolicy ? [{ label: "Póliza", key: "policyNumber" }] : []),
           { label: "Cargos", key: "charges", format: number, numeric: true },
           { label: "Abonos", key: "credits", format: number, numeric: true },
         ]}

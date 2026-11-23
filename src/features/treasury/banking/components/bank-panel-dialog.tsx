@@ -54,13 +54,13 @@ function DisabledButtons({ labels }: { labels: string[] }) {
   return <div className="flex flex-wrap gap-1">{labels.map((label) => <Button disabled key={label} size="xs" variant="outline">{label}</Button>)}</div>
 }
 
-function Auxiliary({ data }: { data: BankPanel }) {
+function Auxiliary({ data, deposits = false }: { data: BankPanel; deposits?: boolean }) {
   return <div className="grid gap-1"><DataTable columns={[
     { label: "Concepto", key: "description" }, { label: "OK", key: "reconciled" }, { label: "TM", key: "movementType" },
-    { label: "Cheque", key: "checkNumber" }, { label: "Póliza", key: "policyNumber" }, { label: "Fecha", key: "policyDate" },
+    { label: deposits ? "Depósito" : "Cheque", key: "checkNumber" }, { label: "Póliza", key: "policyNumber" }, { label: "Fecha", key: "policyDate" },
     { label: "Cargos", key: "charge", numeric: true }, { label: "Abonos", key: "credit", numeric: true }, { label: "Saldo", key: "runningBalance", numeric: true },
     { label: "C.C.", key: "costCenter" }, { label: "Benef", key: "beneficiary" }, { label: "Usr.", key: "user" }, { label: "Ref.", key: "bankNumber" }, { label: "Fecha Pr.", key: "postdatedAt" },
-  ]} rows={data.items} runningBalance /><div className="flex flex-wrap items-end justify-between gap-1"><DisabledButtons labels={["Comentarios", "Imprimir Póliza", "Imprimir Cheque"]} /><div className="flex gap-1"><ErpDataMetric label="Cargos" value={money(data.summary?.charges)} /><ErpDataMetric label="Abonos" value={money(data.summary?.credits)} /><ErpDataMetric label="Saldo" value={money(data.summary?.balance)} /></div></div></div>
+  ]} rows={data.items} runningBalance /><div className="flex flex-wrap items-end justify-between gap-1"><DisabledButtons labels={deposits ? ["Comentarios", "Imprimir Póliza"] : ["Comentarios", "Imprimir Póliza", "Imprimir Cheque"]} /><div className="flex gap-1"><ErpDataMetric label="Cargos" value={money(data.summary?.charges)} /><ErpDataMetric label="Abonos" value={money(data.summary?.credits)} /><ErpDataMetric label="Saldo" value={money(data.summary?.balance)} /></div></div></div>
 }
 
 function Reconciliation({ data }: { data: BankPanel }) {
@@ -135,6 +135,7 @@ function PanelContent({ account, data, panelKey }: { account: BankAccount; data:
   if (!data.available) return <Unavailable data={data} />
   switch (panelKey) {
     case "auxiliary": case "payments": return <Auxiliary data={data} />
+    case "deposits": return <Auxiliary data={data} deposits />
     case "reconciliation": return <Reconciliation data={data} />
     case "automatic-reconciliation": return <AutomaticReconciliation data={data} />
     case "general-ledger": return <Ledger data={data} />
@@ -144,7 +145,7 @@ function PanelContent({ account, data, panelKey }: { account: BankAccount; data:
     case "transfer": return <Transfer account={account} />
     case "unapplied-auxiliary": return <UnappliedAuxiliary data={data} />
     case "supplier-expenses": return <SupplierExpenses account={account} />
-    case "movements": case "deposits": return <Unavailable data={data} />
+    case "movements": return <Unavailable data={data} />
   }
 }
 

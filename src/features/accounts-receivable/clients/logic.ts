@@ -12,6 +12,7 @@ import {
   getClientAnalytics,
   getFirstActiveClient,
   getClientClassifications,
+  getClientCollectionPreview,
   getClientPanel,
   searchClients,
   type ClientSearchCriteria,
@@ -24,6 +25,8 @@ export const clientKeys = {
   search: (criteria: ClientSearchCriteria) => [...clientKeys.all, "search", criteria] as const,
   panel: (clientId: number, panelKey: string) =>
     [...clientKeys.detail(clientId), "panel", panelKey] as const,
+  collection: (clientId: number, remissionId: number) =>
+    [...clientKeys.detail(clientId), "collection", remissionId] as const,
   classifications: (clientId: number, position: number) =>
     [...clientKeys.detail(clientId), "classifications", position] as const,
   analytics: (criteria: ClientAnalyticsCriteria) =>
@@ -45,10 +48,25 @@ export const clientSearchQueryOptions = (criteria: ClientSearchCriteria) => quer
   queryFn: ({ signal }) => searchClients(criteria, signal),
 })
 
-export const clientPanelQueryOptions = (clientId: number, panel: ClientPanelDefinition) => queryOptions({
-  queryKey: clientKeys.panel(clientId, panel.key),
-  queryFn: ({ signal }) => getClientPanel(clientId, panel, signal),
+export const clientPanelQueryOptions = (clientId: number, panel: ClientPanelDefinition, page = 1) => queryOptions({
+  queryKey: [...clientKeys.panel(clientId, panel.key), page],
+  queryFn: ({ signal }) => getClientPanel(clientId, panel, signal, page),
 })
+
+export const clientCollectionQueryOptions = (clientId: number, remissionId: number) => queryOptions({
+  queryKey: clientKeys.collection(clientId, remissionId),
+  queryFn: ({ signal }) => getClientCollectionPreview(clientId, remissionId, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+})
+
+export function collectionRemissionId(row: Record<string, unknown>): number | null {
+  const id = Number(row.remissionId ?? row.id)
+  const amount = Number(row.amountInBaseCurrency ?? row.amount)
+  const local = Number.isSafeInteger(id) && id >= 7_100_000_000_000 && id <= 7_100_099_999_998
+    && typeof row.number === "string" && /^FAW\d{8}$/.test(row.number)
+  return local && Number.isFinite(amount) && amount > 0 ? id : null
+}
 
 export const clientClassificationsQueryOptions = (clientId: number, position: number) => queryOptions({
   queryKey: clientKeys.classifications(clientId, position),

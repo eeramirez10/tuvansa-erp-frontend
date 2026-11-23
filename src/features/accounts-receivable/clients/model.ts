@@ -179,6 +179,37 @@ export type ClientPanelResponse = {
   pagination?: { page: number; pageSize: number; total: number }
 }
 
+export type ClientCollectionPreview = {
+  remissionId: number
+  number: string
+  remaining: number
+  revision: number
+  canWrite: boolean
+  reason: string | null
+  bankAccounts: Array<{ id: number; code: string; name: string }>
+  defaults: { date: string; amount: number }
+}
+
+export type ClientCollectionInput = {
+  requestKey: string
+  revision: number
+  bankAccountId: number
+  amount: number
+  date: string
+  description: string
+  reference: string
+}
+
+export type ClientCollection = Pick<ClientCollectionInput, "bankAccountId" | "amount" | "date"> & {
+  id: number
+  remissionId: number
+  remissionNumber: string
+  number: string
+  policyNumber: string
+  receiptNumber: number
+  remaining: number
+}
+
 export type ClientClassification = {
   id: number | null
   position: number

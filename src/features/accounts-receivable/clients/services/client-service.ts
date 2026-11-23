@@ -4,6 +4,9 @@ import type {
   ClientAnalyticsCriteria,
   ClientAnalyticsResponse,
   ClientClassificationsResponse,
+  ClientCollection,
+  ClientCollectionInput,
+  ClientCollectionPreview,
   ClientMutationInput,
   ClientPanelDefinition,
   ClientPanelResponse,
@@ -79,10 +82,11 @@ export async function getClientPanel(
   clientId: number,
   panel: ClientPanelDefinition,
   signal?: AbortSignal,
+  page = 1,
 ): Promise<ClientPanelResponse> {
   const response = await apiClient.get<RawPanelResponse>(
     `/accounts-receivable/clients/${clientId}/${panel.path}`,
-    { params: { page: 1, pageSize: 100 }, signal },
+    { params: { page, pageSize: 100 }, signal },
   )
   const payload = response.data.data
   const rawData = payload[panel.dataKey]
@@ -107,6 +111,22 @@ export async function getClientPanel(
     },
     ...(response.data.pagination ? { pagination: response.data.pagination } : {}),
   }
+}
+
+const collectionPath = (clientId: number, remissionId: number) =>
+  `/accounts-receivable/clients/${clientId}/collections/${remissionId}`
+
+export async function getClientCollectionPreview(clientId: number, remissionId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<ClientCollectionPreview>>(
+    collectionPath(clientId, remissionId),
+    { signal },
+  )
+  return response.data.data
+}
+
+export async function recordClientCollection(clientId: number, remissionId: number, input: ClientCollectionInput) {
+  const response = await apiClient.post<ItemResponse<ClientCollection>>(collectionPath(clientId, remissionId), input)
+  return response.data.data
 }
 
 export async function getClientClassifications(
