@@ -114,20 +114,22 @@ export type BankReconciliation = {
 }
 
 type BankTransferAccount = Pick<BankAccount, "id" | "code" | "name">
+type BankTransferMode = "check" | "transfer"
 
 export type BankTransferPreview = {
-  destination: BankTransferAccount
-  sources: BankTransferAccount[]
+  source: BankTransferAccount
+  destinations: BankTransferAccount[]
   canWrite: boolean
   reason: string | null
-  defaults: { date: string }
+  defaults: { date: string; checkNumber: string }
   fiscalStart: string
   fiscalEnd: string
 }
 
 export type BankTransferInput = {
   requestKey: string
-  sourceBankAccountId: number
+  destinationBankAccountId: number
+  mode: BankTransferMode
   date: string
   amount: number
   reference: string
@@ -135,7 +137,7 @@ export type BankTransferInput = {
   description: string
 }
 
-export type BankTransfer = Pick<BankTransferInput, "date" | "amount" | "reference" | "beneficiary" | "description"> & {
+export type BankTransfer = Pick<BankTransferInput, "date" | "amount" | "reference" | "beneficiary" | "description" | "mode"> & {
   id: number
   number: string
   policyNumber: string

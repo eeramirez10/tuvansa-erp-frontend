@@ -10,14 +10,15 @@
 | Cambio → OK | Guardar la cuenta | PATCH `/treasury/bank-accounts/:bankAccountId` | `bank-account-service.ts` |
 | Baja | Consultar si la cuenta admite la baja y obtener su revisión | GET `/treasury/bank-accounts/:bankAccountId/edit` | `bankAccountKeys.form(accountId)` |
 | Dar de baja | Confirmar la baja con la revisión consultada | DELETE `/treasury/bank-accounts/:bankAccountId` | `bank-account-removal-dialog.tsx` |
-| Traspasos entre Cuentas | Consultar el destino, las cuentas de origen y la fecha | GET `/treasury/bank-accounts/:bankAccountId/actions/transfer/capture` | `bankAccountKeys.transfer(accountId)` |
-| Traspasos → OK | Registrar el traspaso a la cuenta abierta | POST `/treasury/bank-accounts/:bankAccountId/actions/transfer` | `bank-transfer-dialog.tsx` |
+| Traspasos entre Cuentas | Consultar la cuenta de origen, las cuentas destino y el periodo | GET `/treasury/bank-accounts/:bankAccountId/actions/transfer/capture?direction=outgoing` | `bankAccountKeys.transfer(accountId)` |
+| Traspasos → OK | Registrar Cheque o Traspas desde la cuenta abierta | POST `/treasury/bank-accounts/:bankAccountId/actions/transfer` | `bank-transfer-dialog.tsx` |
 
 En Alta y Cambio, **Acciones** muestra **OK** y **Cancelar** en la misma ficha.
 Las casillas de Control y las fiscales se capturan junto con el tipo de cuenta
 y los consecutivos. Sub ctas, Movs y los saldos son de consulta. Cancelar o
 pulsar Escape descarta la captura. El traspaso actualiza ambas cuentas y muestra
-el folio y la póliza.
+el folio y la póliza. El modo Cheque captura el número de la cuenta emisora y
+la póliza enlazada muestra el mismo número.
 Al confirmar **Baja**, el catálogo abre su primera cuenta disponible.
 
 ## Bancos · Presupuesto, clasificadores, revisión y gastos

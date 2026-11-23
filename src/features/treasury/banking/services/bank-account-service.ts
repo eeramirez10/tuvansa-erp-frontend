@@ -89,7 +89,9 @@ export async function registerBankReconciliation(id: number, input: BankReconcil
 const bankTransferPath = (id: number) => `/treasury/bank-accounts/${id}/${panelPaths.transfer}`
 
 export async function getBankTransferPreview(id: number, signal?: AbortSignal) {
-  const response = await apiClient.get<ItemResponse<BankTransferPreview>>(`${bankTransferPath(id)}/capture`, { signal })
+  const response = await apiClient.get<ItemResponse<BankTransferPreview>>(`${bankTransferPath(id)}/capture`, {
+    params: { direction: "outgoing" }, signal,
+  })
   return response.data.data
 }
 
