@@ -1,5 +1,13 @@
 # Mapa de vistas, controles y endpoints
 
+## Órdenes de compra · Comentarios
+
+**Comentarios** conserva la consulta `GET /purchasing/purchase-orders/:id/actions/comments`
+y obtiene el borrador, revisión y capacidad de escritura por `GET /actions/comments/editor`
+en la misma orden. **OK** guarda con `PATCH /actions/comments`. **Cancelar** y
+Escape descartan el borrador. El importe con letra se deriva del guardado y
+el historial de firmas se muestra aparte de la cuarta línea editable.
+
 ## Órdenes de compra · Cotiz y Gen %
 
 **Cotiz** consulta `GET /purchasing/purchase-orders/:id/actions/quote-conversion`.
