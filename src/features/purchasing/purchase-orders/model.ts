@@ -109,6 +109,25 @@ export type PurchaseOrderEdit = {
   lines: PurchaseOrderEditLine[]
 }
 
+export type PurchaseOrderRemoveInput = {
+  number: string
+  revision: number
+  legacyVersion: string
+}
+
+export type PurchaseOrderRemoval = PurchaseOrderRemoveInput & {
+  id: number
+  supplier: PurchaseOrder["supplier"]
+  canRemove: boolean
+  reason: string
+}
+
+export type PurchaseOrderRemovalResult = {
+  id: number
+  number: string
+  replacement: PurchaseOrder | null
+}
+
 export type PurchaseOrderEditProduct = {
   code: string
   description: string

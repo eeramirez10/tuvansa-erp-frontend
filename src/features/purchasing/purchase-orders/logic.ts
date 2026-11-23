@@ -4,6 +4,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderEditor,
   getPurchaseOrderPanel,
+  getPurchaseOrderRemoval,
   searchPurchaseOrders,
   type PurchaseOrderSearchCriteria,
 } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
@@ -15,6 +16,7 @@ export const purchaseOrderKeys = {
   search: (criteria: PurchaseOrderSearchCriteria) => [...purchaseOrderKeys.searches(), criteria] as const,
   panel: (id: number, key: PurchaseOrderPanelKey) => [...purchaseOrderKeys.detail(id), "panel", key] as const,
   editor: (id: number) => [...purchaseOrderKeys.detail(id), "edit"] as const,
+  removal: (id: number) => [...purchaseOrderKeys.detail(id), "removal"] as const,
 }
 
 export const displayPurchaseOrderDate = (input: string | null) =>
@@ -45,4 +47,11 @@ export const purchaseOrderEditorQueryOptions = (id: number) => queryOptions({
   queryKey: purchaseOrderKeys.editor(id),
   queryFn: ({ signal }) => getPurchaseOrderEditor(id, signal),
   refetchOnMount: "always",
+})
+
+export const purchaseOrderRemovalQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseOrderKeys.removal(id),
+  queryFn: ({ signal }) => getPurchaseOrderRemoval(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
 })

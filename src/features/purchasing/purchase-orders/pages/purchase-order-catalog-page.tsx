@@ -7,11 +7,12 @@ import { PurchaseOrderActionDialog } from "@/features/purchasing/purchase-orders
 import { PurchaseOrderCreateDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-create-dialog"
 import { PurchaseOrderDetails } from "@/features/purchasing/purchase-orders/components/purchase-order-details"
 import { PurchaseOrderEditDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-edit-dialog"
+import { PurchaseOrderRemovalDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-removal-dialog"
 import { PurchaseOrderSearchDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-search-dialog"
 import { PurchaseOrderToolbar } from "@/features/purchasing/purchase-orders/components/purchase-order-toolbar"
 import { purchaseOrderActions } from "@/features/purchasing/purchase-orders/constants"
 import { purchaseOrderKeys, purchaseOrderQueryOptions } from "@/features/purchasing/purchase-orders/logic"
-import type { PurchaseOrder, PurchaseOrderAction } from "@/features/purchasing/purchase-orders/model"
+import type { PurchaseOrder, PurchaseOrderAction, PurchaseOrderRemovalResult } from "@/features/purchasing/purchase-orders/model"
 import { getAdjacentPurchaseOrder } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -29,6 +30,7 @@ export function PurchaseOrderCatalogPage() {
   const { windows: createWindows, openWindow: openCreateWindow, closeWindow: closeCreateWindow } = useDesktopWindowCollection<null>()
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseOrderActionWindow>()
   const { windows: editWindows, openWindow: openEditWindow, closeWindow: closeEditWindow } = useDesktopWindowCollection<number>()
+  const { windows: removalWindows, openWindow: openRemovalWindow, closeWindow: closeRemovalWindow } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openPurchaseOrder = (next: PurchaseOrder) => {
@@ -44,6 +46,26 @@ export function PurchaseOrderCatalogPage() {
     onError: (error) => setNotice({ title: "No fue posible navegar", message: getApiErrorMessage(error), error: true }),
   })
 
+  function onRemoved(result: PurchaseOrderRemovalResult, windowId: string) {
+    closeRemovalWindow(windowId)
+    for (const window of editWindows) if (window.payload === result.id) closeEditWindow(window.id)
+    for (const window of actionWindows) if (window.payload.purchaseOrder.id === result.id) closeActionWindow(window.id)
+    const detail = purchaseOrderKeys.detail(result.id)
+    void queryClient.cancelQueries({ queryKey: detail })
+    void queryClient.invalidateQueries({ queryKey: purchaseOrderKeys.searches() })
+    void queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
+    if (id === result.id) {
+      const next = result.replacement
+      if (next) queryClient.setQueryData(purchaseOrderKeys.detail(next.id), next)
+      void (async () => {
+        if (!next) await queryClient.refetchQueries({ queryKey: purchaseOrderKeys.search({ page: 1, pageSize: 1 }), exact: true })
+        await navigate(next ? paths.purchaseOrder(next.id) : paths.purchaseOrders, { replace: true })
+        queryClient.removeQueries({ queryKey: detail })
+      })()
+    } else queryClient.removeQueries({ queryKey: detail })
+    setNotice({ title: "Orden dada de baja", message: `La orden ${result.number} se retiró del catálogo.` })
+  }
+
   return (
     <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
       <PurchaseOrderToolbar
@@ -51,6 +73,7 @@ export function PurchaseOrderCatalogPage() {
         hasOrder={!!purchaseOrder}
         onCreate={() => openCreateWindow("purchase-orders:create", null)}
         onEdit={() => { if (purchaseOrder) openEditWindow(`purchase-orders:${purchaseOrder.id}:edit`, purchaseOrder.id) }}
+        onRemove={() => { if (purchaseOrder) openRemovalWindow(`purchase-orders:${purchaseOrder.id}:removal`, purchaseOrder.id) }}
         onNext={() => navigation.mutate("next")}
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
@@ -73,6 +96,9 @@ export function PurchaseOrderCatalogPage() {
       /></DesktopWindowIdentity>)}
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder} /></DesktopWindowIdentity>)}
       {editWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderEditDialog id={window.payload} onClose={() => closeEditWindow(window.id)} /></DesktopWindowIdentity>)}
+      {removalWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderRemovalDialog
+        id={window.payload} onClose={() => closeRemovalWindow(window.id)} onRemoved={(result) => onRemoved(result, window.id)}
+      /></DesktopWindowIdentity>)}
     </main>
   )
 }

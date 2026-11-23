@@ -18,7 +18,7 @@ function Tool({ label, icon, onClick, disabled }: { label: string; icon: typeof 
   )
 }
 
-export function PurchaseOrderToolbar({ disabled, hasOrder, onPrevious, onSearch, onNext, onCreate, onEdit }: {
+export function PurchaseOrderToolbar({ disabled, hasOrder, onPrevious, onSearch, onNext, onCreate, onEdit, onRemove }: {
   disabled?: boolean
   hasOrder: boolean
   onPrevious: () => void
@@ -26,6 +26,7 @@ export function PurchaseOrderToolbar({ disabled, hasOrder, onPrevious, onSearch,
   onNext: () => void
   onCreate: () => void
   onEdit: () => void
+  onRemove: () => void
 }) {
   return (
     <ErpModuleToolbarPortal><div aria-label="Navegación de órdenes de compra" className="flex items-center gap-1" role="toolbar">
@@ -34,7 +35,7 @@ export function PurchaseOrderToolbar({ disabled, hasOrder, onPrevious, onSearch,
       <Tool disabled={disabled || !hasOrder} icon={ArrowRight01Icon} label="Orden siguiente" onClick={onNext} />
       <Separator className="mx-0.5 h-5" orientation="vertical" />
       <Tool disabled={disabled} icon={FileAddIcon} label="Nueva orden" onClick={onCreate} />
-      <Tool disabled icon={Delete01Icon} label="Eliminar orden (escritura pendiente)" />
+      <Tool disabled={disabled || !hasOrder} icon={Delete01Icon} label="Baja de orden de compra" onClick={onRemove} />
       <Tool disabled={disabled || !hasOrder} icon={Edit02Icon} label="Editar orden" onClick={onEdit} />
     </div></ErpModuleToolbarPortal>
   )

@@ -343,6 +343,13 @@ Comentarios reproduce la distribución de `EOC#6` de Omnis 7. Usa las etiquetas 
 
 El editor mantiene un borrador de partidas. Tab desde **Pzas.** en la última partida abre la siguiente. Cancelar descarta el borrador. OK pregunta si debe retirar partidas existentes de cantidad cero antes de guardar. Al guardar se actualiza la ficha y se invalidan los paneles vinculados a la orden y el catálogo de Inventarios.
 
+| Baja de órdenes de compra | Endpoint relativo a `/api/purchasing/purchase-orders` |
+| --- | --- |
+| Papelera / validar y abrir confirmación | `GET /:purchaseOrderId/removal` |
+| Baja de orden de compra / Sí | `DELETE /:purchaseOrderId` |
+
+**No** cierra la confirmación. **Sí** envía el folio, la revisión y la versión validados por la API. Al confirmar se cierran las ventanas de la orden, se actualizan las búsquedas y se abre la orden disponible siguiente.
+
 | Alta de órdenes de compra | Endpoint relativo a `/api/purchasing/purchase-orders` |
 | --- | --- |
 | Hoja / Nueva orden de compra / Almacén | `GET /create` |

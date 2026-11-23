@@ -10,6 +10,9 @@ import type {
   PurchaseOrderEditProduct,
   PurchaseOrderPanel,
   PurchaseOrderPanelKey,
+  PurchaseOrderRemoval,
+  PurchaseOrderRemovalResult,
+  PurchaseOrderRemoveInput,
   PurchaseOrderSearchResponse,
 } from "@/features/purchasing/purchase-orders/model"
 import { apiClient } from "@/shared/api/api-client"
@@ -70,6 +73,16 @@ export async function updatePurchaseOrderClassifications(id: number, update: Pur
 
 export async function getPurchaseOrderEditor(id: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<PurchaseOrderEditor>>(`/purchasing/purchase-orders/${id}/edit`, { signal })
+  return response.data.data
+}
+
+export async function getPurchaseOrderRemoval(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderRemoval>>(`/purchasing/purchase-orders/${id}/removal`, { signal })
+  return response.data.data
+}
+
+export async function removePurchaseOrder(id: number, confirmation: PurchaseOrderRemoveInput) {
+  const response = await apiClient.delete<ItemResponse<PurchaseOrderRemovalResult>>(`/purchasing/purchase-orders/${id}`, { data: confirmation })
   return response.data.data
 }
 
