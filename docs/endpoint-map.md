@@ -331,6 +331,17 @@ entradas/salidas a su costo, netos por escenario, revaluaciones aparte y conteos
 de costo cero/ausente. Excel incluye Costos históricos. No se certifica aún el
 saldo contable conciliado ni se sustituye un costo faltante por el actual.
 
+### Recepciones
+
+La ruta web es `/recepciones/:purchaseReceptionId`. **Nueva recepción** abre el borrador por folio de una orden confirmada. **OK** registra las cantidades seleccionadas y navega a la ficha guardada. **Cancelar** descarta el borrador.
+
+| Vista o botón | Endpoint relativo a `/api/purchasing/purchase-receptions` |
+| --- | --- |
+| Nueva recepción / Buscar orden | `GET /create?orderNumber=…` |
+| Nueva recepción / OK | `POST /` |
+| Ficha y partidas | `GET /:purchaseReceptionId` |
+| Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
+
 ### Órdenes de compra
 
 La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se usa para elegir un ID. La ficha carga su detalle con partidas. Las respuestas de las flechas ya incluyen las partidas.
@@ -350,8 +361,12 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 | Duplicar | `GET/POST /:purchaseOrderId/actions/duplicate` |
 | Split | `GET/POST /:purchaseOrderId/actions/split` |
 | Alta Piezas | `GET /:purchaseOrderId/actions/pieces/editor`, `PATCH /:purchaseOrderId/actions/pieces` |
+| Alta Piezas / Importar TSV | `PATCH /:purchaseOrderId/actions/pieces/import` |
 | Piezas | `GET /:purchaseOrderId/actions/pieces` |
 | Piezas / Confirmar | `GET/PATCH /:purchaseOrderId/actions/pieces/confirmation` |
+| Etiquetas | `GET /:purchaseOrderId/actions/labels` |
+| Imprimir | `GET /:purchaseOrderId/actions/print` |
+| Imprimir Conf. | `GET /:purchaseOrderId/actions/print-confirmation` |
 | Confirmar todo / validar | `GET /:purchaseOrderId/actions/confirmation` |
 | Confirmar todo o desconfirmar / Sí | `PATCH /:purchaseOrderId/actions/confirmation` |
 | Autorizar / consultar O.K. A–F | `GET /:purchaseOrderId/actions/authorization` |

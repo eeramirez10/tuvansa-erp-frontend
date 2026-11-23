@@ -18,19 +18,21 @@ function Tool({ label, icon, onClick, disabled }: { label: string; icon: typeof 
   )
 }
 
-export function PurchaseReceptionToolbar({ disabled, onPrevious, onSearch, onNext }: {
+export function PurchaseReceptionToolbar({ disabled, hasReception, onCreate, onPrevious, onSearch, onNext }: {
   disabled?: boolean
+  hasReception: boolean
+  onCreate: () => void
   onPrevious: () => void
   onSearch: () => void
   onNext: () => void
 }) {
   return (
     <ErpModuleToolbarPortal><div aria-label="Navegación de recepciones" className="flex items-center gap-1" role="toolbar">
-      <Tool disabled={disabled} icon={ArrowLeft01Icon} label="Recepción anterior" onClick={onPrevious} />
+      <Tool disabled={disabled || !hasReception} icon={ArrowLeft01Icon} label="Recepción anterior" onClick={onPrevious} />
       <Tool disabled={disabled} icon={Search01Icon} label="Buscar recepción" onClick={onSearch} />
-      <Tool disabled={disabled} icon={ArrowRight01Icon} label="Recepción siguiente" onClick={onNext} />
+      <Tool disabled={disabled || !hasReception} icon={ArrowRight01Icon} label="Recepción siguiente" onClick={onNext} />
       <Separator className="mx-0.5 h-5" orientation="vertical" />
-      <Tool disabled icon={FileAddIcon} label="Nueva recepción (escritura pendiente)" />
+      <Tool icon={FileAddIcon} label="Nueva recepción" onClick={onCreate} />
       <Tool disabled icon={Delete01Icon} label="Eliminar recepción (escritura pendiente)" />
       <Tool disabled icon={Edit02Icon} label="Editar recepción (escritura pendiente)" />
     </div></ErpModuleToolbarPortal>

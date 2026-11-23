@@ -9,7 +9,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (params.purchaseReceptionId === undefined) {
     const result = await queryClient.ensureQueryData(purchaseReceptionSearchQueryOptions({ page: 1, pageSize: 1 }))
     const reception = result.data[0]
-    if (!reception) throw new Response("No hay recepciones disponibles", { status: 404 })
+    if (!reception) return null
     await queryClient.ensureQueryData(purchaseReceptionQueryOptions(reception.id))
     return redirect(paths.purchaseReception(reception.id))
   }

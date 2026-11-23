@@ -35,7 +35,11 @@ function ReadonlyField({ label, fieldValue, className = "" }: { label: string; f
   )
 }
 
-export function PurchaseOrderDetails({ purchaseOrder }: { purchaseOrder: PurchaseOrder }) {
+export function PurchaseOrderDetails({ purchaseOrder, selectedLineIds, onToggleLine }: {
+  purchaseOrder: PurchaseOrder
+  selectedLineIds: readonly number[]
+  onToggleLine: (id: number) => void
+}) {
   const [sort, setSort] = useState<Sort | null>(null)
   const lines = sort === null ? purchaseOrder.lines : purchaseOrder.lines.toSorted((left, right) => {
     const a = left[sort.key]
@@ -95,8 +99,14 @@ export function PurchaseOrderDetails({ purchaseOrder }: { purchaseOrder: Purchas
                 {lines.map((line) => {
                   const factor = line.factor || 1
                   return (
-                  <TableRow key={line.id}>
-                    <TableCell className="px-1 py-0.5 font-mono">{line.productCode}</TableCell>
+                  <TableRow data-state={selectedLineIds.includes(line.id) ? "selected" : undefined} key={line.id}>
+                    <TableCell className="px-1 py-0.5 font-mono">
+                      <Button aria-label={`Marcar partida ${line.productCode} (${line.id}) para Etiquetas`}
+                        aria-pressed={selectedLineIds.includes(line.id)} className="h-auto p-0 font-mono"
+                        onClick={() => onToggleLine(line.id)} size="xs" type="button" variant="ghost">
+                        {line.productCode}
+                      </Button>
+                    </TableCell>
                     <TableCell className="max-w-[280px] truncate px-1 py-0.5">{line.description}</TableCell>
                     <TableCell className="px-1 py-0.5 text-right">{money.format(line.ordered / factor)}</TableCell>
                     <TableCell className="px-1 py-0.5 text-right">{money.format(line.fulfilled / factor)}</TableCell>

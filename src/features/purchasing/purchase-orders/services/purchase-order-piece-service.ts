@@ -33,6 +33,12 @@ export type PurchaseOrderPieceUpdate = Pick<PurchaseOrderPieceEditor, "revision"
   entries: PurchaseOrderPieceEntry[]
 }
 
+export type PurchaseOrderPieceImportEntry = Omit<PurchaseOrderPieceEntry, "id"> & { productCode: string }
+
+export type PurchaseOrderPieceImport = Pick<PurchaseOrderPieceEditor, "revision" | "legacyVersion"> & {
+  entries: PurchaseOrderPieceImportEntry[]
+}
+
 const piecesPath = (id: number) => `/purchasing/purchase-orders/${id}/actions/pieces`
 
 export async function getPurchaseOrderPieceEditor(id: number, signal?: AbortSignal) {
@@ -42,5 +48,10 @@ export async function getPurchaseOrderPieceEditor(id: number, signal?: AbortSign
 
 export async function updatePurchaseOrderPieces(id: number, update: PurchaseOrderPieceUpdate) {
   const response = await apiClient.patch<{ data: PurchaseOrderPieceEditor }>(piecesPath(id), update)
+  return response.data.data
+}
+
+export async function importPurchaseOrderPieces(id: number, payload: PurchaseOrderPieceImport) {
+  const response = await apiClient.patch<{ data: PurchaseOrderPieceEditor }>(`${piecesPath(id)}/import`, payload)
   return response.data.data
 }

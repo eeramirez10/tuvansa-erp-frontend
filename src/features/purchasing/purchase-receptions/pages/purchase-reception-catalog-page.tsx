@@ -1,9 +1,10 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { paths } from "@/app/router/paths"
 import { PurchaseReceptionActionButtons } from "@/features/purchasing/purchase-receptions/components/purchase-reception-action-buttons"
 import { PurchaseReceptionActionDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-action-dialog"
+import { PurchaseReceptionCreateDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-create-dialog"
 import { PurchaseReceptionDetails } from "@/features/purchasing/purchase-receptions/components/purchase-reception-details"
 import { PurchaseReceptionSearchDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-search-dialog"
 import { PurchaseReceptionToolbar } from "@/features/purchasing/purchase-receptions/components/purchase-reception-toolbar"
@@ -22,8 +23,9 @@ export function PurchaseReceptionCatalogPage() {
   const id = Number(useParams().purchaseReceptionId)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { data: reception } = useSuspenseQuery(purchaseReceptionQueryOptions(id))
+  const { data: reception } = useQuery({ ...purchaseReceptionQueryOptions(id), enabled: id > 0 })
   const [searchOpen, setSearchOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseReceptionActionWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
@@ -33,7 +35,7 @@ export function PurchaseReceptionCatalogPage() {
   }
 
   const navigation = useMutation({
-    mutationFn: (direction: "previous" | "next") => getAdjacentPurchaseReception(reception.id, direction),
+    mutationFn: (direction: "previous" | "next") => getAdjacentPurchaseReception(id, direction),
     onSuccess: (next, direction) => next
       ? openReception(next)
       : setNotice({ title: "Fin del catálogo", message: direction === "previous" ? "Esta es la primera recepción disponible." : "Esta es la última recepción disponible." }),
@@ -44,14 +46,17 @@ export function PurchaseReceptionCatalogPage() {
     <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
       <PurchaseReceptionToolbar
         disabled={navigation.isPending}
+        hasReception={Boolean(reception)}
+        onCreate={() => setCreateOpen(true)}
         onNext={() => navigation.mutate("next")}
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
       />
-      <aside><PurchaseReceptionActionButtons actions={purchaseReceptionActions} onSelect={(action) => openActionWindow(`purchase-receptions:${reception.id}:${action.key}`, { reception, action })} /></aside>
+      <aside>{reception && <PurchaseReceptionActionButtons actions={purchaseReceptionActions}
+        onSelect={(action) => openActionWindow(`purchase-receptions:${reception.id}:${action.key}`, { reception, action })} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
-        <PurchaseReceptionDetails reception={reception} />
+        {reception && <PurchaseReceptionDetails reception={reception} />}
       </section>
 
       {searchOpen && (
@@ -59,6 +64,14 @@ export function PurchaseReceptionCatalogPage() {
           onOpenChange={setSearchOpen}
           onSelect={(selected) => { setSearchOpen(false); void navigate(paths.purchaseReception(selected.id)) }}
         /></DesktopWindowIdentity>
+      )}
+      {createOpen && (
+        <DesktopWindowIdentity id="purchase-receptions:create">
+          <PurchaseReceptionCreateDialog
+            onClose={() => setCreateOpen(false)}
+            onCreated={(next) => { setCreateOpen(false); setNotice(null); openReception(next) }}
+          />
+        </DesktopWindowIdentity>
       )}
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseReceptionActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} reception={window.payload.reception} /></DesktopWindowIdentity>)}
     </main>

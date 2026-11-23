@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { Link } from "react-router"
+import { paths } from "@/app/router/paths"
 import { PurchaseOrderClassificationsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-classifications-dialog"
 import { PurchaseOrderCommentsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-comments-dialog"
 import { PurchaseOrderConfirmationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-confirmation-dialog"
@@ -9,6 +11,8 @@ import { PurchaseOrderSplitDialog } from "@/features/purchasing/purchase-orders/
 import { PurchaseOrderBranchTransferDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-branch-transfer-dialog"
 import { PurchaseOrderPieceEditorDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-piece-editor-dialog"
 import { PurchaseOrderPieceConfirmation } from "@/features/purchasing/purchase-orders/components/purchase-order-piece-confirmation"
+import { PurchaseOrderPrintDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-print-dialog"
+import { PurchaseOrderLabelsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-labels-dialog"
 import { PurchaseOrderDuplicateDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-duplicate-dialog"
 import { PurchaseOrderAuthorizationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-authorization-dialog"
 import { PurchaseOrderSupplierActionDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-supplier-change-dialog"
@@ -36,7 +40,14 @@ function Receipts({ panel }: { panel: PurchaseOrderPanel }) {
       <Table className="min-w-[28rem] text-[9px]">
         <TableHeader><TableRow><TableHead className="h-5 px-1 text-[9px]">Docto</TableHead><TableHead className="h-5 px-1 text-[9px]">Fecha</TableHead></TableRow></TableHeader>
         <TableBody>
-          {panel.items.map((row, index) => <TableRow key={index}><TableCell className="px-1 py-0.5">{text(row.document)}</TableCell><TableCell className="px-1 py-0.5">{date(row.date)}</TableCell></TableRow>)}
+          {panel.items.map((row, index) => (
+            <TableRow key={index}>
+              <TableCell className="px-1 py-0.5">{typeof row.id === "number" ? (
+                <Link className="text-primary underline" to={paths.purchaseReception(row.id)}>{text(row.document)}</Link>
+              ) : text(row.document)}</TableCell>
+              <TableCell className="px-1 py-0.5">{date(row.date)}</TableCell>
+            </TableRow>
+          ))}
           {!panel.items.length && <TableRow><TableCell className="px-1 py-1 text-muted-foreground" colSpan={2}>Sin recepciones</TableCell></TableRow>}
         </TableBody>
       </Table>
@@ -51,6 +62,7 @@ const pieceColumns = [
 
 function Pieces({ panel, purchaseOrder }: { panel: PurchaseOrderPanel; purchaseOrder: PurchaseOrder }) {
   const [confirming, setConfirming] = useState(false)
+  const [showPrintStatus, setShowPrintStatus] = useState(false)
   return (
     <>
       <ErpDataTableViewport axes="xy" className="h-[17rem]">
@@ -68,10 +80,12 @@ function Pieces({ panel, purchaseOrder }: { panel: PurchaseOrderPanel; purchaseO
       </ErpDataTableViewport>
       <div className="flex items-end justify-between gap-2">
         <div className="flex gap-1"><Button disabled={confirming || !panel.items.length} onClick={() => setConfirming(true)}
-          size="sm" variant="outline">Confirmar</Button><Button disabled size="sm" variant="outline">Imprimir</Button></div>
+          size="sm" variant="outline">Confirmar</Button><Button aria-expanded={showPrintStatus}
+          onClick={() => setShowPrintStatus((visible) => !visible)} size="sm" variant="outline">Imprimir</Button></div>
         <Field label="Total" value={quantity.format(Number(panel.summary?.totalQuantity ?? 0))} />
       </div>
       {confirming && <PurchaseOrderPieceConfirmation purchaseOrder={purchaseOrder} onClose={() => setConfirming(false)} />}
+      {showPrintStatus && <Alert><AlertDescription>TUVANSA no tiene configurado un formato de etiquetas de piezas.</AlertDescription></Alert>}
     </>
   )
 }
@@ -144,16 +158,21 @@ function ReadPanel({ purchaseOrder, action, onClose, panelKey }: {
   )
 }
 
-export function PurchaseOrderActionDialog({ purchaseOrder, action, onClose, confirmation, markedOnly, onOrderCreated }: {
+export function PurchaseOrderActionDialog({ purchaseOrder, action, onClose, confirmation, markedOnly, labelLineIds, onOrderCreated }: {
   purchaseOrder: PurchaseOrder
   action: PurchaseOrderAction
   onClose: () => void
   confirmation?: PurchaseOrderConfirmationMode
   markedOnly?: boolean
+  labelLineIds?: readonly number[]
   onOrderCreated: (order: PurchaseOrder) => void
 }) {
   if (action.key === "confirm-all") return <PurchaseOrderConfirmationDialog purchaseOrder={purchaseOrder} initialMode={confirmation ?? "confirm"} onClose={onClose} />
   if (action.key === "quote") return <PurchaseOrderConversionDialog purchaseOrder={purchaseOrder} onClose={onClose} />
+  if (action.key === "labels") return <PurchaseOrderLabelsDialog id={purchaseOrder.id} number={purchaseOrder.number}
+    selectedLineIds={labelLineIds} onClose={onClose} />
+  if (action.key === "print" || action.key === "print-confirmation") return <PurchaseOrderPrintDialog id={purchaseOrder.id}
+    number={purchaseOrder.number} confirmed={action.key === "print-confirmation"} onClose={onClose} />
   if (action.key === "add-pieces") return <PurchaseOrderPieceEditorDialog purchaseOrder={purchaseOrder} onClose={onClose} />
   if (action.key === "duplicate") return <PurchaseOrderDuplicateDialog purchaseOrder={purchaseOrder} markedOnly={markedOnly ?? false} onClose={onClose} onDuplicated={onOrderCreated} />
   if (action.key === "split") return <PurchaseOrderSplitDialog purchaseOrder={purchaseOrder} onClose={onClose} onSplit={onOrderCreated} />

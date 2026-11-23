@@ -19,7 +19,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { title: string; message: string; error?: boolean }
-type PurchaseOrderActionWindow = { purchaseOrder: PurchaseOrder; action: PurchaseOrderAction; confirmation?: PurchaseOrderConfirmationMode; markedOnly?: boolean }
+type PurchaseOrderActionWindow = {
+  purchaseOrder: PurchaseOrder
+  action: PurchaseOrderAction
+  confirmation?: PurchaseOrderConfirmationMode
+  markedOnly?: boolean
+  labelLineIds?: readonly number[]
+}
 
 export function PurchaseOrderCatalogPage() {
   const id = Number(useParams().purchaseOrderId)
@@ -32,6 +38,8 @@ export function PurchaseOrderCatalogPage() {
   const { windows: editWindows, openWindow: openEditWindow, closeWindow: closeEditWindow } = useDesktopWindowCollection<number>()
   const { windows: removalWindows, openWindow: openRemovalWindow, closeWindow: closeRemovalWindow } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const [lineSelection, setLineSelection] = useState<{ orderId: number; lineIds: number[] }>()
+  const selectedLineIds = lineSelection?.orderId === id ? lineSelection.lineIds : []
 
   const openPurchaseOrder = (next: PurchaseOrder) => {
     queryClient.setQueryData(purchaseOrderKeys.detail(next.id), next)
@@ -81,12 +89,18 @@ export function PurchaseOrderCatalogPage() {
       <aside>{purchaseOrder && <PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={(action, shift) => {
         const confirmation = action.key === "confirm-all" && shift ? "unconfirm" : undefined
         const markedOnly = action.key === "duplicate" && shift
-        const windowId = `purchase-orders:${purchaseOrder.id}:${action.key}${confirmation ? ":unconfirm" : markedOnly ? ":marked" : ""}`
-        openActionWindow(windowId, { purchaseOrder, action, confirmation, markedOnly })
+        const selectedLabels = action.key === "labels" && shift
+        const windowId = `purchase-orders:${purchaseOrder.id}:${action.key}${confirmation ? ":unconfirm" : markedOnly ? ":marked" : selectedLabels ? ":selected" : ""}`
+        openActionWindow(windowId, { purchaseOrder, action, confirmation, markedOnly,
+          ...(selectedLabels ? { labelLineIds: selectedLineIds } : {}) })
       }} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
-        {purchaseOrder && <PurchaseOrderDetails purchaseOrder={purchaseOrder} />}
+        {purchaseOrder && <PurchaseOrderDetails purchaseOrder={purchaseOrder} selectedLineIds={selectedLineIds}
+          onToggleLine={(lineId) => setLineSelection({
+            orderId: id,
+            lineIds: selectedLineIds.includes(lineId) ? selectedLineIds.filter((current) => current !== lineId) : [...selectedLineIds, lineId],
+          })} />}
       </section>
 
       {searchOpen && (
@@ -102,6 +116,7 @@ export function PurchaseOrderCatalogPage() {
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action}
         confirmation={window.payload.confirmation} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder}
         markedOnly={window.payload.markedOnly}
+        labelLineIds={window.payload.labelLineIds}
         onOrderCreated={(order) => { closeActionWindow(window.id); setNotice(null); openPurchaseOrder(order) }}
       /></DesktopWindowIdentity>)}
       {editWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderEditDialog id={window.payload} onClose={() => closeEditWindow(window.id)} /></DesktopWindowIdentity>)}
