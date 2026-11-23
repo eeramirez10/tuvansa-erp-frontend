@@ -1,5 +1,8 @@
 import type {
   PurchaseOrder,
+  PurchaseOrderAuthorization,
+  PurchaseOrderAuthorizationDirection,
+  PurchaseOrderAuthorizationLevel,
   PurchaseOrderClassificationPanel,
   PurchaseOrderClassificationUpdate,
   PurchaseOrderConfirmation,
@@ -85,6 +88,22 @@ export async function getPurchaseOrderRemoval(id: number, signal?: AbortSignal) 
 
 export async function getPurchaseOrderConfirmation(id: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<PurchaseOrderConfirmation>>(`/purchasing/purchase-orders/${id}/actions/confirmation`, { signal })
+  return response.data.data
+}
+
+export async function getPurchaseOrderAuthorization(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderAuthorization>>(`/purchasing/purchase-orders/${id}/actions/authorization`, { signal })
+  return response.data.data
+}
+
+export async function authorizePurchaseOrder(
+  id: number, level: PurchaseOrderAuthorizationLevel, direction: PurchaseOrderAuthorizationDirection,
+  { revision, classificationRevision, legacyVersion, status }: PurchaseOrderAuthorization, key: string,
+) {
+  const response = await apiClient.patch<ItemResponse<PurchaseOrder>>(
+    `/purchasing/purchase-orders/${id}/actions/authorization`, { level, direction, revision, classificationRevision, legacyVersion, status },
+    { headers: { Authorization: `Bearer ${key}` } },
+  )
   return response.data.data
 }
 

@@ -140,6 +140,21 @@ export type PurchaseOrderConfirmation = {
   reason: string
 }
 
+export type PurchaseOrderAuthorizationLevel = "A" | "B" | "C" | "D" | "E" | "F"
+export type PurchaseOrderAuthorizationDirection = "approve" | "revoke"
+
+export type PurchaseOrderAuthorization = {
+  id: number
+  number: string
+  status: string
+  revision: number
+  classificationRevision: number
+  legacyVersion: string
+  canWrite: boolean
+  reason: string
+  options: Array<{ level: PurchaseOrderAuthorizationLevel; canApprove: boolean; canRevoke: boolean }>
+}
+
 export type PurchaseOrderEditProduct = {
   code: string
   description: string

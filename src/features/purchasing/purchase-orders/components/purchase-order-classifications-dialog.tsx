@@ -47,7 +47,9 @@ function EditClassifications({ purchaseOrder, panel, onClose }: DialogProps & { 
           {summary.current.map((original, index) => {
             const id = `${formId}-${index}`
             const label = summary.labels[index] || `Clasificador ${index + 1}`
-            const options = items.filter((item) => item.classifier === index + 1 && item.compositeCode !== "")
+            const approvalManaged = index === 8 && /^9[A-F]?$/.test(original)
+            const options = items.filter((item) => item.classifier === index + 1 && item.compositeCode !== "" &&
+              (index !== 8 || !/^9[A-F]?$/.test(item.compositeCode)))
             const historicalValue = original && !options.some((item) => item.compositeCode === original) ? original : null
             return (
               <div className="grid grid-cols-[8rem_minmax(0,1fr)] items-center gap-1" key={id}>
@@ -56,7 +58,7 @@ function EditClassifications({ purchaseOrder, panel, onClose }: DialogProps & { 
                   const option = options.find((item) => item.compositeCode === field.value)
                   const selection = option ? `${option.code} ${option.description}` : field.value
                   return (
-                    <Select disabled={!summary.canWrite || save.isPending}
+                    <Select disabled={!summary.canWrite || approvalManaged || save.isPending}
                       onValueChange={(next) => { if (typeof next === "string") field.onChange(next) }}
                       value={field.value}>
                       <SelectTrigger className="w-full text-[9px]" id={id} onBlur={field.onBlur} ref={field.ref} size="sm">

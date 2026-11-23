@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import type { PurchaseOrder, PurchaseOrderPanelKey } from "@/features/purchasing/purchase-orders/model"
 import {
   getPurchaseOrder,
+  getPurchaseOrderAuthorization,
   getPurchaseOrderConfirmation,
   getPurchaseOrderEditor,
   getPurchaseOrderPanel,
@@ -19,6 +20,7 @@ export const purchaseOrderKeys = {
   editor: (id: number) => [...purchaseOrderKeys.detail(id), "edit"] as const,
   removal: (id: number) => [...purchaseOrderKeys.detail(id), "removal"] as const,
   confirmation: (id: number) => [...purchaseOrderKeys.detail(id), "confirmation"] as const,
+  authorization: (id: number) => [...purchaseOrderKeys.detail(id), "authorization"] as const,
 }
 
 export const displayPurchaseOrderDate = (input: string | null) =>
@@ -61,6 +63,13 @@ export const purchaseOrderRemovalQueryOptions = (id: number) => queryOptions({
 export const purchaseOrderConfirmationQueryOptions = (id: number) => queryOptions({
   queryKey: purchaseOrderKeys.confirmation(id),
   queryFn: ({ signal }) => getPurchaseOrderConfirmation(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+})
+
+export const purchaseOrderAuthorizationQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseOrderKeys.authorization(id),
+  queryFn: ({ signal }) => getPurchaseOrderAuthorization(id, signal),
   refetchOnMount: "always",
   refetchOnWindowFocus: false,
 })

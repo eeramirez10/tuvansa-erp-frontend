@@ -3,6 +3,7 @@ import { useState } from "react"
 import { PurchaseOrderClassificationsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-classifications-dialog"
 import { PurchaseOrderCommentsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-comments-dialog"
 import { PurchaseOrderConfirmationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-confirmation-dialog"
+import { PurchaseOrderAuthorizationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-authorization-dialog"
 import { displayPurchaseOrderDate, purchaseOrderPanelQueryOptions } from "@/features/purchasing/purchase-orders/logic"
 import type { PurchaseOrder, PurchaseOrderAction, PurchaseOrderColorSizeGroup, PurchaseOrderConfirmationMode, PurchaseOrderPanel } from "@/features/purchasing/purchase-orders/model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
@@ -136,6 +137,7 @@ export function PurchaseOrderActionDialog({ purchaseOrder, action, onClose, conf
   confirmation?: PurchaseOrderConfirmationMode
 }) {
   if (action.key === "confirm-all") return <PurchaseOrderConfirmationDialog purchaseOrder={purchaseOrder} initialMode={confirmation ?? "confirm"} onClose={onClose} />
+  if (action.key === "authorize") return <PurchaseOrderAuthorizationDialog purchaseOrder={purchaseOrder} onClose={onClose} />
   if (action.panelKey === "classifications") return <PurchaseOrderClassificationsDialog onClose={onClose} purchaseOrder={purchaseOrder} />
   if (action.panelKey === "comments") return <PurchaseOrderCommentsDialog onClose={onClose} purchaseOrder={purchaseOrder} />
   if (action.panelKey) return <ReadPanel action={action} onClose={onClose} panelKey={action.panelKey} purchaseOrder={purchaseOrder} />

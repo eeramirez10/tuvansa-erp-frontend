@@ -332,8 +332,12 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 | Piezas | `GET /:purchaseOrderId/actions/pieces` |
 | Confirmar todo / validar | `GET /:purchaseOrderId/actions/confirmation` |
 | Confirmar todo o desconfirmar / Sí | `PATCH /:purchaseOrderId/actions/confirmation` |
+| Autorizar / consultar O.K. A–F | `GET /:purchaseOrderId/actions/authorization` |
+| O.K. A–F / autorizar o revertir | `PATCH /:purchaseOrderId/actions/authorization` |
 
 **Confirmar todo** pide confirmación antes de asignar el saldo pendiente. **Shift + clic** o **Desconfirmar todo** dentro del diálogo permiten retirar las asignaciones. El servidor valida la revisión. Al terminar se refrescan las partidas y **Asignado**, los paneles de la orden e Inventarios.
+
+**Autorizar** abre **Autoriza O.C.** con los niveles **O.K. A–F**. Se firma con la clave personal de Compras. **Shift + clic** o **Desautorizar** revierten un nivel. La clave se envía en el encabezado `Authorization` y se vacía del formulario al firmar. La operación actualiza **Autorización** de la ficha y su historial en **Comentarios**.
 
 Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador. Las acciones internas Cambio, Confirmar e Imprimir de CT/Piezas quedan fuera de esta entrega.
 
