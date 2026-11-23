@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { PurchaseOrder, PurchaseOrderPanelKey } from "@/features/purchasing/purchase-orders/model"
+import type { PurchaseOrder, PurchaseOrderPanelKey, PurchaseOrderSupplierSearch } from "@/features/purchasing/purchase-orders/model"
 import {
   getPurchaseOrder,
   getPurchaseOrderAuthorization,
@@ -7,6 +7,7 @@ import {
   getPurchaseOrderEditor,
   getPurchaseOrderPanel,
   getPurchaseOrderRemoval,
+  searchAuthorizationSuppliers,
   searchPurchaseOrders,
   type PurchaseOrderSearchCriteria,
 } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
@@ -21,6 +22,7 @@ export const purchaseOrderKeys = {
   removal: (id: number) => [...purchaseOrderKeys.detail(id), "removal"] as const,
   confirmation: (id: number) => [...purchaseOrderKeys.detail(id), "confirmation"] as const,
   authorization: (id: number) => [...purchaseOrderKeys.detail(id), "authorization"] as const,
+  authorizationSuppliers: (filters: PurchaseOrderSupplierSearch) => [...purchaseOrderKeys.all, "authorization", "suppliers", filters] as const,
 }
 
 export const displayPurchaseOrderDate = (input: string | null) =>
@@ -72,4 +74,10 @@ export const purchaseOrderAuthorizationQueryOptions = (id: number) => queryOptio
   queryFn: ({ signal }) => getPurchaseOrderAuthorization(id, signal),
   refetchOnMount: "always",
   refetchOnWindowFocus: false,
+})
+
+export const purchaseOrderAuthorizationSupplierQueryOptions = (filters: PurchaseOrderSupplierSearch) => queryOptions({
+  queryKey: purchaseOrderKeys.authorizationSuppliers(filters),
+  queryFn: ({ signal }) => searchAuthorizationSuppliers(filters, signal),
+  enabled: Boolean(filters.code || filters.name),
 })

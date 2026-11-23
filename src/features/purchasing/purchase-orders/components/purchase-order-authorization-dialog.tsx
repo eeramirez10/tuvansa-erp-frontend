@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useId, useRef, useState } from "react"
+import { PurchaseOrderSupplierChangeDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-supplier-change-dialog"
 import { purchaseOrderAuthorizationQueryOptions, purchaseOrderKeys } from "@/features/purchasing/purchase-orders/logic"
 import type { PurchaseOrder, PurchaseOrderAuthorization, PurchaseOrderAuthorizationDirection, PurchaseOrderAuthorizationLevel } from "@/features/purchasing/purchase-orders/model"
 import { authorizePurchaseOrder } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
+import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
@@ -30,8 +32,18 @@ export function PurchaseOrderAuthorizationDialog({ purchaseOrder, onClose }: {
   const key = useRef("")
   const [revoke, setRevoke] = useState(false)
   const [message, setMessage] = useState("")
+  const supplierWindows = useDesktopWindowCollection<PurchaseOrderAuthorization>()
   const query = useQuery(purchaseOrderAuthorizationQueryOptions(id))
   const state = query.data
+
+  async function refreshOrder(order: PurchaseOrder) {
+    const detail = purchaseOrderKeys.detail(id)
+    await queryClient.cancelQueries({ queryKey: detail })
+    queryClient.setQueryData(detail, order)
+    await queryClient.invalidateQueries({ queryKey: detail, predicate: (entry) => entry.queryKey.length > detail.length })
+    void queryClient.invalidateQueries({ queryKey: purchaseOrderKeys.searches() })
+  }
+
   const write = useMutation({
     networkMode: "always",
     mutationFn: (change: Change) => {
@@ -41,11 +53,7 @@ export function PurchaseOrderAuthorizationDialog({ purchaseOrder, onClose }: {
         .catch((error: unknown) => { throw new Error(getApiErrorMessage(error)) })
     },
     onSuccess: async (order, change) => {
-      const detail = purchaseOrderKeys.detail(id)
-      await queryClient.cancelQueries({ queryKey: detail })
-      queryClient.setQueryData(detail, order)
-      await queryClient.invalidateQueries({ queryKey: detail, predicate: (entry) => entry.queryKey.length > detail.length })
-      void queryClient.invalidateQueries({ queryKey: purchaseOrderKeys.searches() })
+      await refreshOrder(order)
       setRevoke(false)
       setMessage(change.direction === "approve" ? `Nivel ${change.level} autorizado.` : `Nivel ${change.level} desautorizado.`)
     },
@@ -75,7 +83,7 @@ export function PurchaseOrderAuthorizationDialog({ purchaseOrder, onClose }: {
 
   const ready = state?.canWrite && !query.isFetching && !query.isError
   const error = write.isError ? getApiErrorMessage(write.error) : query.isError ? getApiErrorMessage(query.error) : ""
-  return (
+  return <>
     <ErpDataDialog defaultWidth={605} title="Autoriza O.C." description={number}
       onOpenChange={(open) => { if (!open && !write.isPending) onClose() }}>
       <ErpDataDialogBody className="grid gap-2">
@@ -95,7 +103,12 @@ export function PurchaseOrderAuthorizationDialog({ purchaseOrder, onClose }: {
                 title={option?.canRevoke ? `Shift + clic para desautorizar ${level}` : undefined}
                 variant={state?.status === `9${level}` ? "default" : "outline"}>O.K. {level}</Button>
             })}
-            <Button disabled size="sm" variant="outline">Cambia proveedor</Button>
+            <span title={state?.supplierChange?.reason || undefined}>
+              <Button disabled={!state?.supplierChange?.canWrite || query.isFetching || query.isError || write.isPending}
+                onClick={() => {
+                  if (state?.supplierChange?.canWrite) supplierWindows.openWindow(`purchase-orders:${id}:authorization:supplier`, state)
+                }} size="sm" variant="outline">Cambia proveedor</Button>
+            </span>
             {(query.isFetching || write.isPending) && <Spinner />}
           </div>
           {state && <p className="text-muted-foreground">Orden {number} · Autorización {state.status === "9" ? "pendiente" : state.status || "pendiente"}</p>}
@@ -114,5 +127,15 @@ export function PurchaseOrderAuthorizationDialog({ purchaseOrder, onClose }: {
         </div>
       </ErpDataDialogBody>
     </ErpDataDialog>
-  )
+    {supplierWindows.windows.map(({ id: windowId, payload }) => (
+      <DesktopWindowIdentity id={windowId} key={windowId}>
+        <PurchaseOrderSupplierChangeDialog state={payload} onClose={() => supplierWindows.closeWindow(windowId)} onChange={(order) => {
+          supplierWindows.closeWindow(windowId)
+          void refreshOrder(order)
+          void queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
+          setMessage(`Proveedor actualizado a ${order.supplier.code}.`)
+        }} />
+      </DesktopWindowIdentity>
+    ))}
+  </>
 }

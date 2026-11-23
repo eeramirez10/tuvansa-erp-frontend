@@ -153,7 +153,10 @@ export type PurchaseOrderAuthorization = {
   canWrite: boolean
   reason: string
   options: Array<{ level: PurchaseOrderAuthorizationLevel; canApprove: boolean; canRevoke: boolean }>
+  supplierChange: { canWrite: boolean; reason: string; supplier: PurchaseOrder["supplier"] }
 }
+
+export type PurchaseOrderSupplierSearch = { code: string; name: string }
 
 export type PurchaseOrderEditProduct = {
   code: string

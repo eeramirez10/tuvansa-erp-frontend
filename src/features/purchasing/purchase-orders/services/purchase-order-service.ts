@@ -1,4 +1,5 @@
 import type {
+  PurchaseOrderSupplierSearch,
   PurchaseOrder,
   PurchaseOrderAuthorization,
   PurchaseOrderAuthorizationDirection,
@@ -102,6 +103,25 @@ export async function authorizePurchaseOrder(
 ) {
   const response = await apiClient.patch<ItemResponse<PurchaseOrder>>(
     `/purchasing/purchase-orders/${id}/actions/authorization`, { level, direction, revision, classificationRevision, legacyVersion, status },
+    { headers: { Authorization: `Bearer ${key}` } },
+  )
+  return response.data.data
+}
+
+export async function searchAuthorizationSuppliers({ code, name }: PurchaseOrderSupplierSearch, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrder["supplier"][]>>(
+    "/purchasing/purchase-orders/authorization/suppliers",
+    { params: { code: code || undefined, name: name || undefined }, signal },
+  )
+  return response.data.data
+}
+
+export async function replacePurchaseOrderSupplier(
+  id: number, supplierCode: string, { revision, classificationRevision, legacyVersion }: PurchaseOrderAuthorization, key: string,
+) {
+  const response = await apiClient.patch<ItemResponse<PurchaseOrder>>(
+    `/purchasing/purchase-orders/${id}/actions/authorization/supplier`,
+    { supplierCode, revision, classificationRevision, legacyVersion },
     { headers: { Authorization: `Bearer ${key}` } },
   )
   return response.data.data
