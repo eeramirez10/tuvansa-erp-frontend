@@ -2,6 +2,7 @@ import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleI
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { SupplierPaymentReversalDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-reversal-dialog"
 import { BankAutomaticReconciliationDialog } from "@/features/treasury/banking/components/bank-automatic-reconciliation-dialog"
 import { BankAuxiliaryPanel } from "@/features/treasury/banking/components/bank-auxiliary-panel"
 import { BankClassifiersPanel } from "@/features/treasury/banking/components/bank-classifiers-panel"
@@ -15,6 +16,7 @@ import { bankMoney, bankPanelQueryOptions } from "@/features/treasury/banking/lo
 import type { BankAccount, BankPanel, BankPanelDefinition, BankPanelKey } from "@/features/treasury/banking/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
+import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric } from "@/shared/ui/erp-data-dialog"
 import { Spinner } from "@/shared/ui/spinner"
 
@@ -41,12 +43,13 @@ function SupplierExpensesReport({ data }: { data: BankPanel }) {
   </>
 }
 
-function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange }: {
+function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange, onPaymentReversal }: {
   account: BankAccount
   data: BankPanel
   panelKey: PanelKey
   costCenter: string
   onCostCenterChange: (center: string) => void
+  onPaymentReversal?: (supplierId: number, paymentId: number) => void
 }) {
   if (!data.available || panelKey === "movements") {
     return <Alert>
@@ -57,7 +60,7 @@ function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange 
   }
   switch (panelKey) {
     case "auxiliary": case "payments": case "deposits": case "unapplied-auxiliary":
-      return <BankAuxiliaryPanel data={data} variant={panelKey} />
+      return <BankAuxiliaryPanel data={data} onPaymentReversal={onPaymentReversal} variant={panelKey} />
     case "general-ledger": return <BankLedgerPanel accountId={account.id} data={data} />
     case "cost-center-ledger": return <BankLedgerPanel accountId={account.id} center={costCenter} data={data}
       key={costCenter} onCenterChange={onCostCenterChange} />
@@ -72,6 +75,7 @@ type Props = { account: BankAccount; panel: BankPanelDefinition; onOpenChange: (
 function BankReadPanelDialog({ account, panelKey, onOpenChange }: Omit<Props, "panel"> & { panelKey: PanelKey }) {
   const [costCenter, setCostCenter] = useState("1")
   const [payingReceipt, setPayingReceipt] = useState(false)
+  const [paymentReversal, setPaymentReversal] = useState<{ supplierId: number; paymentId: number } | null>(null)
   const query = useQuery(bankPanelQueryOptions(account.id, panelKey, panelKey === "cost-center-ledger" ? costCenter : undefined))
   const title = titles[panelKey]
   const supplierReport = panelKey === "supplier-expenses"
@@ -81,23 +85,32 @@ function BankReadPanelDialog({ account, panelKey, onOpenChange }: Omit<Props, "p
     return <BankSupplierExpensesDialog account={account} onOpenChange={(open) => { if (!open) setPayingReceipt(false) }} />
   }
 
-  return <ErpDataDialog className={supplierReport ? "sm:max-w-[38rem]" : "sm:max-w-[72rem]"} description={`${title} de la cuenta ${account.code}`}
-    onOpenChange={onOpenChange} title={title} tone="banking">
-    <ErpDataDialogBody className="grid gap-1.5">
-      {query.isPending && <div className="grid min-h-64 place-items-center"><Spinner /></div>}
-      {query.isError && <Alert variant="destructive">
-        <HugeiconsIcon icon={InformationCircleIcon} />
-        <AlertTitle>No fue posible cargar la ventana</AlertTitle>
-        <AlertDescription>Revise la conexión con la API.</AlertDescription>
-      </Alert>}
-      {query.data && <PanelContent account={account} costCenter={costCenter} data={query.data} panelKey={panelKey}
-        onCostCenterChange={setCostCenter} />}
-      <footer className="flex justify-end gap-1">
-        {canOpenPayment && <Button onClick={() => setPayingReceipt(true)} size="sm" variant="outline">Pagar recepción</Button>}
-        <Button onClick={() => onOpenChange(false)} size="sm" variant="outline">Cerrar</Button>
-      </footer>
-    </ErpDataDialogBody>
-  </ErpDataDialog>
+  return <>
+    <ErpDataDialog className={supplierReport ? "sm:max-w-[38rem]" : "sm:max-w-[72rem]"} description={`${title} de la cuenta ${account.code}`}
+      onOpenChange={open => { if (open || !paymentReversal) onOpenChange(open) }} title={title} tone="banking">
+      <ErpDataDialogBody className="grid gap-1.5">
+        {query.isPending && <div className="grid min-h-64 place-items-center"><Spinner /></div>}
+        {query.isError && <Alert variant="destructive">
+          <HugeiconsIcon icon={InformationCircleIcon} />
+          <AlertTitle>No fue posible cargar la ventana</AlertTitle>
+          <AlertDescription>Revise la conexión con la API.</AlertDescription>
+        </Alert>}
+        {query.data && <PanelContent account={account} costCenter={costCenter} data={query.data} panelKey={panelKey}
+          onCostCenterChange={setCostCenter}
+          onPaymentReversal={paymentReversal ? undefined : (supplierId, paymentId) => setPaymentReversal({ supplierId, paymentId })} />}
+        <footer className="flex justify-end gap-1">
+          {canOpenPayment && <Button onClick={() => setPayingReceipt(true)} size="sm" variant="outline">Pagar recepción</Button>}
+          <Button disabled={Boolean(paymentReversal)} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cerrar</Button>
+        </footer>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
+    {paymentReversal && (
+      <DesktopWindowIdentity id={`banking:${account.id}:payment-reversal:${paymentReversal.paymentId}`}>
+        <SupplierPaymentReversalDialog onClose={() => setPaymentReversal(null)} paymentId={paymentReversal.paymentId}
+          supplierId={paymentReversal.supplierId} tone="banking" />
+      </DesktopWindowIdentity>
+    )}
+  </>
 }
 
 export function BankPanelDialog({ account, panel, onOpenChange }: Props) {

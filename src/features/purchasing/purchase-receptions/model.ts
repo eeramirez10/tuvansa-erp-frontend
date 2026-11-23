@@ -1,3 +1,5 @@
+import type { PostingReversal } from "@/features/accounts-payable/posting-reversal-model"
+
 export type PurchaseReceptionLine = {
   id: number
   productId: number
@@ -29,6 +31,7 @@ export type PurchaseReception = {
   branch: number
   status: string
   cancelled: boolean
+  cancellation?: PostingReversal | null
   dates: { receivedAt: string | null; dueAt: string | null; orderedAt: string | null }
   delayDays: number
   classifications: string[]

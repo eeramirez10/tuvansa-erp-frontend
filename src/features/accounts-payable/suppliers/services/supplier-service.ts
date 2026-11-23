@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/api/api-client"
+import type { PostingReversal, PostingReversalInput, PostingReversalPreview } from "@/features/accounts-payable/posting-reversal-model"
 import type {
   Supplier,
   SupplierClassificationsResponse,
@@ -91,6 +92,25 @@ export async function getSupplierPaymentPreview(supplierId: number, receiptId: n
 export async function recordSupplierPayment(supplierId: number, receiptId: number, input: SupplierPaymentInput) {
   const response = await apiClient.post<ItemResponse<SupplierPayment>>(
     supplierPaymentPath(supplierId, receiptId),
+    input,
+  )
+  return response.data.data
+}
+
+const supplierPaymentReversalPath = (supplierId: number, paymentId: number) =>
+  `${supplierPaymentPath(supplierId, paymentId)}/reversal`
+
+export async function getSupplierPaymentReversalPreview(supplierId: number, paymentId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PostingReversalPreview>>(
+    supplierPaymentReversalPath(supplierId, paymentId),
+    { signal },
+  )
+  return response.data.data
+}
+
+export async function reverseSupplierPayment(supplierId: number, paymentId: number, input: PostingReversalInput) {
+  const response = await apiClient.post<ItemResponse<PostingReversal>>(
+    supplierPaymentReversalPath(supplierId, paymentId),
     input,
   )
   return response.data.data

@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
+import type { PostingReversal } from "@/features/accounts-payable/posting-reversal-model"
 import {
   getFirstSupplier,
   getSupplier,
@@ -18,6 +19,7 @@ export const supplierKeys = {
   panel: (supplierId: number, panelKey: string) => [...supplierKeys.detail(supplierId), "panel", panelKey] as const,
   classifications: (supplierId: number, position: number) => [...supplierKeys.detail(supplierId), "classifications", position] as const,
   payment: (supplierId: number, receiptId: number) => [...supplierKeys.detail(supplierId), "payment", receiptId] as const,
+  paymentReversal: (supplierId: number, paymentId: number) => [...supplierKeys.detail(supplierId), "payment-reversal", paymentId] as const,
 }
 
 export const supplierQueryOptions = (supplierId: number) => queryOptions({
@@ -61,6 +63,22 @@ export function supplierBalanceReceiptId(row: Record<string, unknown> | undefine
 
   // Older balance responses identify local receptions by their reserved id range.
   return row.canPay === true || (id >= 6_700_000_000_000 && id <= 6_700_099_999_998) ? id : null
+}
+
+function supplierPaymentReversal(raw: unknown): PostingReversal | null {
+  if (!raw || typeof raw !== "object") return null
+  const reversal = raw as Partial<PostingReversal>
+  if (typeof reversal.id !== "number" || !Number.isSafeInteger(reversal.id) || reversal.id <= 0 ||
+    typeof reversal.policyNumber !== "string" || typeof reversal.date !== "string" || typeof reversal.reason !== "string") return null
+  return { id: reversal.id, policyNumber: reversal.policyNumber, date: reversal.date, reason: reversal.reason }
+}
+
+export function supplierReversiblePayment(row: Record<string, unknown> | undefined) {
+  if (row?.movementType !== "PP") return null
+  const reversal = supplierPaymentReversal(row.reversal)
+  const id = Number(row.paymentId ?? row.id)
+  if (!(row.canReverse === true || reversal) || !Number.isSafeInteger(id) || id <= 0) return null
+  return { id, reversal }
 }
 
 const supplierDayFormatter = new Intl.DateTimeFormat("es-MX", { timeZone: "UTC" })

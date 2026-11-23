@@ -1,4 +1,7 @@
+import { Link } from "react-router"
+import { paths } from "@/app/router/paths"
 import type { PurchaseReception } from "@/features/purchasing/purchase-receptions/model"
+import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
@@ -17,13 +20,28 @@ function Field({ label, fieldValue, className = "", numeric = false }: { label: 
   )
 }
 
-export function PurchaseReceptionDetails({ reception }: { reception: PurchaseReception }) {
+export function PurchaseReceptionDetails({ reception, onCancelExpense }: { reception: PurchaseReception; onCancelExpense?: () => void }) {
   const expenseTaxes = reception.totals.expenseTaxes
   if (expenseTaxes) {
     return (
       <div className="grid min-w-0 gap-2">
         <Card size="sm">
-          <CardHeader className="border-b bg-module-reception/15 py-1"><CardTitle>Gastos múltiples</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b bg-module-reception/15 py-1">
+            <CardTitle>Gastos múltiples</CardTitle>
+            {onCancelExpense && (
+              <div className="flex items-center gap-2">
+                {reception.cancelled && <span className="font-medium" role="status">GA cancelado</span>}
+                {reception.cancellation && (
+                  <Link className="underline underline-offset-2" to={paths.accountingPolicy(reception.cancellation.id)}>
+                    Póliza {reception.cancellation.policyNumber}
+                  </Link>
+                )}
+                <Button onClick={onCancelExpense} size="xs" type="button" variant="outline">
+                  {reception.cancelled ? "Ver cancelación" : "Cancelar GA"}
+                </Button>
+              </div>
+            )}
+          </CardHeader>
           <CardContent className="grid grid-cols-12 gap-2 py-1">
             <Field className="col-span-3" label="Documento" fieldValue={reception.number} />
             <Field className="col-span-3" label="Referencia" fieldValue={reception.supplierReference} />

@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Link } from "react-router"
 
 import { paths } from "@/app/router/paths"
+import { supplierReversiblePayment } from "@/features/accounts-payable/suppliers/logic"
 import { accountingPolicyQueryOptions } from "@/features/accounting/policies/logic"
 import { BankPanelTable, type BankPanelColumn } from "@/features/treasury/banking/components/bank-panel-table"
 import { printBankPolicy } from "@/features/treasury/banking/components/bank-policy-print"
@@ -106,7 +107,11 @@ function BankPolicyComments({ id, row, onClose }: { id: number; row: Row; onClos
   )
 }
 
-export function BankAuxiliaryPanel({ data, variant }: { data: BankPanel; variant: Variant }) {
+export function BankAuxiliaryPanel({ data, variant, onPaymentReversal }: {
+  data: BankPanel
+  variant: Variant
+  onPaymentReversal?: (supplierId: number, paymentId: number) => void
+}) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [comment, setComment] = useState<{ id: number; row: Row } | null>(null)
   const queryClient = useQueryClient()
@@ -116,6 +121,10 @@ export function BankAuxiliaryPanel({ data, variant }: { data: BankPanel; variant
   })
   const selectedRow = data.items.find((row) => selectionKey(row) === selectedKey)
   const selectedPolicyId = policyId(selectedRow)
+  const selectedPayment = variant === "payments" ? supplierReversiblePayment(selectedRow) : null
+  const supplierId = selectedRow?.supplierId
+  const canReversePayment = selectedPayment !== null && typeof supplierId === "number" && Number.isSafeInteger(supplierId) && supplierId > 0
+  const showPaymentReversal = variant === "payments" && data.items.some(row => supplierReversiblePayment(row) !== null)
   const unapplied = variant === "unapplied-auxiliary"
   const showStatementDate = data.items.some(({ statementDate }) => typeof statementDate === "string" && statementDate !== "")
   const columns: BankPanelColumn[] = [
@@ -154,6 +163,21 @@ export function BankAuxiliaryPanel({ data, variant }: { data: BankPanel; variant
             Imprimir Póliza
           </Button>
           {(variant === "auxiliary" || variant === "payments") && <Button disabled size="xs" variant="outline">Imprimir Cheque</Button>}
+          {showPaymentReversal && (
+            <Button disabled={!canReversePayment || !onPaymentReversal}
+              onClick={() => { if (canReversePayment) onPaymentReversal?.(supplierId, selectedPayment.id) }}
+              size="xs" type="button" variant="outline">
+              {selectedPayment?.reversal ? "Ver reversión" : "Revertir PP"}
+            </Button>
+          )}
+          {selectedPayment?.reversal && (
+            <span className="flex items-center gap-1" role="status">
+              PP revertido
+              <Link className="underline underline-offset-2" to={paths.accountingPolicy(selectedPayment.reversal.id)}>
+                Póliza {selectedPayment.reversal.policyNumber}
+              </Link>
+            </span>
+          )}
         </div>
         {!unapplied && (
           <div className="flex gap-1">

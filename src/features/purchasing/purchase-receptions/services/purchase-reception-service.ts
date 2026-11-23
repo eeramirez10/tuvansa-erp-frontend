@@ -1,3 +1,4 @@
+import type { PostingReversal, PostingReversalInput, PostingReversalPreview } from "@/features/accounts-payable/posting-reversal-model"
 import type {
   PurchaseReception,
   PurchaseReceptionPanel,
@@ -47,5 +48,17 @@ export async function getPurchaseReceptionPanel(id: number, key: PurchaseRecepti
     `/purchasing/purchase-receptions/${id}/${panelPaths[key]}`,
     { signal },
   )
+  return response.data.data
+}
+
+const expenseCancellationPath = (id: number) => `/purchasing/purchase-receptions/${id}/actions/cancel-expense`
+
+export async function getPurchaseExpenseCancellationPreview(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PostingReversalPreview>>(expenseCancellationPath(id), { signal })
+  return response.data.data
+}
+
+export async function cancelPurchaseExpense(id: number, input: PostingReversalInput) {
+  const response = await apiClient.post<ItemResponse<PostingReversal>>(expenseCancellationPath(id), input)
   return response.data.data
 }

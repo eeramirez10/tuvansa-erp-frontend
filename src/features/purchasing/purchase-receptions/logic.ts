@@ -13,6 +13,7 @@ export const purchaseReceptionKeys = {
   detail: (id: number) => [...purchaseReceptionKeys.all, "detail", id] as const,
   search: (criteria: PurchaseReceptionSearchCriteria) => [...purchaseReceptionKeys.all, "search", criteria] as const,
   panel: (id: number, key: PurchaseReceptionPanelKey) => [...purchaseReceptionKeys.detail(id), "panel", key] as const,
+  expenseCancellation: (id: number) => [...purchaseReceptionKeys.detail(id), "cancel-expense"] as const,
 }
 
 export const purchaseReceptionQueryOptions = (id: number) => queryOptions({

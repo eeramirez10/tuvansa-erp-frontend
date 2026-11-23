@@ -1,8 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { Link } from "react-router"
+import { paths } from "@/app/router/paths"
 import { SupplierPaymentDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-dialog"
+import { SupplierPaymentReversalDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-reversal-dialog"
 import {
-  supplierBalanceReceiptId, supplierCalendarDate, supplierClassificationsQueryOptions, supplierDateLabel, supplierPanelQueryOptions,
+  supplierBalanceReceiptId, supplierCalendarDate, supplierClassificationsQueryOptions, supplierDateLabel,
+  supplierPanelQueryOptions, supplierReversiblePayment,
 } from "@/features/accounts-payable/suppliers/logic"
 import type { Supplier, SupplierPanelColumn, SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
 import { Button } from "@/shared/ui/button"
@@ -25,6 +29,10 @@ const metricLabels: Record<string, string> = {
   negativeAmount: "Negativo",
 }
 
+function panelRowKey(row: Record<string, unknown>, index: number, movements: boolean) {
+  return movements ? JSON.stringify([row.id ?? index, row.document, row.movementType]) : String(row.id ?? index)
+}
+
 function valueText(value: unknown, column?: SupplierPanelColumn) {
   if (value === null || value === undefined || value === "") return ""
   if (column?.format === "money") return moneyFormatter.format(Number(value) || 0)
@@ -40,11 +48,16 @@ function LoadingOrError({ loading, error }: { loading: boolean; error: unknown }
   return null
 }
 
-function PanelTable({ columns, rows, height = "21rem", selection }: {
+function PanelTable({ columns, rows, height = "21rem", movements = false, selection }: {
   columns: readonly SupplierPanelColumn[]
   rows: Array<Record<string, unknown>>
   height?: string
-  selection?: { index: number; onSelect: (key: string) => void }
+  movements?: boolean
+  selection?: {
+    index: number
+    onSelect: (key: string) => void
+    allowsRow?: (row: Record<string, unknown>) => boolean
+  }
 }) {
   const minimumWidth = columns.reduce((total, column) => total + Number.parseFloat(column.width ?? "7"), 0)
   return (
@@ -54,17 +67,20 @@ function PanelTable({ columns, rows, height = "21rem", selection }: {
         <thead className="sticky top-0 z-10 bg-background"><tr className="h-5 border-b">{columns.map((column, index) => <th className="border-r px-1 text-left font-normal" key={`${column.key}-${index}`}>{column.label}</th>)}</tr></thead>
         <tbody>
           {rows.map((row, rowIndex) => {
-            const rowKey = String(row.id ?? rowIndex)
+            const rowKey = panelRowKey(row, rowIndex, movements)
             const selected = rowIndex === (selection?.index ?? 0)
+            const selectRow = selection && (!selection.allowsRow || selection.allowsRow(row))
+              ? () => selection.onSelect(rowKey)
+              : undefined
             return (
-              <tr className={cn("h-4 border-b border-dotted", selection && "cursor-pointer",
+              <tr className={cn("h-4 border-b border-dotted", selectRow && "cursor-pointer",
                 selected && "bg-module-payable text-module-payable-foreground")} key={rowKey}
-                onClick={selection ? () => selection.onSelect(rowKey) : undefined}>
+                onClick={selectRow}>
                 {columns.map((column, columnIndex) => {
                   const value = valueText(row[column.key], column)
                   return <td className={cn("truncate border-r px-1", (column.format === "money" || column.format === "number") && "text-right tabular-nums")}
                     key={`${column.key}-${columnIndex}`}>
-                    {selection && column.key === "document" ? (
+                    {selectRow && column.key === "document" ? (
                       <Button aria-pressed={selected} className="block h-full w-full truncate rounded-none border-0 p-0 text-left font-normal leading-none hover:bg-transparent hover:text-inherit"
                         size="xs" type="button" variant="ghost">
                         {value}
@@ -149,6 +165,7 @@ function AnnualChart({ rows }: { rows: Array<Record<string, unknown>> }) {
 function GeneralPanelDialog(props: Props) {
   const [selectedRow, setSelectedRow] = useState<string>()
   const [paymentReceipt, setPaymentReceipt] = useState<{ id: number; number: string; date?: string } | null>(null)
+  const [paymentReversalId, setPaymentReversalId] = useState<number | null>(null)
   const query = useQuery(supplierPanelQueryOptions(props.supplier.id, props.panel))
   const payload = query.data?.data
   const detail = payload?.detail ?? {}
@@ -156,21 +173,30 @@ function GeneralPanelDialog(props: Props) {
   const tableHeight = props.panel.key === "events" || props.panel.key === "contacts" ? "13rem" : "21rem"
   const totals = Object.entries(payload?.summary ?? {})
   const balancePanel = props.panel.key === "balance"
-  const selectedIndex = Math.max(0, rows.findIndex((row, index) => String(row.id ?? index) === selectedRow))
+  const movementsPanel = props.panel.key === "movements"
+  const paymentSelection = movementsPanel && rows.some(row => supplierReversiblePayment(row) !== null)
+  const matchingIndex = rows.findIndex((row, index) => panelRowKey(row, index, movementsPanel) === selectedRow)
+  const selectedIndex = balancePanel ? Math.max(0, matchingIndex) : matchingIndex
   const selectedBalance = balancePanel ? rows[selectedIndex] : undefined
   const receiptId = supplierBalanceReceiptId(selectedBalance)
+  const selectedPayment = paymentSelection ? supplierReversiblePayment(rows[selectedIndex]) : null
 
   return (
     <>
     <ErpDataDialog className="sm:max-w-[68rem]" description={`${props.panel.title} del proveedor.`}
-      onOpenChange={(open) => { if (open || !paymentReceipt) props.onOpenChange(open) }} title={props.panel.title} tone="payable">
+      onOpenChange={(open) => { if (open || (!paymentReceipt && paymentReversalId === null)) props.onOpenChange(open) }}
+      title={props.panel.title} tone="payable">
       <ErpDataDialogBody>
         <LoadingOrError error={query.error} loading={query.isLoading} />
         {!query.isLoading && !query.error && (
           <>
             {props.panel.key === "various" ? <VariousView detail={detail} /> : props.panel.columns.length > 0 ? (
-              <PanelTable columns={props.panel.columns} height={tableHeight} rows={rows}
-                selection={balancePanel ? { index: selectedIndex, onSelect: setSelectedRow } : undefined} />
+              <PanelTable columns={props.panel.columns} height={tableHeight} movements={movementsPanel} rows={rows}
+                selection={balancePanel || paymentSelection ? {
+                  index: selectedIndex,
+                  onSelect: setSelectedRow,
+                  allowsRow: paymentSelection ? row => supplierReversiblePayment(row) !== null : undefined,
+                } : undefined} />
             ) : <div className="grid min-h-36 place-items-center"><div className="grid w-80 gap-1">{Object.entries(detail).map(([key, value]) => <DetailField key={key} label={key} value={value} />)}</div></div>}
             {props.panel.key === "events" && <div className="mt-1 grid gap-1"><Input className="h-20 text-[9px]" readOnly value={valueText(rows[0]?.description)} /><DisabledButtons labels={panelButtons.events ?? []} /></div>}
             {props.panel.key === "contacts" && <div className="mt-1 grid grid-cols-2 gap-1"><DetailField label="Teléfono" value={rows[0]?.phone1} /><DetailField label="Tel 2" value={rows[0]?.phone2} /><DetailField label="Mail" value={rows[0]?.email} /><DetailField label="Cumpleaños" value={rows[0]?.birthday} /><DisabledButtons labels={panelButtons.contacts ?? []} /></div>}
@@ -185,6 +211,21 @@ function GeneralPanelDialog(props: Props) {
                     setPaymentReceipt({ id: receiptId, number: valueText(selectedBalance?.document),
                       date: supplierCalendarDate(selectedBalance?.date) })
                   }} size="xs" type="button" variant="outline">Paga</Button>}
+                {paymentSelection && (
+                  <Button disabled={!selectedPayment || paymentReversalId !== null || query.isFetching}
+                    onClick={() => { if (selectedPayment) setPaymentReversalId(selectedPayment.id) }}
+                    size="xs" type="button" variant="outline">
+                    {selectedPayment?.reversal ? "Ver reversión" : "Revertir PP"}
+                  </Button>
+                )}
+                {selectedPayment?.reversal && (
+                  <span className="flex items-center gap-1" role="status">
+                    PP revertido
+                    <Link className="underline underline-offset-2" to={paths.accountingPolicy(selectedPayment.reversal.id)}>
+                      Póliza {selectedPayment.reversal.policyNumber}
+                    </Link>
+                  </span>
+                )}
               </div>
               <div className="flex gap-1">{totals.map(([key, value]) => <ErpDataMetric key={key} label={metricLabels[key] ?? key} value={moneyFormatter.format(Number(value) || 0)} />)}</div>
             </div>
@@ -196,6 +237,15 @@ function GeneralPanelDialog(props: Props) {
       <SupplierPaymentDialog documentNumber={paymentReceipt.number} onClose={() => setPaymentReceipt(null)}
         receiptDate={paymentReceipt.date} receiptId={paymentReceipt.id} supplierId={props.supplier.id} />
     </DesktopWindowIdentity>}
+    {paymentReversalId !== null && (
+      <DesktopWindowIdentity id={`suppliers:${props.supplier.id}:payment-reversal:${paymentReversalId}`}>
+        <SupplierPaymentReversalDialog
+          onClose={() => setPaymentReversalId(null)}
+          paymentId={paymentReversalId}
+          supplierId={props.supplier.id}
+        />
+      </DesktopWindowIdentity>
+    )}
     </>
   )
 }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { paths } from "@/app/router/paths"
+import { PostingReversalDialog } from "@/features/accounts-payable/components/posting-reversal-dialog"
 import { GeneralExpensesDialog } from "@/features/purchasing/purchase-receptions/components/general-expenses-dialog"
 import { PurchaseReceptionActionButtons } from "@/features/purchasing/purchase-receptions/components/purchase-reception-action-buttons"
 import { PurchaseReceptionActionDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-action-dialog"
@@ -12,7 +13,11 @@ import { PurchaseReceptionToolbar } from "@/features/purchasing/purchase-recepti
 import { purchaseReceptionActions } from "@/features/purchasing/purchase-receptions/constants"
 import { purchaseReceptionKeys, purchaseReceptionQueryOptions } from "@/features/purchasing/purchase-receptions/logic"
 import type { PurchaseReception, PurchaseReceptionAction } from "@/features/purchasing/purchase-receptions/model"
-import { getAdjacentPurchaseReception } from "@/features/purchasing/purchase-receptions/services/purchase-reception-service"
+import {
+  cancelPurchaseExpense,
+  getAdjacentPurchaseReception,
+  getPurchaseExpenseCancellationPreview,
+} from "@/features/purchasing/purchase-receptions/services/purchase-reception-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
@@ -29,6 +34,7 @@ export function PurchaseReceptionCatalogPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [generalExpensesOpen, setGeneralExpensesOpen] = useState(false)
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseReceptionActionWindow>()
+  const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
   const openReception = (next: PurchaseReception) => {
@@ -59,7 +65,12 @@ export function PurchaseReceptionCatalogPage() {
         onSelect={(action) => openActionWindow(`purchase-receptions:${reception.id}:${action.key}`, { reception, action })} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
-        {reception && <PurchaseReceptionDetails reception={reception} />}
+        {reception && <PurchaseReceptionDetails
+          onCancelExpense={reception.number.startsWith("GAW") && reception.totals.expenseTaxes
+            ? () => openCancellation(`purchase-receptions:${reception.id}:cancel-expense`, reception.id)
+            : undefined}
+          reception={reception}
+        />}
       </section>
 
       {searchOpen && (
@@ -79,6 +90,17 @@ export function PurchaseReceptionCatalogPage() {
       {generalExpensesOpen && <DesktopWindowIdentity id="purchase-receptions:general-expenses">
         <GeneralExpensesDialog onClose={() => setGeneralExpensesOpen(false)} />
       </DesktopWindowIdentity>}
+      {cancellationWindows.map(({ id: windowId, payload: expenseId }) => (
+        <DesktopWindowIdentity id={windowId} key={windowId}>
+          <PostingReversalDialog
+            kind="expense"
+            load={signal => getPurchaseExpenseCancellationPreview(expenseId, signal)}
+            onClose={() => closeCancellation(windowId)}
+            queryKey={purchaseReceptionKeys.expenseCancellation(expenseId)}
+            record={input => cancelPurchaseExpense(expenseId, input)}
+          />
+        </DesktopWindowIdentity>
+      ))}
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseReceptionActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} reception={window.payload.reception} /></DesktopWindowIdentity>)}
     </main>
   )
