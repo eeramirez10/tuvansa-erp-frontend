@@ -4,12 +4,21 @@ import { ErpLayout } from "@/app/layouts/erp-layout"
 import { RootErrorBoundary } from "@/app/router/root-error-boundary"
 import { RouteLoadingFallback } from "@/app/router/route-loading-fallback"
 import { paths } from "@/app/router/paths"
+import { requireCompanyContext } from "@/features/startup/multicia/company-context-middleware"
 
 export const router = createBrowserRouter([
+  {
+    path: paths.startup,
+    ErrorBoundary: RootErrorBoundary,
+    HydrateFallback: RouteLoadingFallback,
+    lazy: () => import("@/features/startup/multicia/startup-route"),
+  },
   {
     Component: ErpLayout,
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RouteLoadingFallback,
+    middleware: [requireCompanyContext],
+    loader: () => null,
     children: [
       {
         index: true,

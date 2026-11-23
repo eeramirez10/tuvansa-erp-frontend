@@ -1,5 +1,18 @@
 # Mapa de vistas, controles y endpoints
 
+## Inicio y MULTICIA
+
+`/inicio` muestra **Usuario**. **Cancelar** abre **Selección de multicía** y lee
+`GET /companies`. Elegir **MEXICO** valida `GET /companies/1/context` e inicia el
+ERP. El alias se activa con clic o teclado y la fila también admite doble clic.
+Las demás compañías aparecen deshabilitadas.
+
+La pestaña guarda el ID en `sessionStorage`. Al recargar, el router valida el
+contexto antes de ejecutar los loaders del ERP. Sin contexto válido redirige a
+`/inicio` y conserva la ruta solicitada con sus parámetros y fragmento para
+volver después de elegir México. Los cuatro campos de Usuario y **Aceptar**
+están inactivos durante esta fase.
+
 ## Bancos · Alta, Cambio, Baja y traspasos
 
 | Control | Evento | Método y endpoint relativo a `/api` | Query key / archivo |

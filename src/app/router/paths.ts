@@ -1,5 +1,6 @@
 export const paths = {
   home: "/",
+  startup: "/inicio",
   inventoryProducts: "/inventarios/productos",
   inventoryProduct: (productId: number) => `/inventarios/productos/${productId}`,
   accountsReceivableClients: "/cuentas-por-cobrar/clientes",
