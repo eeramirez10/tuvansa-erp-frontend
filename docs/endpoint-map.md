@@ -1,5 +1,22 @@
 # Mapa de vistas, controles y endpoints
 
+## Cuentas por pagar · Saldo y Paga
+
+**Paga** se habilita al seleccionar una recepción web con saldo pendiente en
+**Proveedores → Saldo**. El equivalente en Omnis es **Programar pagos → Paga**
+(`EPRV#25/98 → /120`).
+
+| Control | Evento | Método y endpoint relativo a `/api` | Archivo |
+| --- | --- | --- | --- |
+| Paga | Consultar saldo, bancos y valores iniciales | GET `/accounts-payable/suppliers/:supplierId/payments/:receiptId` | `supplier-payment-dialog.tsx` |
+| OK | Registrar pago completo o parcial de la recepción | POST en la misma ruta | `supplier-service.ts` |
+| Cancelar / Escape | Cerrar la captura | Sin petición de escritura | `supplier-payment-dialog.tsx` |
+
+La captura incluye cuenta bancaria, transferencia o cheque, importe, fecha y
+concepto. El POST conserva la revisión de la consulta y la clave de solicitud en
+los reintentos del mismo pago. Al guardar se actualizan Proveedores, Bancos,
+Recepciones y Contabilidad.
+
 ## Órdenes de compra · Comentarios
 
 **Comentarios** conserva la consulta `GET /purchasing/purchase-orders/:id/actions/comments`

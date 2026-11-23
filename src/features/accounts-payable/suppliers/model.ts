@@ -85,3 +85,35 @@ export type SupplierClassificationsResponse = {
     options: Array<{ id: number; code: string; description: string; number: string; type: string }>
   }
 }
+
+export type SupplierPaymentMode = "transfer" | "check"
+
+export type SupplierPaymentPreview = {
+  receiptId: number
+  number: string
+  remaining: number
+  revision: number
+  canWrite: boolean
+  reason: string
+  bankAccounts: Array<{ id: number; code: string; name: string }>
+  defaults: { date: string; amount: number; mode: "transfer" }
+}
+
+export type SupplierPaymentInput = {
+  requestKey: string
+  revision: number
+  bankAccountId: number
+  mode: SupplierPaymentMode
+  amount: number
+  date: string
+  description: string
+}
+
+export type SupplierPayment = Pick<SupplierPaymentInput, "bankAccountId" | "mode" | "amount" | "date"> & {
+  id: number
+  receiptId: number
+  receiptNumber: string
+  number: string
+  policyNumber: string
+  remaining: number
+}

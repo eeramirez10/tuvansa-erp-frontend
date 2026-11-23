@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "react-router"
+import { paths } from "@/app/router/paths"
 import { purchaseReceptionPanelQueryOptions } from "@/features/purchasing/purchase-receptions/logic"
 import type { PurchaseReception, PurchaseReceptionAction, PurchaseReceptionPanel } from "@/features/purchasing/purchase-receptions/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -13,18 +15,22 @@ const text = (value: unknown) => value === null || value === undefined ? "" : St
 const money = (value: unknown) => Number(value ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 function Auxiliary({ panel }: { panel: PurchaseReceptionPanel }) {
+  const showPolicy = panel.items.some((item) => typeof item.policyId === "number")
   return (
     <div className="grid gap-1">
       <ErpDataTableViewport axes="xy" className="h-[16rem]">
         <Table className="min-w-[34rem] text-[9px]">
           <TableHeader><TableRow>
-            {["Fecha", "T.M.", "Referencia", "Cargos", "Abonos"].map((column) => <TableHead className="h-5 px-1 text-[9px]" key={column}>{column}</TableHead>)}
+            {["Fecha", "T.M.", "Referencia", ...(showPolicy ? ["Póliza"] : []), "Cargos", "Abonos"].map((column) => <TableHead className="h-5 px-1 text-[9px]" key={column}>{column}</TableHead>)}
           </TableRow></TableHeader>
           <TableBody>{panel.items.map((row, index) => (
             <TableRow key={index}>
               <TableCell className="px-1 py-0.5">{text(row.date)}</TableCell>
               <TableCell className="px-1 py-0.5">{text(row.transactionType)}</TableCell>
               <TableCell className="px-1 py-0.5">{text(row.reference)}</TableCell>
+              {showPolicy && <TableCell className="px-1 py-0.5">{typeof row.policyId === "number" && (
+                <Link className="text-primary underline" to={paths.accountingPolicy(row.policyId)}>{text(row.policyNumber)}</Link>
+              )}</TableCell>}
               <TableCell className="px-1 py-0.5 text-right">{Number(row.charges ?? 0) === 0 ? "" : money(row.charges)}</TableCell>
               <TableCell className="px-1 py-0.5 text-right">{Number(row.payments ?? 0) === 0 ? "" : money(row.payments)}</TableCell>
             </TableRow>

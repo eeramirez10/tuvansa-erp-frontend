@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { supplierClassificationsQueryOptions, supplierPanelQueryOptions } from "@/features/accounts-payable/suppliers/logic"
+import { SupplierPaymentDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-dialog"
+import { supplierBalanceReceiptId, supplierClassificationsQueryOptions, supplierPanelQueryOptions } from "@/features/accounts-payable/suppliers/logic"
 import type { Supplier, SupplierPanelColumn, SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
 import { Button } from "@/shared/ui/button"
+import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { cn } from "@/shared/utils/cn"
@@ -40,10 +42,11 @@ function LoadingOrError({ loading, error }: { loading: boolean; error: unknown }
   return null
 }
 
-function PanelTable({ columns, rows, height = "21rem" }: {
+function PanelTable({ columns, rows, height = "21rem", selection }: {
   columns: readonly SupplierPanelColumn[]
   rows: Array<Record<string, unknown>>
   height?: string
+  selection?: { index: number; onSelect: (key: string) => void }
 }) {
   const minimumWidth = columns.reduce((total, column) => total + Number.parseFloat(column.width ?? "7"), 0)
   return (
@@ -52,7 +55,28 @@ function PanelTable({ columns, rows, height = "21rem" }: {
         <colgroup>{columns.map((column, index) => <col key={`${column.key}-${index}`} style={{ width: column.width ?? "7rem" }} />)}</colgroup>
         <thead className="sticky top-0 z-10 bg-background"><tr className="h-5 border-b">{columns.map((column, index) => <th className="border-r px-1 text-left font-normal" key={`${column.key}-${index}`}>{column.label}</th>)}</tr></thead>
         <tbody>
-          {rows.map((row, rowIndex) => <tr className={cn("h-4 border-b border-dotted", rowIndex === 0 && "bg-module-payable text-module-payable-foreground")} key={String(row.id ?? rowIndex)}>{columns.map((column, columnIndex) => <td className={cn("truncate border-r px-1", (column.format === "money" || column.format === "number") && "text-right tabular-nums")} key={`${column.key}-${columnIndex}`}>{valueText(row[column.key], column)}</td>)}</tr>)}
+          {rows.map((row, rowIndex) => {
+            const rowKey = String(row.id ?? rowIndex)
+            const selected = rowIndex === (selection?.index ?? 0)
+            return (
+              <tr className={cn("h-4 border-b border-dotted", selection && "cursor-pointer",
+                selected && "bg-module-payable text-module-payable-foreground")} key={rowKey}
+                onClick={selection ? () => selection.onSelect(rowKey) : undefined}>
+                {columns.map((column, columnIndex) => {
+                  const value = valueText(row[column.key], column)
+                  return <td className={cn("truncate border-r px-1", (column.format === "money" || column.format === "number") && "text-right tabular-nums")}
+                    key={`${column.key}-${columnIndex}`}>
+                    {selection && column.key === "document" ? (
+                      <Button aria-pressed={selected} className="block h-full w-full truncate rounded-none border-0 p-0 text-left font-normal leading-none hover:bg-transparent hover:text-inherit"
+                        size="xs" type="button" variant="ghost">
+                        {value}
+                      </Button>
+                    ) : value}
+                  </td>
+                })}
+              </tr>
+            )
+          })}
           {rows.length === 0 && <tr><td className="h-48 text-center text-muted-foreground" colSpan={columns.length}>Sin datos para este proveedor</td></tr>}
         </tbody>
       </table>
@@ -125,32 +149,57 @@ function AnnualChart({ rows }: { rows: Array<Record<string, unknown>> }) {
 }
 
 function GeneralPanelDialog(props: Props) {
+  const [selectedRow, setSelectedRow] = useState<string>()
+  const [paymentReceipt, setPaymentReceipt] = useState<{ id: number; number: string; date?: string } | null>(null)
   const query = useQuery(supplierPanelQueryOptions(props.supplier.id, props.panel))
   const payload = query.data?.data
   const detail = payload?.detail ?? {}
   const rows = payload?.items ?? []
   const tableHeight = props.panel.key === "events" || props.panel.key === "contacts" ? "13rem" : "21rem"
   const totals = Object.entries(payload?.summary ?? {})
+  const balancePanel = props.panel.key === "balance"
+  const selectedIndex = Math.max(0, rows.findIndex((row, index) => String(row.id ?? index) === selectedRow))
+  const selectedBalance = balancePanel ? rows[selectedIndex] : undefined
+  const receiptId = supplierBalanceReceiptId(selectedBalance)
 
   return (
-    <ErpDataDialog className="sm:max-w-[68rem]" description={`${props.panel.title} del proveedor.`} onOpenChange={props.onOpenChange} title={props.panel.title} tone="payable">
+    <>
+    <ErpDataDialog className="sm:max-w-[68rem]" description={`${props.panel.title} del proveedor.`}
+      onOpenChange={(open) => { if (open || !paymentReceipt) props.onOpenChange(open) }} title={props.panel.title} tone="payable">
       <ErpDataDialogBody>
         <LoadingOrError error={query.error} loading={query.isLoading} />
         {!query.isLoading && !query.error && (
           <>
-            {props.panel.key === "various" ? <VariousView detail={detail} /> : props.panel.columns.length > 0 ? <PanelTable columns={props.panel.columns} height={tableHeight} rows={rows} /> : <div className="grid min-h-36 place-items-center"><div className="grid w-80 gap-1">{Object.entries(detail).map(([key, value]) => <DetailField key={key} label={key} value={value} />)}</div></div>}
+            {props.panel.key === "various" ? <VariousView detail={detail} /> : props.panel.columns.length > 0 ? (
+              <PanelTable columns={props.panel.columns} height={tableHeight} rows={rows}
+                selection={balancePanel ? { index: selectedIndex, onSelect: setSelectedRow } : undefined} />
+            ) : <div className="grid min-h-36 place-items-center"><div className="grid w-80 gap-1">{Object.entries(detail).map(([key, value]) => <DetailField key={key} label={key} value={value} />)}</div></div>}
             {props.panel.key === "events" && <div className="mt-1 grid gap-1"><Input className="h-20 text-[9px]" readOnly value={valueText(rows[0]?.description)} /><DisabledButtons labels={panelButtons.events ?? []} /></div>}
             {props.panel.key === "contacts" && <div className="mt-1 grid grid-cols-2 gap-1"><DetailField label="Teléfono" value={rows[0]?.phone1} /><DetailField label="Tel 2" value={rows[0]?.phone2} /><DetailField label="Mail" value={rows[0]?.email} /><DetailField label="Cumpleaños" value={rows[0]?.birthday} /><DisabledButtons labels={panelButtons.contacts ?? []} /></div>}
             {props.panel.key === "annual-purchases-summary" && <AnnualChart rows={rows} />}
             {payload?.unavailableReason && <p className="mt-1 text-muted-foreground">{payload.unavailableReason}</p>}
             <div className="mt-1 flex items-end justify-between gap-2">
-              <DisabledButtons labels={panelButtons[props.panel.key] ?? []} />
+              <div className="flex flex-wrap items-center gap-1">
+                <DisabledButtons labels={panelButtons[props.panel.key] ?? []} />
+                {balancePanel && <Button disabled={receiptId === null || Boolean(paymentReceipt) || query.isFetching}
+                  onClick={() => {
+                    if (receiptId === null) return
+                    const date = valueText(selectedBalance?.date).slice(0, 10)
+                    setPaymentReceipt({ id: receiptId, number: valueText(selectedBalance?.document),
+                      date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined })
+                  }} size="xs" type="button" variant="outline">Paga</Button>}
+              </div>
               <div className="flex gap-1">{totals.map(([key, value]) => <ErpDataMetric key={key} label={metricLabels[key] ?? key} value={moneyFormatter.format(Number(value) || 0)} />)}</div>
             </div>
           </>
         )}
       </ErpDataDialogBody>
     </ErpDataDialog>
+    {paymentReceipt && <DesktopWindowIdentity id={`suppliers:${props.supplier.id}:payments:${paymentReceipt.id}`}>
+      <SupplierPaymentDialog documentNumber={paymentReceipt.number} onClose={() => setPaymentReceipt(null)}
+        receiptDate={paymentReceipt.date} receiptId={paymentReceipt.id} supplierId={props.supplier.id} />
+    </DesktopWindowIdentity>}
+    </>
   )
 }
 

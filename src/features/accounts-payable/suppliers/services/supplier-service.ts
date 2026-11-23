@@ -4,6 +4,9 @@ import type {
   SupplierClassificationsResponse,
   SupplierPanelDefinition,
   SupplierPanelResponse,
+  SupplierPayment,
+  SupplierPaymentInput,
+  SupplierPaymentPreview,
   SupplierSearchResponse,
 } from "@/features/accounts-payable/suppliers/model"
 
@@ -72,4 +75,23 @@ export async function getSupplierClassifications(
     { params: { position }, signal },
   )
   return response.data
+}
+
+const supplierPaymentPath = (supplierId: number, receiptId: number) =>
+  `/accounts-payable/suppliers/${supplierId}/payments/${receiptId}`
+
+export async function getSupplierPaymentPreview(supplierId: number, receiptId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<SupplierPaymentPreview>>(
+    supplierPaymentPath(supplierId, receiptId),
+    { signal },
+  )
+  return response.data.data
+}
+
+export async function recordSupplierPayment(supplierId: number, receiptId: number, input: SupplierPaymentInput) {
+  const response = await apiClient.post<ItemResponse<SupplierPayment>>(
+    supplierPaymentPath(supplierId, receiptId),
+    input,
+  )
+  return response.data.data
 }

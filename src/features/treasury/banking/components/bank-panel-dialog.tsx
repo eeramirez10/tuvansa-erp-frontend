@@ -1,6 +1,8 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "react-router"
+import { paths } from "@/app/router/paths"
 import { bankPanelQueryOptions } from "@/features/treasury/banking/logic"
 import type { BankAccount, BankPanel, BankPanelDefinition, BankPanelKey } from "@/features/treasury/banking/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -17,6 +19,15 @@ const money = (value: unknown) => moneyFormat.format(Number(value ?? 0))
 const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
 type Column = { label: string; key: string; numeric?: boolean }
+
+function cellValue(row: Record<string, unknown>, column: Column) {
+  if (column.numeric) return money(row[column.key])
+  const value = text(row[column.key])
+  if (column.key === "policyNumber" && value && typeof row.policyId === "number") {
+    return <Link className="text-primary underline" to={paths.accountingPolicy(row.policyId)}>{value}</Link>
+  }
+  return value
+}
 
 function withRunningBalances(rows: Array<Record<string, unknown>>) {
   const result: Array<Record<string, unknown>> = []
@@ -36,7 +47,7 @@ function DataTable({ columns, rows, minWidth = "min-w-[1080px]", height = "h-[24
   runningBalance?: boolean
 }) {
   const displayRows = runningBalance ? withRunningBalances(rows) : rows
-  return <ErpDataTableViewport className={height} axes="xy"><Table className={`${minWidth} text-[9px]`} containerClassName="overflow-visible"><TableHeader className="sticky top-0 z-[1] bg-muted"><TableRow>{columns.map((column) => <TableHead className="h-5 whitespace-nowrap px-1 text-[9px]" key={column.key}>{column.label}</TableHead>)}</TableRow></TableHeader><TableBody>{displayRows.map((row, index) => <TableRow key={text(row.movementId ?? row.code ?? index)}>{columns.map((column) => <TableCell className={`whitespace-nowrap px-1 py-0.5 ${column.numeric ? "text-right tabular-nums" : ""}`} key={column.key}>{column.numeric ? money(row[column.key]) : text(row[column.key])}</TableCell>)}</TableRow>)}</TableBody></Table></ErpDataTableViewport>
+  return <ErpDataTableViewport className={height} axes="xy"><Table className={`${minWidth} text-[9px]`} containerClassName="overflow-visible"><TableHeader className="sticky top-0 z-[1] bg-muted"><TableRow>{columns.map((column) => <TableHead className="h-5 whitespace-nowrap px-1 text-[9px]" key={column.key}>{column.label}</TableHead>)}</TableRow></TableHeader><TableBody>{displayRows.map((row, index) => <TableRow key={text(row.movementId ?? row.code ?? index)}>{columns.map((column) => <TableCell className={`whitespace-nowrap px-1 py-0.5 ${column.numeric ? "text-right tabular-nums" : ""}`} key={column.key}>{cellValue(row, column)}</TableCell>)}</TableRow>)}</TableBody></Table></ErpDataTableViewport>
 }
 
 function DisabledButtons({ labels }: { labels: string[] }) {
@@ -123,7 +134,7 @@ const titles: Record<BankPanelKey, string> = {
 function PanelContent({ account, data, panelKey }: { account: BankAccount; data: BankPanel; panelKey: BankPanelKey }) {
   if (!data.available) return <Unavailable data={data} />
   switch (panelKey) {
-    case "auxiliary": return <Auxiliary data={data} />
+    case "auxiliary": case "payments": return <Auxiliary data={data} />
     case "reconciliation": return <Reconciliation data={data} />
     case "automatic-reconciliation": return <AutomaticReconciliation data={data} />
     case "general-ledger": return <Ledger data={data} />
@@ -133,7 +144,7 @@ function PanelContent({ account, data, panelKey }: { account: BankAccount; data:
     case "transfer": return <Transfer account={account} />
     case "unapplied-auxiliary": return <UnappliedAuxiliary data={data} />
     case "supplier-expenses": return <SupplierExpenses account={account} />
-    case "movements": case "deposits": case "payments": return <Unavailable data={data} />
+    case "movements": case "deposits": return <Unavailable data={data} />
   }
 }
 
