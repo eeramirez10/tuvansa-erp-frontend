@@ -18,22 +18,24 @@ function Tool({ label, icon, onClick, disabled }: { label: string; icon: typeof 
   )
 }
 
-export function PurchaseOrderToolbar({ disabled, onPrevious, onSearch, onNext, onEdit }: {
+export function PurchaseOrderToolbar({ disabled, hasOrder, onPrevious, onSearch, onNext, onCreate, onEdit }: {
   disabled?: boolean
+  hasOrder: boolean
   onPrevious: () => void
   onSearch: () => void
   onNext: () => void
+  onCreate: () => void
   onEdit: () => void
 }) {
   return (
     <ErpModuleToolbarPortal><div aria-label="Navegación de órdenes de compra" className="flex items-center gap-1" role="toolbar">
-      <Tool disabled={disabled} icon={ArrowLeft01Icon} label="Orden anterior" onClick={onPrevious} />
+      <Tool disabled={disabled || !hasOrder} icon={ArrowLeft01Icon} label="Orden anterior" onClick={onPrevious} />
       <Tool disabled={disabled} icon={Search01Icon} label="Buscar orden" onClick={onSearch} />
-      <Tool disabled={disabled} icon={ArrowRight01Icon} label="Orden siguiente" onClick={onNext} />
+      <Tool disabled={disabled || !hasOrder} icon={ArrowRight01Icon} label="Orden siguiente" onClick={onNext} />
       <Separator className="mx-0.5 h-5" orientation="vertical" />
-      <Tool disabled icon={FileAddIcon} label="Nueva orden (escritura pendiente)" />
+      <Tool disabled={disabled} icon={FileAddIcon} label="Nueva orden" onClick={onCreate} />
       <Tool disabled icon={Delete01Icon} label="Eliminar orden (escritura pendiente)" />
-      <Tool disabled={disabled} icon={Edit02Icon} label="Editar orden" onClick={onEdit} />
+      <Tool disabled={disabled || !hasOrder} icon={Edit02Icon} label="Editar orden" onClick={onEdit} />
     </div></ErpModuleToolbarPortal>
   )
 }

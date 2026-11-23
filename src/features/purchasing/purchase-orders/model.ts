@@ -67,7 +67,7 @@ export type PurchaseOrderPanel = {
   key: PurchaseOrderPanelKey
   section: "actions"
   button: string
-  source: "mysql" | "mysql+postgres"
+  source: "mysql" | "mysql+postgres" | "postgres"
   items: Array<Record<string, unknown>>
   summary?: Record<string, unknown>
 }
@@ -114,7 +114,52 @@ export type PurchaseOrderEditProduct = {
   description: string
   defaultUnit: string
   eligible: boolean
+  taxable: boolean
+  exciseTaxPercentage: number
   units: Array<{ code: string; factor: number; suggestedPrice: number | null }>
+}
+
+export type PurchaseOrderCreateDefaults = {
+  movement: string
+  today: string
+  from: string
+  dueAt: string
+  warehouse: string
+  taxPercentage: number
+  discountLocked: boolean
+  maxLines: number
+  canWrite: boolean
+}
+
+export type PurchaseOrderCreateSupplier = PurchaseOrder["supplier"] & {
+  terms: number
+  taxType: number
+  taxPercentage: number
+  agent: string
+  discountPercentages: [number, number, number]
+  currencyId: number
+  currencyName: string
+  priceLocked: boolean
+  supplierUnits: boolean
+}
+
+export type PurchaseOrderCreateInput = {
+  requestKey: string
+  supplierCode: string
+  supplierOrderNumber: string
+  orderedAt: string
+  from: string
+  dueAt: string
+  warehouse: string
+  agent: string
+  discountPercentages: [number, number, number]
+  taxPercentage: number
+  freight: number
+  insurance: number
+  other: number
+  otherLabel: string
+  onAccount: number
+  lines: PurchaseOrderEditLine[]
 }
 
 export type PurchaseOrderColorSizeGroup = {

@@ -12,7 +12,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (params.purchaseOrderId === undefined) {
     const result = await queryClient.ensureQueryData(purchaseOrderSearchQueryOptions({ page: 1, pageSize: 1 }))
     const purchaseOrder = result.data[0]
-    if (!purchaseOrder) throw new Response("No hay órdenes de compra disponibles", { status: 404 })
+    if (!purchaseOrder) return null
     return redirect(paths.purchaseOrder(purchaseOrder.id))
   }
   const id = Number(params.purchaseOrderId)

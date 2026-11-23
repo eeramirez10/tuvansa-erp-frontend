@@ -2,6 +2,9 @@ import type {
   PurchaseOrder,
   PurchaseOrderClassificationPanel,
   PurchaseOrderClassificationUpdate,
+  PurchaseOrderCreateDefaults,
+  PurchaseOrderCreateInput,
+  PurchaseOrderCreateSupplier,
   PurchaseOrderEdit,
   PurchaseOrderEditor,
   PurchaseOrderEditProduct,
@@ -79,5 +82,29 @@ export async function searchPurchaseOrderEditProducts(id: number, query: string,
 
 export async function editPurchaseOrder(id: number, edit: PurchaseOrderEdit) {
   const response = await apiClient.patch<ItemResponse<PurchaseOrder>>(`/purchasing/purchase-orders/${id}`, edit)
+  return response.data.data
+}
+
+export async function getPurchaseOrderCreateDefaults(signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderCreateDefaults>>("/purchasing/purchase-orders/create", { signal })
+  return response.data.data
+}
+
+export async function searchPurchaseOrderCreateSuppliers(query: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderCreateSupplier[]>>(
+    "/purchasing/purchase-orders/create/suppliers", { params: { q: query }, signal },
+  )
+  return response.data.data
+}
+
+export async function searchPurchaseOrderCreateProducts(supplierCode: string, query: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderEditProduct[]>>(
+    "/purchasing/purchase-orders/create/products", { params: { supplierCode, q: query }, signal },
+  )
+  return response.data.data
+}
+
+export async function createPurchaseOrder(input: PurchaseOrderCreateInput) {
+  const response = await apiClient.post<ItemResponse<PurchaseOrder>>("/purchasing/purchase-orders", input)
   return response.data.data
 }

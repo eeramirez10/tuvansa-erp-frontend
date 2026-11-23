@@ -1,9 +1,10 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { paths } from "@/app/router/paths"
 import { PurchaseOrderActionButtons } from "@/features/purchasing/purchase-orders/components/purchase-order-action-buttons"
 import { PurchaseOrderActionDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-action-dialog"
+import { PurchaseOrderCreateDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-create-dialog"
 import { PurchaseOrderDetails } from "@/features/purchasing/purchase-orders/components/purchase-order-details"
 import { PurchaseOrderEditDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-edit-dialog"
 import { PurchaseOrderSearchDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-search-dialog"
@@ -23,8 +24,9 @@ export function PurchaseOrderCatalogPage() {
   const id = Number(useParams().purchaseOrderId)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { data: purchaseOrder } = useSuspenseQuery(purchaseOrderQueryOptions(id))
+  const { data: purchaseOrder } = useQuery({ ...purchaseOrderQueryOptions(id), enabled: id > 0 })
   const [searchOpen, setSearchOpen] = useState(false)
+  const { windows: createWindows, openWindow: openCreateWindow, closeWindow: closeCreateWindow } = useDesktopWindowCollection<null>()
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseOrderActionWindow>()
   const { windows: editWindows, openWindow: openEditWindow, closeWindow: closeEditWindow } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -35,7 +37,7 @@ export function PurchaseOrderCatalogPage() {
   }
 
   const navigation = useMutation({
-    mutationFn: (direction: "previous" | "next") => getAdjacentPurchaseOrder(purchaseOrder.id, direction),
+    mutationFn: (direction: "previous" | "next") => getAdjacentPurchaseOrder(id, direction),
     onSuccess: (next, direction) => next
       ? openPurchaseOrder(next)
       : setNotice({ title: "Fin del catálogo", message: direction === "previous" ? "Esta es la primera orden disponible." : "Esta es la última orden disponible." }),
@@ -46,15 +48,17 @@ export function PurchaseOrderCatalogPage() {
     <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
       <PurchaseOrderToolbar
         disabled={navigation.isPending}
-        onEdit={() => openEditWindow(`purchase-orders:${purchaseOrder.id}:edit`, purchaseOrder.id)}
+        hasOrder={!!purchaseOrder}
+        onCreate={() => openCreateWindow("purchase-orders:create", null)}
+        onEdit={() => { if (purchaseOrder) openEditWindow(`purchase-orders:${purchaseOrder.id}:edit`, purchaseOrder.id) }}
         onNext={() => navigation.mutate("next")}
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
       />
-      <aside><PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={(action) => openActionWindow(`purchase-orders:${purchaseOrder.id}:${action.key}`, { purchaseOrder, action })} /></aside>
+      <aside>{purchaseOrder && <PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={(action) => openActionWindow(`purchase-orders:${purchaseOrder.id}:${action.key}`, { purchaseOrder, action })} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
-        <PurchaseOrderDetails purchaseOrder={purchaseOrder} />
+        {purchaseOrder && <PurchaseOrderDetails purchaseOrder={purchaseOrder} />}
       </section>
 
       {searchOpen && (
@@ -63,6 +67,10 @@ export function PurchaseOrderCatalogPage() {
           onSelect={(selected) => { setSearchOpen(false); void navigate(paths.purchaseOrder(selected.id)) }}
         /></DesktopWindowIdentity>
       )}
+      {createWindows.map(({ id: windowId }) => <DesktopWindowIdentity id={windowId} key={windowId}><PurchaseOrderCreateDialog
+        onClose={() => closeCreateWindow(windowId)}
+        onCreated={(order) => { closeCreateWindow(windowId); setNotice(null); openPurchaseOrder(order) }}
+      /></DesktopWindowIdentity>)}
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder} /></DesktopWindowIdentity>)}
       {editWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderEditDialog id={window.payload} onClose={() => closeEditWindow(window.id)} /></DesktopWindowIdentity>)}
     </main>
