@@ -47,6 +47,29 @@ export type BankAccountSearchResponse = {
   pagination: { page: number; pageSize: number; total: number; pages: number }
 }
 
+export type BankAccountFormFields = Pick<BankAccount,
+  "code" | "family" | "accountNumber" | "branch" | "name" | "nature" | "systemType" | "control" | "prorationPercentages"
+> & { currencyId: number }
+
+export type BankAccountFormPreview = {
+  fields: BankAccountFormFields
+  options: {
+    codeLengths: number[]
+    currencies: Array<{ id: number; name: string }>
+    natures: Array<{ id: BankAccount["nature"]; name: string }>
+    systemTypes: Array<{ id: BankAccount["systemType"]; name: string }>
+  }
+  canWrite: boolean
+  reason: string | null
+  revision: string | null
+  editableFields: string[]
+  canDelete?: boolean
+  deleteReason?: string | null
+}
+
+export type CreateBankAccountInput = { requestKey: string; fields: BankAccountFormFields }
+export type UpdateBankAccountInput = { revision: string; fields: BankAccountFormFields }
+
 export type BankPanelKey =
   | "movements"
   | "deposits"
@@ -88,4 +111,36 @@ export type BankReconciliation = {
   bankBalance: number
   previousBankBalance: number
   netMovement: number
+}
+
+type BankTransferAccount = Pick<BankAccount, "id" | "code" | "name">
+
+export type BankTransferPreview = {
+  destination: BankTransferAccount
+  sources: BankTransferAccount[]
+  canWrite: boolean
+  reason: string | null
+  defaults: { date: string }
+  fiscalStart: string
+  fiscalEnd: string
+}
+
+export type BankTransferInput = {
+  requestKey: string
+  sourceBankAccountId: number
+  date: string
+  amount: number
+  reference: string
+  beneficiary: string
+  description: string
+}
+
+export type BankTransfer = Pick<BankTransferInput, "date" | "amount" | "reference" | "beneficiary" | "description"> & {
+  id: number
+  number: string
+  policyNumber: string
+  source: BankTransferAccount
+  destination: BankTransferAccount
+  sourceMovementId: number
+  destinationMovementId: number
 }

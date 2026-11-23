@@ -1,5 +1,48 @@
 # Mapa de vistas, controles y endpoints
 
+## Bancos · Alta, Cambio, Baja y traspasos
+
+| Control | Evento | Método y endpoint relativo a `/api` | Query key / archivo |
+| --- | --- | --- | --- |
+| Alta | Abrir ficha de nueva cuenta | GET `/treasury/bank-accounts/create` | `bankAccountKeys.form(null)` |
+| Alta → OK | Guardar y abrir la nueva cuenta | POST `/treasury/bank-accounts` | `bank-account-service.ts` |
+| Cambio | Consultar ficha y revisión editable | GET `/treasury/bank-accounts/:bankAccountId/edit` | `bankAccountKeys.form(accountId)` |
+| Cambio → OK | Guardar la cuenta | PATCH `/treasury/bank-accounts/:bankAccountId` | `bank-account-service.ts` |
+| Baja | Consultar si la cuenta admite la baja y obtener su revisión | GET `/treasury/bank-accounts/:bankAccountId/edit` | `bankAccountKeys.form(accountId)` |
+| Dar de baja | Confirmar la baja con la revisión consultada | DELETE `/treasury/bank-accounts/:bankAccountId` | `bank-account-removal-dialog.tsx` |
+| Traspasos entre Cuentas | Consultar el destino, las cuentas de origen y la fecha | GET `/treasury/bank-accounts/:bankAccountId/actions/transfer/capture` | `bankAccountKeys.transfer(accountId)` |
+| Traspasos → OK | Registrar el traspaso a la cuenta abierta | POST `/treasury/bank-accounts/:bankAccountId/actions/transfer` | `bank-transfer-dialog.tsx` |
+
+Las fichas muestran los saldos para consulta. El catálogo indica los campos
+editables según la cuenta y la operación. Cancelar o pulsar Escape descarta la
+captura. El traspaso actualiza ambas cuentas y muestra el folio y la póliza.
+Al confirmar **Baja**, el catálogo abre su primera cuenta disponible.
+
+## Bancos · Presupuesto, clasificadores, revisión y gastos
+
+| Control | Consulta / registro | Dato guardado |
+| --- | --- | --- |
+| Mayor → Iguales o Cambiar | GET y PATCH `/treasury/bank-accounts/:id/actions/general-ledger` | Revisión y doce importes del primer periodo |
+| Mayor C.C. → Iguales o Cambiar | GET y PATCH `/treasury/bank-accounts/:id/actions/cost-center-ledger?costCenter=:code` | Presupuesto por centro configurado |
+| Clasificar → Guardar Todos | GET y PATCH `/treasury/bank-accounts/:id/actions/classifiers` | Revisión y nueve valores del catálogo |
+| Revisar → Registrar | GET y PATCH `/treasury/bank-accounts/:id/actions/authorization-review` | Revisión y partidas web seleccionadas con marca `*` |
+| Gastos por prv. | GET `/treasury/bank-accounts/:id/actions/supplier-expenses/capture`, POST `/treasury/bank-accounts/:id/actions/supplier-expenses` | Pago por cheque de la recepción seleccionada desde la cuenta abierta |
+| Concilia Automático → Registra | GET `/treasury/bank-accounts/:id/actions/automatic-reconciliation?asOfDate=YYYY-MM-DD`, POST `/treasury/bank-accounts/:id/actions/reconciliation` | Partidas web emparejadas desde CSV o TSV y saldo de corte validado |
+
+En **Concilia Automático**, **Liga** permite elegir una partida pendiente con
+el mismo importe y signo cuando el archivo no tiene una coincidencia única.
+
+## Bancos · Auxiliar y pólizas
+
+En **Auxiliar**, **Pagos**, **Depósitos** y **Aux. no aplicados**, selecciona un
+movimiento para consultar el concepto de su póliza o preparar el documento.
+
+| Control | Evento | Método y endpoint relativo a `/api` | Query key / archivo |
+| --- | --- | --- | --- |
+| Comentarios | Mostrar el concepto y los datos de la póliza | GET `/accounting/policies/:policyId` | `bank-auxiliary-panel.tsx` |
+| Imprimir Póliza | Abrir la impresión del navegador con las partidas y totales | GET en la misma ruta | `bank-policy-print.ts` |
+| Folio / Ver póliza | Abrir el detalle contable | GET en la misma ruta | `/contabilidad/polizas/:policyId` |
+
 ## Bancos · Conciliar
 
 **Bancos → Conciliar** muestra los movimientos pendientes. La selección de

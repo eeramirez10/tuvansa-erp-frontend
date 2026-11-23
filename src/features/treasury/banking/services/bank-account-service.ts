@@ -1,4 +1,7 @@
-import type { BankAccount, BankAccountSearchResponse, BankPanel, BankPanelKey, BankReconciliation, BankReconciliationInput } from "@/features/treasury/banking/model"
+import type {
+  BankAccount, BankAccountFormPreview, BankAccountSearchResponse, BankPanel, BankPanelKey, BankReconciliation,
+  BankReconciliationInput, BankTransfer, BankTransferInput, BankTransferPreview, CreateBankAccountInput, UpdateBankAccountInput,
+} from "@/features/treasury/banking/model"
 import { apiClient } from "@/shared/api/api-client"
 
 type ItemResponse<T> = { data: T }
@@ -48,8 +51,30 @@ export async function getAdjacentBankAccount(id: number, direction: "previous" |
   return response.data.data
 }
 
-export async function getBankPanel(id: number, key: BankPanelKey, signal?: AbortSignal) {
-  const response = await apiClient.get<BankPanel>(`/treasury/bank-accounts/${id}/${panelPaths[key]}`, { signal })
+export async function getBankAccountFormPreview(id: number | null, signal?: AbortSignal) {
+  const path = id === null ? "/treasury/bank-accounts/create" : `/treasury/bank-accounts/${id}/edit`
+  const response = await apiClient.get<ItemResponse<BankAccountFormPreview>>(path, { signal })
+  return response.data.data
+}
+
+export async function createBankAccount(input: CreateBankAccountInput) {
+  const response = await apiClient.post<ItemResponse<BankAccount>>("/treasury/bank-accounts", input)
+  return response.data.data
+}
+
+export async function updateBankAccount(id: number, input: UpdateBankAccountInput) {
+  const response = await apiClient.patch<ItemResponse<BankAccount>>(`/treasury/bank-accounts/${id}`, input)
+  return response.data.data
+}
+
+export async function deactivateBankAccount(id: number, revision: string) {
+  await apiClient.delete(`/treasury/bank-accounts/${id}`, { data: { revision, confirmed: true } })
+}
+
+export async function getBankPanel(id: number, key: BankPanelKey, signal?: AbortSignal, costCenter?: string) {
+  const response = await apiClient.get<BankPanel>(`/treasury/bank-accounts/${id}/${panelPaths[key]}`, {
+    signal, ...(costCenter ? { params: { costCenter } } : {}),
+  })
   return response.data
 }
 
@@ -58,5 +83,17 @@ export async function registerBankReconciliation(id: number, input: BankReconcil
     `/treasury/bank-accounts/${id}/${panelPaths.reconciliation}`,
     input,
   )
+  return response.data.data
+}
+
+const bankTransferPath = (id: number) => `/treasury/bank-accounts/${id}/${panelPaths.transfer}`
+
+export async function getBankTransferPreview(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<BankTransferPreview>>(`${bankTransferPath(id)}/capture`, { signal })
+  return response.data.data
+}
+
+export async function createBankTransfer(id: number, input: BankTransferInput) {
+  const response = await apiClient.post<ItemResponse<BankTransfer>>(bankTransferPath(id), input)
   return response.data.data
 }

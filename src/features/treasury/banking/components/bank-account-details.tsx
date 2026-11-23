@@ -18,6 +18,35 @@ function Check({ label, checked }: { label: string; checked: boolean }) {
   return <label className="flex h-5 items-center gap-1 whitespace-nowrap text-[9px]" htmlFor={id}><Checkbox checked={checked} disabled id={id} />{label}</label>
 }
 
+export function BankAccountBalances({ balances, currencyBalances, createdAt, currencyName }: Pick<BankAccount, "balances" | "currencyBalances" | "createdAt"> & {
+  currencyName: string
+}) {
+  return <div className="grid content-start gap-2">
+    <Card size="sm"><CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Saldos</CardTitle></CardHeader><CardContent className="grid gap-1 py-1">
+      <Field label="Saldo actual" numeric value={balances.current} /><Field label="Saldo banco" numeric value={balances.bank} />
+      <Field label="Saldo anterior" numeric value={balances.previous} /><Field label="Saldo tránsito" numeric value={balances.inTransit} />
+    </CardContent></Card>
+    <Card size="sm"><CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Moneda {currencyName}</CardTitle></CardHeader><CardContent className="grid gap-1 py-1">
+      <Field label="Saldo actual" numeric value={currencyBalances.current} /><Field label="Saldo Mes 12" numeric value={currencyBalances.month12} />
+      <Field label="Saldo anterior" numeric value={currencyBalances.previous} /><Field label="Alta" value={createdAt} />
+    </CardContent></Card>
+  </div>
+}
+
+export function BankAccountFiscalSettings({ reports }: { reports: BankAccount["fiscalReports"] }) {
+  return <Card size="sm">
+    <CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Información para reportes Fiscales:</CardTitle></CardHeader>
+    <CardContent className="flex flex-wrap items-center gap-x-3 py-1">
+      <span>Ajuste anual por inflación</span>
+      <Check checked={reports.annualInflationAdjustment === 0} label="No" />
+      <Check checked={reports.annualInflationAdjustment === 1} label="Créditos" />
+      <Check checked={reports.annualInflationAdjustment === 2} label="Débitos" />
+      <Check checked={reports.deductibleIetu} label="Deducible IETU" />
+      <Check checked={reports.nonDeductibleVat} label="No Deducible IVA" />
+    </CardContent>
+  </Card>
+}
+
 export function BankAccountDetails({ account }: { account: BankAccount }) {
   return <div className="grid min-w-0 gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif] xl:grid-cols-[minmax(0,1.7fr)_minmax(16rem,0.8fr)]">
     <div className="grid min-w-0 gap-2">
@@ -32,11 +61,9 @@ export function BankAccountDetails({ account }: { account: BankAccount }) {
         <Field className="col-span-2" label="Cia" value={account.control.company} /><Field className="col-span-2" label="Multicia Cia" value={account.control.multiCompany} /><Check checked={account.control.deposits} label="Depósitos" /><Check checked={account.control.payments} label="Pagos" /><Check checked={account.control.budgetable} label="Presupuestable" /><Check checked={account.control.preventJournalEntries} label="No poder utilizar en pólizas" />
         <Field className="col-span-2" label="% Vta." value={account.prorationPercentages.sales} /><Field className="col-span-2" label="% Inv." value={account.prorationPercentages.inventory} /><Field className="col-span-2" label="% Dist." value={account.prorationPercentages.distribution} /><Field className="col-span-2" label="% Anti." value={account.prorationPercentages.advance} /><span className="col-span-2 self-end pb-1 text-[9px]">=100%</span>
       </CardContent></Card>
-      <Card size="sm"><CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Información para reportes Fiscales:</CardTitle></CardHeader><CardContent className="flex flex-wrap items-center gap-x-3 py-1"><span>Ajuste anual por inflación</span><Check checked={account.fiscalReports.annualInflationAdjustment === 0} label="No" /><Check checked={account.fiscalReports.annualInflationAdjustment === 1} label="Créditos" /><Check checked={account.fiscalReports.annualInflationAdjustment === 2} label="Débitos" /><Check checked={account.fiscalReports.deductibleIetu} label="Deducible IETU" /><Check checked={account.fiscalReports.nonDeductibleVat} label="No Deducible IVA" /></CardContent></Card>
+      <BankAccountFiscalSettings reports={account.fiscalReports} />
     </div>
-    <div className="grid content-start gap-2">
-      <Card size="sm"><CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Saldos</CardTitle></CardHeader><CardContent className="grid gap-1 py-1"><Field label="Saldo actual" numeric value={account.balances.current} /><Field label="Saldo banco" numeric value={account.balances.bank} /><Field label="Saldo anterior" numeric value={account.balances.previous} /><Field label="Saldo tránsito" numeric value={account.balances.inTransit} /></CardContent></Card>
-      <Card size="sm"><CardHeader className="border-b bg-module-banking/15 py-1"><CardTitle>Moneda {account.currency.name}</CardTitle></CardHeader><CardContent className="grid gap-1 py-1"><Field label="Saldo actual" numeric value={account.currencyBalances.current} /><Field label="Saldo Mes 12" numeric value={account.currencyBalances.month12} /><Field label="Saldo anterior" numeric value={account.currencyBalances.previous} /><Field label="Alta" value={account.createdAt} /></CardContent></Card>
-    </div>
+    <BankAccountBalances balances={account.balances} currencyBalances={account.currencyBalances} createdAt={account.createdAt}
+      currencyName={account.currency.name} />
   </div>
 }

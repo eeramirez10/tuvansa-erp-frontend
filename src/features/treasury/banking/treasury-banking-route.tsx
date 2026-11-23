@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router"
-import { redirect } from "react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { redirect, useParams } from "react-router"
 import { queryClient } from "@/app/providers/query-client"
 import { paths } from "@/app/router/paths"
 import { bankAccountKeys, bankAccountQueryOptions, firstBankAccountQueryOptions } from "@/features/treasury/banking/logic"
@@ -7,7 +8,8 @@ import { BankAccountCatalogPage } from "@/features/treasury/banking/pages/bank-a
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (params.bankAccountId === undefined) {
-    const account = await queryClient.ensureQueryData(firstBankAccountQueryOptions())
+    const account = await queryClient.fetchQuery(firstBankAccountQueryOptions())
+    if (!account) return null
     queryClient.setQueryData(bankAccountKeys.detail(account.id), account)
     return redirect(paths.bankAccount(account.id))
   }
@@ -17,4 +19,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return null
 }
 
-export function Component() { return <BankAccountCatalogPage /> }
+function BankAccountDetail({ id }: { id: number }) {
+  const { data: account } = useSuspenseQuery(bankAccountQueryOptions(id))
+  return <BankAccountCatalogPage account={account} />
+}
+
+export function Component() {
+  const { bankAccountId } = useParams()
+  return bankAccountId ? <BankAccountDetail id={Number(bankAccountId)} /> : <BankAccountCatalogPage />
+}
