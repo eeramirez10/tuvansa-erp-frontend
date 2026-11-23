@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRef, useState, type ReactNode } from "react"
 import { PurchaseOrderLineEditor, type PurchaseOrderDraftLine } from "@/features/purchasing/purchase-orders/components/purchase-order-line-editor"
+import { PurchaseOrderWarehouseDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-warehouse-dialog"
 import { purchaseOrderKeys } from "@/features/purchasing/purchase-orders/logic"
 import type { PurchaseOrder, PurchaseOrderCreateDefaults, PurchaseOrderCreateInput, PurchaseOrderCreateSupplier, PurchaseOrderEditLine } from "@/features/purchasing/purchase-orders/model"
 import {
@@ -90,8 +91,10 @@ function Totals({ header, lines, supplier }: {
   </dl>
 }
 
-function CreateDraft({ defaults, onClose, onCreated }: {
+function CreateDraft({ defaults, warehouse, usedDefaultWarehouse, onClose, onCreated }: {
   defaults: PurchaseOrderCreateDefaults
+  warehouse: string
+  usedDefaultWarehouse: boolean
   onClose: () => void
   onCreated: (order: PurchaseOrder) => void
 }) {
@@ -104,7 +107,7 @@ function CreateDraft({ defaults, onClose, onCreated }: {
   const { windows, openWindow, closeWindow } = useDesktopWindowCollection<string>()
   const [header, setHeader] = useState<Header>({
     supplierOrderNumber: "", orderedAt: defaults.today, from: defaults.from, dueAt: defaults.dueAt,
-    warehouse: defaults.warehouse, agent: "", discountPercentages: [0, 0, 0], taxPercentage: defaults.taxPercentage,
+    warehouse, agent: "", discountPercentages: [0, 0, 0], taxPercentage: defaults.taxPercentage,
     freight: 0, insurance: 0, other: 0, otherLabel: "", onAccount: 0,
   })
   const set = <K extends keyof Header>(key: K, value: Header[K]) => setHeader((previous) => ({ ...previous, [key]: value }))
@@ -166,7 +169,8 @@ function CreateDraft({ defaults, onClose, onCreated }: {
           <Field label="Número"><Input className={`${fieldClass} bg-muted`} readOnly value="Al guardar" /></Field>
           {dateField("Fecha", "orderedAt")}{dateField("Desde", "from", header.orderedAt)}{dateField("Vence", "dueAt", header.from)}
           <Field label="Pedido del proveedor"><Input className={`${fieldClass} uppercase`} maxLength={30} value={header.supplierOrderNumber} onChange={(event) => set("supplierOrderNumber", event.target.value)} /></Field>
-          <Field label="Almacén"><Input className={fieldClass} maxLength={10} required value={header.warehouse} onChange={(event) => set("warehouse", event.target.value)} /></Field>
+          <Field label="Almacén"><Input className={`${fieldClass} bg-muted`} readOnly value={header.warehouse}
+            title={defaults.warehouses.find((option) => option.code === warehouse)?.description} /></Field>
           <Field label="Proveedor">
             <div className="flex gap-0.5">
               <Input aria-label="Proveedor" autoFocus={!supplier} className={`${fieldClass} uppercase`} maxLength={20} value={supplierCode}
@@ -182,6 +186,9 @@ function CreateDraft({ defaults, onClose, onCreated }: {
           <Field label="Clasificador"><Input className={`${fieldClass} uppercase`} maxLength={9} value={header.agent} onChange={(event) => set("agent", event.target.value)} /></Field>
           <Field label="Moneda"><Input className={`${fieldClass} bg-muted`} readOnly value={supplier?.currencyName ?? ""} /></Field>
           <Field label="Plazo"><Input className={`${fieldClass} bg-muted`} readOnly value={supplier?.terms ?? ""} /></Field>
+          {usedDefaultWarehouse && <p className="col-span-full text-muted-foreground" role="status">
+            El movimiento se aplicará al almacén {warehouse}.
+          </p>}
         </fieldset>,
         footer: (lines) => <fieldset className="grid gap-1.5 rounded-sm border p-1.5" disabled={save.isPending}>
           <div className="grid grid-cols-9 gap-1">
@@ -207,6 +214,23 @@ function CreateDraft({ defaults, onClose, onCreated }: {
   </>
 }
 
+function CreateWithWarehouse({ defaults, onClose, onCreated }: {
+  defaults: PurchaseOrderCreateDefaults
+  onClose: () => void
+  onCreated: (order: PurchaseOrder) => void
+}) {
+  const [selection, setSelection] = useState<{ code: string; usedDefault: boolean } | null>(null)
+  if (!selection && defaults.selectWarehouse) {
+    return <PurchaseOrderWarehouseDialog
+      initial={defaults.warehouse} warehouses={defaults.warehouses}
+      onSelect={(code) => setSelection({ code, usedDefault: false })}
+      onCancel={() => setSelection({ code: defaults.warehouse, usedDefault: true })}
+    />
+  }
+  return <CreateDraft defaults={defaults} warehouse={selection?.code ?? defaults.warehouse}
+    usedDefaultWarehouse={selection?.usedDefault ?? false} onClose={onClose} onCreated={onCreated} />
+}
+
 export function PurchaseOrderCreateDialog({ onClose, onCreated }: {
   onClose: () => void
   onCreated: (order: PurchaseOrder) => void
@@ -216,15 +240,16 @@ export function PurchaseOrderCreateDialog({ onClose, onCreated }: {
     queryFn: ({ signal }) => getPurchaseOrderCreateDefaults(signal),
     refetchOnMount: "always",
   })
-  if (defaults.data?.canWrite && (defaults.isFetchedAfterMount || !defaults.isFetching)) {
-    return <CreateDraft defaults={defaults.data} onClose={onClose} onCreated={onCreated} />
+  if (defaults.data?.canWrite && defaults.data.warehouse && (defaults.isFetchedAfterMount || !defaults.isFetching)) {
+    return <CreateWithWarehouse defaults={defaults.data} onClose={onClose} onCreated={onCreated} />
   }
   return (
     <ErpDataDialog defaultWidth={550} description="Orden de compra" title={title} onOpenChange={(open) => !open && onClose()}>
       <ErpDataDialogBody className="grid gap-1">
         {defaults.isFetching ? <div className="grid min-h-32 place-items-center"><Spinner /></div>
           : <Alert variant={defaults.isError ? "destructive" : "default"}>
-            <AlertDescription>{defaults.isError ? getApiErrorMessage(defaults.error) : "El alta de órdenes requiere PostgreSQL."}</AlertDescription>
+            <AlertDescription>{defaults.isError ? getApiErrorMessage(defaults.error)
+              : defaults.data?.canWrite ? "No hay almacenes habilitados para el alta." : "El alta de órdenes requiere PostgreSQL."}</AlertDescription>
           </Alert>}
         <div className="flex justify-end"><Button onClick={onClose} size="sm" variant="outline">Cerrar</Button></div>
       </ErpDataDialogBody>

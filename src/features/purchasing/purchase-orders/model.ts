@@ -125,11 +125,15 @@ export type PurchaseOrderCreateDefaults = {
   from: string
   dueAt: string
   warehouse: string
+  warehouses: PurchaseOrderWarehouse[]
+  selectWarehouse: boolean
   taxPercentage: number
   discountLocked: boolean
   maxLines: number
   canWrite: boolean
 }
+
+export type PurchaseOrderWarehouse = { code: string; description: string }
 
 export type PurchaseOrderCreateSupplier = PurchaseOrder["supplier"] & {
   terms: number

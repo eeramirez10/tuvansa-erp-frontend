@@ -342,3 +342,12 @@ Comentarios reproduce la distribución de `EOC#6` de Omnis 7. Usa las etiquetas 
 | OK y respuesta al aviso de cantidad cero | `PATCH /:purchaseOrderId` |
 
 El editor mantiene un borrador de partidas. Tab desde **Pzas.** en la última partida abre la siguiente. Cancelar descarta el borrador. OK pregunta si debe retirar partidas existentes de cantidad cero antes de guardar. Al guardar se actualiza la ficha y se invalidan los paneles vinculados a la orden y el catálogo de Inventarios.
+
+| Alta de órdenes de compra | Endpoint relativo a `/api/purchasing/purchase-orders` |
+| --- | --- |
+| Hoja / Nueva orden de compra / Almacén | `GET /create` |
+| Buscar proveedor | `GET /create/suppliers?q=...` |
+| Buscar producto | `GET /create/products?supplierCode=...&q=...` |
+| Nueva orden de compra / OK | `POST /` |
+
+Cuando la configuración del alta pide una selección, **Almacén** abre primero y muestra código y descripción. OK, doble clic o Enter confirman el almacén. Cancelar aplica el predeterminado. La captura muestra el código elegido y lo envía con el encabezado.
