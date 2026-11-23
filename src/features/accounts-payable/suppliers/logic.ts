@@ -62,3 +62,18 @@ export function supplierBalanceReceiptId(row: Record<string, unknown> | undefine
   // Older balance responses identify local receptions by their reserved id range.
   return row.canPay === true || (id >= 6_700_000_000_000 && id <= 6_700_099_999_998) ? id : null
 }
+
+const supplierDayFormatter = new Intl.DateTimeFormat("es-MX", { timeZone: "UTC" })
+
+export function supplierCalendarDate(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined
+  const day = value.trim().slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day === "1900-12-31" || day.startsWith("0000-")) return undefined
+  const parsed = new Date(`${day}T00:00:00Z`)
+  return Number.isFinite(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === day ? day : undefined
+}
+
+export function supplierDateLabel(value: unknown): string {
+  const day = supplierCalendarDate(value)
+  return day ? supplierDayFormatter.format(new Date(`${day}T00:00:00Z`)) : ""
+}

@@ -18,6 +18,55 @@ function Field({ label, fieldValue, className = "", numeric = false }: { label: 
 }
 
 export function PurchaseReceptionDetails({ reception }: { reception: PurchaseReception }) {
+  const expenseTaxes = reception.totals.expenseTaxes
+  if (expenseTaxes) {
+    return (
+      <div className="grid min-w-0 gap-2">
+        <Card size="sm">
+          <CardHeader className="border-b bg-module-reception/15 py-1"><CardTitle>Gastos múltiples</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-12 gap-2 py-1">
+            <Field className="col-span-3" label="Documento" fieldValue={reception.number} />
+            <Field className="col-span-3" label="Referencia" fieldValue={reception.supplierReference} />
+            <Field className="col-span-3" label="Fecha" fieldValue={reception.dates.receivedAt} />
+            <Field className="col-span-3" label="Vence" fieldValue={reception.dates.dueAt} />
+            <Field className="col-span-3" label="Proveedor" fieldValue={reception.supplier.code} />
+            <Field className="col-span-9" label="Nombre" fieldValue={reception.supplier.name} />
+          </CardContent>
+        </Card>
+        <Card className="min-w-0" size="sm">
+          <CardContent className="p-0">
+            <div className="h-[19rem] w-full overflow-hidden">
+              <Table className="min-w-[720px]" containerClassName="h-full overflow-auto">
+                <TableHeader className="sticky top-0 bg-muted"><TableRow>
+                  {["Código", "Gasto", "Importe", "I.V.A.", "Ret. I.V.A.", "Ret. I.S.R.", "C.C."].map((label) => <TableHead key={label}>{label}</TableHead>)}
+                </TableRow></TableHeader>
+                <TableBody>{reception.lines.map((line) => <TableRow key={line.id}>
+                  <TableCell className="font-mono">{line.productCode}</TableCell>
+                  <TableCell>{line.description}</TableCell>
+                  <TableCell className="text-right tabular-nums">{number.format(line.amount)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{number.format(line.expenseTaxes?.vat ?? 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{number.format(line.expenseTaxes?.vatWithholding ?? 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{number.format(line.expenseTaxes?.incomeWithholding ?? 0)}</TableCell>
+                  <TableCell>{line.costCenter}</TableCell>
+                </TableRow>)}</TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+        <Card size="sm">
+          <CardHeader className="border-b bg-module-reception/15 py-1"><CardTitle>Totales</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-3 gap-2 py-1 md:grid-cols-6">
+            <Field label="Importe" fieldValue={number.format(reception.totals.subtotal)} numeric />
+            <Field label="I.V.A." fieldValue={number.format(reception.totals.tax)} numeric />
+            <Field label="Ret. I.V.A." fieldValue={number.format(expenseTaxes.vatWithholding)} numeric />
+            <Field label="Ret. I.S.R." fieldValue={number.format(expenseTaxes.incomeWithholding)} numeric />
+            <Field label="Total" fieldValue={number.format(reception.totals.total)} numeric />
+            <Field label="Saldo" fieldValue={number.format(reception.totals.balance)} numeric />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
   return (
     <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">

@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { SupplierPaymentDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-dialog"
-import { supplierBalanceReceiptId, supplierClassificationsQueryOptions, supplierPanelQueryOptions } from "@/features/accounts-payable/suppliers/logic"
+import {
+  supplierBalanceReceiptId, supplierCalendarDate, supplierClassificationsQueryOptions, supplierDateLabel, supplierPanelQueryOptions,
+} from "@/features/accounts-payable/suppliers/logic"
 import type { Supplier, SupplierPanelColumn, SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
 import { Button } from "@/shared/ui/button"
 import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
@@ -28,11 +30,7 @@ function valueText(value: unknown, column?: SupplierPanelColumn) {
   if (column?.format === "money") return moneyFormatter.format(Number(value) || 0)
   if (column?.format === "number") return numberFormatter.format(Number(value) || 0)
   if (column?.format === "boolean") return value ? "Sí" : "No"
-  if (column?.format === "date") {
-    const raw = String(value).slice(0, 10)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw) || raw === "1900-12-31") return ""
-    return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC" }).format(new Date(`${raw}T00:00:00Z`))
-  }
+  if (column?.format === "date") return supplierDateLabel(value)
   return String(value)
 }
 
@@ -184,9 +182,8 @@ function GeneralPanelDialog(props: Props) {
                 {balancePanel && <Button disabled={receiptId === null || Boolean(paymentReceipt) || query.isFetching}
                   onClick={() => {
                     if (receiptId === null) return
-                    const date = valueText(selectedBalance?.date).slice(0, 10)
                     setPaymentReceipt({ id: receiptId, number: valueText(selectedBalance?.document),
-                      date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined })
+                      date: supplierCalendarDate(selectedBalance?.date) })
                   }} size="xs" type="button" variant="outline">Paga</Button>}
               </div>
               <div className="flex gap-1">{totals.map(([key, value]) => <ErpDataMetric key={key} label={metricLabels[key] ?? key} value={moneyFormatter.format(Number(value) || 0)} />)}</div>

@@ -32,7 +32,7 @@ function paymentSchema(preview: SupplierPaymentPreview, receiptDate?: string) {
     mode: z.enum(["transfer", "check"]),
     amount: z.string().regex(/^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})$/, "Captura un importe de hasta dos decimales."),
     date: z.iso.date({ error: "Captura una fecha válida." }).refine((date) => !receiptDate || date >= receiptDate, {
-      error: "La fecha de pago debe ser igual o posterior a la recepción.",
+      error: "La fecha de pago debe ser igual o posterior a la fecha del documento.",
     }),
     description: z.string().trim().max(conceptLimit, `El concepto admite hasta ${conceptLimit} caracteres.`),
   }).refine(({ amount }) => {

@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
+import { getGeneralExpensesPreview, lookupGeneralExpensesCatalog } from "@/features/purchasing/purchase-receptions/services/general-expenses-service"
 import type { PurchaseReceptionPanelKey } from "@/features/purchasing/purchase-receptions/model"
 import {
   getPurchaseReception,
@@ -27,4 +28,20 @@ export const purchaseReceptionSearchQueryOptions = (criteria: PurchaseReceptionS
 export const purchaseReceptionPanelQueryOptions = (id: number, key: PurchaseReceptionPanelKey) => queryOptions({
   queryKey: purchaseReceptionKeys.panel(id, key),
   queryFn: ({ signal }) => getPurchaseReceptionPanel(id, key, signal),
+})
+
+export const generalExpensesPreviewQueryOptions = () => queryOptions({
+  queryKey: [...purchaseReceptionKeys.all, "general-expenses", "create"],
+  queryFn: ({ signal }) => getGeneralExpensesPreview(signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  retry: false,
+})
+
+export const generalExpensesCatalogQueryOptions = (field: "supplierCode" | "productCode", code: string) => queryOptions({
+  queryKey: [...purchaseReceptionKeys.all, "general-expenses", "catalog", field, code],
+  queryFn: ({ signal }) => lookupGeneralExpensesCatalog(field, code, signal),
+  enabled: code.length > 0,
+  staleTime: 60_000,
+  retry: false,
 })

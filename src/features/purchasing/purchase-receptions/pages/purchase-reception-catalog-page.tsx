@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { paths } from "@/app/router/paths"
+import { GeneralExpensesDialog } from "@/features/purchasing/purchase-receptions/components/general-expenses-dialog"
 import { PurchaseReceptionActionButtons } from "@/features/purchasing/purchase-receptions/components/purchase-reception-action-buttons"
 import { PurchaseReceptionActionDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-action-dialog"
 import { PurchaseReceptionCreateDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-create-dialog"
@@ -26,6 +27,7 @@ export function PurchaseReceptionCatalogPage() {
   const { data: reception } = useQuery({ ...purchaseReceptionQueryOptions(id), enabled: id > 0 })
   const [searchOpen, setSearchOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [generalExpensesOpen, setGeneralExpensesOpen] = useState(false)
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseReceptionActionWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
@@ -48,6 +50,7 @@ export function PurchaseReceptionCatalogPage() {
         disabled={navigation.isPending}
         hasReception={Boolean(reception)}
         onCreate={() => setCreateOpen(true)}
+        onGeneralExpenses={() => setGeneralExpensesOpen(true)}
         onNext={() => navigation.mutate("next")}
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
@@ -73,6 +76,9 @@ export function PurchaseReceptionCatalogPage() {
           />
         </DesktopWindowIdentity>
       )}
+      {generalExpensesOpen && <DesktopWindowIdentity id="purchase-receptions:general-expenses">
+        <GeneralExpensesDialog onClose={() => setGeneralExpensesOpen(false)} />
+      </DesktopWindowIdentity>}
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseReceptionActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} reception={window.payload.reception} /></DesktopWindowIdentity>)}
     </main>
   )

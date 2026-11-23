@@ -11,10 +11,11 @@ export type PurchaseReceptionLine = {
   discount: number
   amount: number
   pieces: string
-  costCenter: number
+  costCenter: number | string
   branch: number
   lotId: number
   inventoryCreatedAt: string | null
+  expenseTaxes?: { vat: number; vatWithholding: number; incomeWithholding: number }
 }
 
 export type PurchaseReception = {
@@ -45,6 +46,7 @@ export type PurchaseReception = {
     taxPercentage: number
     tax: number
     withholdingTax: number
+    expenseTaxes?: { vatWithholding: number; incomeWithholding: number }
     total: number
     balance: number
   }
@@ -72,4 +74,59 @@ export type PurchaseReceptionAction = {
   key: string
   label: string
   panelKey?: PurchaseReceptionPanelKey
+}
+
+export type GeneralExpensesTaxAccount = "vat" | "vatWithholding" | "incomeWithholding"
+
+type GeneralExpensesOption = { code: string; name: string }
+
+export type GeneralExpensesPreview = {
+  canWrite: boolean
+  reason: string | null
+  defaults: { date: string; type: "GA" }
+  fiscalStart: string | null
+  fiscalEnd: string | null
+  costCenters: GeneralExpensesOption[]
+  defaultTaxAccounts?: Partial<Record<GeneralExpensesTaxAccount, string>>
+  taxAccounts: Record<GeneralExpensesTaxAccount, GeneralExpensesOption[]>
+}
+
+export type GeneralExpensesCatalog = {
+  supplier?: GeneralExpensesOption & {
+    id: number; vatRate: number; vatWithholdingRate: number; incomeWithholdingRate: number; calculateTaxes: boolean
+  }
+  product?: GeneralExpensesOption & { id: number; vatExempt: boolean; retentionsEligible: boolean }
+}
+
+export type GeneralExpensesInput = {
+  requestKey: string
+  date: string
+  reference: string
+  beneficiary: string
+  description: string
+  taxAccounts?: Partial<Record<GeneralExpensesTaxAccount, string>>
+  lines: Array<{
+    supplierCode: string
+    productCode: string
+    reference: string
+    base: number
+    vat: number
+    vatWithholding: number
+    incomeWithholding: number
+    costCenter: string
+  }>
+}
+
+export type GeneralExpensesResult = {
+  id: number
+  policyNumber: string
+  documents: Array<{
+    id: number
+    number: string
+    supplierId: number
+    supplierCode: string
+    supplierName: string
+    reference: string
+    total: number
+  }>
 }

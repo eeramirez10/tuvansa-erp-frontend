@@ -90,7 +90,7 @@ ingresos.
 
 ## Cuentas por pagar · Saldo y Paga
 
-**Paga** se habilita al seleccionar una recepción web con saldo pendiente en
+**Paga** se habilita al seleccionar una recepción o un GA web con saldo pendiente en
 **Proveedores → Saldo**. El equivalente en Omnis es **Programar pagos → Paga**
 (`EPRV#25/98 → /120`).
 
@@ -457,8 +457,16 @@ La ruta web es `/recepciones/:purchaseReceptionId`. **Nueva recepción** abre el
 | --- | --- |
 | Nueva recepción / Buscar orden | `GET /create?orderNumber=…` |
 | Nueva recepción / OK | `POST /` |
+| Gastos múltiples | `GET /general-expenses/create` |
+| Código proveedor / gasto | `GET /general-expenses/catalog?supplierCode=…&productCode=…` |
+| Gastos múltiples / OK | `POST /general-expenses` |
 | Ficha y partidas | `GET /:purchaseReceptionId` |
 | Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
+
+**Gastos múltiples** permite capturar partidas por proveedor y referencia,
+IVA, retenciones y centro de costo. La confirmación enlaza los documentos
+guardados, el proveedor y la póliza aplicada. Los documentos aparecen en
+la búsqueda de Recepciones y en **Proveedores → Saldo** para registrar un PP.
 
 ### Órdenes de compra
 

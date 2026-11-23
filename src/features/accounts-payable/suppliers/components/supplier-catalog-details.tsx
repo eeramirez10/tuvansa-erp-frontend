@@ -1,4 +1,5 @@
 import type { Supplier } from "@/features/accounts-payable/suppliers/model"
+import { supplierDateLabel } from "@/features/accounts-payable/suppliers/logic"
 import { ReadonlySupplierField } from "@/features/accounts-payable/suppliers/components/readonly-supplier-field"
 import { Badge } from "@/shared/ui/badge"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
@@ -16,10 +17,7 @@ function money(value: number) {
 }
 
 function date(value: string | null) {
-  if (!value) return "—"
-  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC" }).format(
-    new Date(`${value}T00:00:00Z`),
-  )
+  return supplierDateLabel(value) || "—"
 }
 
 const typeLabels = ["Proveedor", "Acreedor", "Deudor"] as const
