@@ -6,23 +6,39 @@ import { BankAutomaticReconciliationDialog } from "@/features/treasury/banking/c
 import { BankAuxiliaryPanel } from "@/features/treasury/banking/components/bank-auxiliary-panel"
 import { BankClassifiersPanel } from "@/features/treasury/banking/components/bank-classifiers-panel"
 import { BankLedgerPanel } from "@/features/treasury/banking/components/bank-ledger-panel"
+import { BankPanelTable } from "@/features/treasury/banking/components/bank-panel-table"
 import { BankReconciliationDialog } from "@/features/treasury/banking/components/bank-reconciliation-dialog"
 import { BankReviewPanel } from "@/features/treasury/banking/components/bank-review-panel"
 import { BankSupplierExpensesDialog } from "@/features/treasury/banking/components/bank-supplier-expenses-dialog"
 import { BankTransferDialog } from "@/features/treasury/banking/components/bank-transfer-dialog"
-import { bankPanelQueryOptions } from "@/features/treasury/banking/logic"
+import { bankMoney, bankPanelQueryOptions } from "@/features/treasury/banking/logic"
 import type { BankAccount, BankPanel, BankPanelDefinition, BankPanelKey } from "@/features/treasury/banking/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
-import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
+import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric } from "@/shared/ui/erp-data-dialog"
 import { Spinner } from "@/shared/ui/spinner"
 
-type PanelKey = Exclude<BankPanelKey, "reconciliation" | "transfer" | "automatic-reconciliation" | "supplier-expenses">
+type PanelKey = Exclude<BankPanelKey, "reconciliation" | "transfer" | "automatic-reconciliation">
 const titles: Record<PanelKey, string> = {
   movements: "Movimientos", deposits: "Depósitos", payments: "Pagos", auxiliary: "Auxiliar",
   "general-ledger": "Mayor y presupuesto",
   "cost-center-ledger": "Mayor y presupuesto", "authorization-review": "Autorizar", classifiers: "Clasificadores",
   "unapplied-auxiliary": "Auxiliar movimientos no aplicados",
+  "supplier-expenses": "Compras por proveedor",
+}
+
+function SupplierExpensesReport({ data }: { data: BankPanel }) {
+  return <>
+    <BankPanelTable columns={[
+      { label: "Código", key: "supplierCode" }, { label: "Proveedor", key: "supplierName" },
+      { label: "Cargo", key: "charge", numeric: true }, { label: "Abono", key: "credit", numeric: true },
+    ]} height="h-72" minWidth="min-w-[420px]" rows={data.items} />
+    {data.reason && <p className="text-muted-foreground" role="status">{data.reason}</p>}
+    <div className="flex flex-wrap justify-end gap-1">
+      <ErpDataMetric label="Total cargos" value={bankMoney(data.summary?.charges)} />
+      <ErpDataMetric label="Total abonos" value={bankMoney(data.summary?.credits)} />
+    </div>
+  </>
 }
 
 function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange }: {
@@ -47,6 +63,7 @@ function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange 
       key={costCenter} onCenterChange={onCostCenterChange} />
     case "authorization-review": return <BankReviewPanel accountId={account.id} data={data} />
     case "classifiers": return <BankClassifiersPanel accountId={account.id} data={data} key={Number(data.summary?.revision ?? 0)} />
+    case "supplier-expenses": return <SupplierExpensesReport data={data} />
   }
 }
 
@@ -54,10 +71,17 @@ type Props = { account: BankAccount; panel: BankPanelDefinition; onOpenChange: (
 
 function BankReadPanelDialog({ account, panelKey, onOpenChange }: Omit<Props, "panel"> & { panelKey: PanelKey }) {
   const [costCenter, setCostCenter] = useState("1")
+  const [payingReceipt, setPayingReceipt] = useState(false)
   const query = useQuery(bankPanelQueryOptions(account.id, panelKey, panelKey === "cost-center-ledger" ? costCenter : undefined))
   const title = titles[panelKey]
+  const supplierReport = panelKey === "supplier-expenses"
+  const canOpenPayment = supplierReport && account.systemType === "bank" && account.currency.id === 1 && account.control.payments
 
-  return <ErpDataDialog className="sm:max-w-[72rem]" description={`${title} de la cuenta ${account.code}`}
+  if (payingReceipt) {
+    return <BankSupplierExpensesDialog account={account} onOpenChange={(open) => { if (!open) setPayingReceipt(false) }} />
+  }
+
+  return <ErpDataDialog className={supplierReport ? "sm:max-w-[38rem]" : "sm:max-w-[72rem]"} description={`${title} de la cuenta ${account.code}`}
     onOpenChange={onOpenChange} title={title} tone="banking">
     <ErpDataDialogBody className="grid gap-1.5">
       {query.isPending && <div className="grid min-h-64 place-items-center"><Spinner /></div>}
@@ -69,6 +93,7 @@ function BankReadPanelDialog({ account, panelKey, onOpenChange }: Omit<Props, "p
       {query.data && <PanelContent account={account} costCenter={costCenter} data={query.data} panelKey={panelKey}
         onCostCenterChange={setCostCenter} />}
       <footer className="flex justify-end gap-1">
+        {canOpenPayment && <Button onClick={() => setPayingReceipt(true)} size="sm" variant="outline">Pagar recepción</Button>}
         <Button onClick={() => onOpenChange(false)} size="sm" variant="outline">Cerrar</Button>
       </footer>
     </ErpDataDialogBody>
@@ -79,6 +104,5 @@ export function BankPanelDialog({ account, panel, onOpenChange }: Props) {
   if (panel.key === "reconciliation") return <BankReconciliationDialog account={account} onOpenChange={onOpenChange} />
   if (panel.key === "automatic-reconciliation") return <BankAutomaticReconciliationDialog account={account} onOpenChange={onOpenChange} />
   if (panel.key === "transfer") return <BankTransferDialog account={account} onOpenChange={onOpenChange} />
-  if (panel.key === "supplier-expenses") return <BankSupplierExpensesDialog account={account} onOpenChange={onOpenChange} />
   return <BankReadPanelDialog account={account} panelKey={panel.key} onOpenChange={onOpenChange} />
 }
