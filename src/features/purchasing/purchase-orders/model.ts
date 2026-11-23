@@ -128,6 +128,18 @@ export type PurchaseOrderRemovalResult = {
   replacement: PurchaseOrder | null
 }
 
+export type PurchaseOrderConfirmationMode = "confirm" | "unconfirm"
+
+export type PurchaseOrderConfirmation = {
+  id: number
+  number: string
+  revision: number
+  legacyVersion: string
+  hasAssignments: boolean
+  canWrite: boolean
+  reason: string
+}
+
 export type PurchaseOrderEditProduct = {
   code: string
   description: string

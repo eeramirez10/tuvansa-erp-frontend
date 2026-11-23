@@ -12,14 +12,14 @@ import { PurchaseOrderSearchDialog } from "@/features/purchasing/purchase-orders
 import { PurchaseOrderToolbar } from "@/features/purchasing/purchase-orders/components/purchase-order-toolbar"
 import { purchaseOrderActions } from "@/features/purchasing/purchase-orders/constants"
 import { purchaseOrderKeys, purchaseOrderQueryOptions } from "@/features/purchasing/purchase-orders/logic"
-import type { PurchaseOrder, PurchaseOrderAction, PurchaseOrderRemovalResult } from "@/features/purchasing/purchase-orders/model"
+import type { PurchaseOrder, PurchaseOrderAction, PurchaseOrderConfirmationMode, PurchaseOrderRemovalResult } from "@/features/purchasing/purchase-orders/model"
 import { getAdjacentPurchaseOrder } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { title: string; message: string; error?: boolean }
-type PurchaseOrderActionWindow = { purchaseOrder: PurchaseOrder; action: PurchaseOrderAction }
+type PurchaseOrderActionWindow = { purchaseOrder: PurchaseOrder; action: PurchaseOrderAction; confirmation?: PurchaseOrderConfirmationMode }
 
 export function PurchaseOrderCatalogPage() {
   const id = Number(useParams().purchaseOrderId)
@@ -78,7 +78,11 @@ export function PurchaseOrderCatalogPage() {
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
       />
-      <aside>{purchaseOrder && <PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={(action) => openActionWindow(`purchase-orders:${purchaseOrder.id}:${action.key}`, { purchaseOrder, action })} />}</aside>
+      <aside>{purchaseOrder && <PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={(action, shift) => {
+        const confirmation = action.key === "confirm-all" && shift ? "unconfirm" : undefined
+        const windowId = `purchase-orders:${purchaseOrder.id}:${action.key}${confirmation ? ":unconfirm" : ""}`
+        openActionWindow(windowId, { purchaseOrder, action, confirmation })
+      }} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
         {purchaseOrder && <PurchaseOrderDetails purchaseOrder={purchaseOrder} />}
@@ -94,7 +98,9 @@ export function PurchaseOrderCatalogPage() {
         onClose={() => closeCreateWindow(windowId)}
         onCreated={(order) => { closeCreateWindow(windowId); setNotice(null); openPurchaseOrder(order) }}
       /></DesktopWindowIdentity>)}
-      {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder} /></DesktopWindowIdentity>)}
+      {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action}
+        confirmation={window.payload.confirmation} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder}
+      /></DesktopWindowIdentity>)}
       {editWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderEditDialog id={window.payload} onClose={() => closeEditWindow(window.id)} /></DesktopWindowIdentity>)}
       {removalWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderRemovalDialog
         id={window.payload} onClose={() => closeRemovalWindow(window.id)} onRemoved={(result) => onRemoved(result, window.id)}

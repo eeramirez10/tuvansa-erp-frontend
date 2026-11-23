@@ -2,6 +2,8 @@ import type {
   PurchaseOrder,
   PurchaseOrderClassificationPanel,
   PurchaseOrderClassificationUpdate,
+  PurchaseOrderConfirmation,
+  PurchaseOrderConfirmationMode,
   PurchaseOrderCreateDefaults,
   PurchaseOrderCreateInput,
   PurchaseOrderCreateSupplier,
@@ -78,6 +80,18 @@ export async function getPurchaseOrderEditor(id: number, signal?: AbortSignal) {
 
 export async function getPurchaseOrderRemoval(id: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<PurchaseOrderRemoval>>(`/purchasing/purchase-orders/${id}/removal`, { signal })
+  return response.data.data
+}
+
+export async function getPurchaseOrderConfirmation(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseOrderConfirmation>>(`/purchasing/purchase-orders/${id}/actions/confirmation`, { signal })
+  return response.data.data
+}
+
+export async function confirmPurchaseOrder(
+  id: number, mode: PurchaseOrderConfirmationMode, { revision, legacyVersion }: Pick<PurchaseOrderConfirmation, "revision" | "legacyVersion">,
+) {
+  const response = await apiClient.patch<ItemResponse<PurchaseOrder>>(`/purchasing/purchase-orders/${id}/actions/confirmation`, { mode, revision, legacyVersion })
   return response.data.data
 }
 

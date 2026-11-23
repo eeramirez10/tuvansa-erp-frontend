@@ -330,6 +330,10 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 | Comentarios | `GET /:purchaseOrderId/actions/comments` |
 | CT | `GET /:purchaseOrderId/actions/ct` |
 | Piezas | `GET /:purchaseOrderId/actions/pieces` |
+| Confirmar todo / validar | `GET /:purchaseOrderId/actions/confirmation` |
+| Confirmar todo o desconfirmar / Sí | `PATCH /:purchaseOrderId/actions/confirmation` |
+
+**Confirmar todo** pide confirmación antes de asignar el saldo pendiente. **Shift + clic** o **Desconfirmar todo** dentro del diálogo permiten retirar las asignaciones. El servidor valida la revisión. Al terminar se refrescan las partidas y **Asignado**, los paneles de la orden e Inventarios.
 
 Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador. Las acciones internas Cambio, Confirmar e Imprimir de CT/Piezas quedan fuera de esta entrega.
 
