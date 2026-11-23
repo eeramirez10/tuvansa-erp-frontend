@@ -1,74 +1,34 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
-import { Link } from "react-router"
-import { paths } from "@/app/router/paths"
-import { bankPanelQueryOptions } from "@/features/treasury/banking/logic"
+import { BankPanelTable as DataTable, type BankPanelColumn as Column } from "@/features/treasury/banking/components/bank-panel-table"
+import { BankReconciliationDialog } from "@/features/treasury/banking/components/bank-reconciliation-dialog"
+import { bankMoney as money, bankPanelQueryOptions } from "@/features/treasury/banking/logic"
 import type { BankAccount, BankPanel, BankPanelDefinition, BankPanelKey } from "@/features/treasury/banking/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
+import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
-
-const moneyFormat = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const text = (value: unknown) => value === null || value === undefined ? "" : String(value)
-const money = (value: unknown) => moneyFormat.format(Number(value ?? 0))
 const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-
-type Column = { label: string; key: string; numeric?: boolean }
-
-function cellValue(row: Record<string, unknown>, column: Column) {
-  if (column.numeric) return money(row[column.key])
-  const value = text(row[column.key])
-  if (column.key === "policyNumber" && value && typeof row.policyId === "number") {
-    return <Link className="text-primary underline" to={paths.accountingPolicy(row.policyId)}>{value}</Link>
-  }
-  return value
-}
-
-function withRunningBalances(rows: Array<Record<string, unknown>>) {
-  const result: Array<Record<string, unknown>> = []
-  let balance = 0
-  for (const row of rows) {
-    balance += Number(row.charge ?? 0) - Number(row.credit ?? 0)
-    result.push({ ...row, runningBalance: balance })
-  }
-  return result
-}
-
-function DataTable({ columns, rows, minWidth = "min-w-[1080px]", height = "h-[24rem]", runningBalance = false }: {
-  columns: Column[]
-  rows: Array<Record<string, unknown>>
-  minWidth?: string
-  height?: string
-  runningBalance?: boolean
-}) {
-  const displayRows = runningBalance ? withRunningBalances(rows) : rows
-  return <ErpDataTableViewport className={height} axes="xy"><Table className={`${minWidth} text-[9px]`} containerClassName="overflow-visible"><TableHeader className="sticky top-0 z-[1] bg-muted"><TableRow>{columns.map((column) => <TableHead className="h-5 whitespace-nowrap px-1 text-[9px]" key={column.key}>{column.label}</TableHead>)}</TableRow></TableHeader><TableBody>{displayRows.map((row, index) => <TableRow key={text(row.movementId ?? row.code ?? index)}>{columns.map((column) => <TableCell className={`whitespace-nowrap px-1 py-0.5 ${column.numeric ? "text-right tabular-nums" : ""}`} key={column.key}>{cellValue(row, column)}</TableCell>)}</TableRow>)}</TableBody></Table></ErpDataTableViewport>
-}
 
 function DisabledButtons({ labels }: { labels: string[] }) {
   return <div className="flex flex-wrap gap-1">{labels.map((label) => <Button disabled key={label} size="xs" variant="outline">{label}</Button>)}</div>
 }
 
 function Auxiliary({ data, deposits = false }: { data: BankPanel; deposits?: boolean }) {
+  const showStatementDate = data.items.some(({ statementDate }) =>
+    typeof statementDate === "string" && statementDate !== "",
+  )
   return <div className="grid gap-1"><DataTable columns={[
     { label: "Concepto", key: "description" }, { label: "OK", key: "reconciled" }, { label: "TM", key: "movementType" },
     { label: deposits ? "Depósito" : "Cheque", key: "checkNumber" }, { label: "Póliza", key: "policyNumber" }, { label: "Fecha", key: "policyDate" },
+    ...(showStatementDate ? [{ label: "Fecha conc.", key: "statementDate" }] : []),
     { label: "Cargos", key: "charge", numeric: true }, { label: "Abonos", key: "credit", numeric: true }, { label: "Saldo", key: "runningBalance", numeric: true },
     { label: "C.C.", key: "costCenter" }, { label: "Benef", key: "beneficiary" }, { label: "Usr.", key: "user" }, { label: "Ref.", key: "bankNumber" }, { label: "Fecha Pr.", key: "postdatedAt" },
   ]} rows={data.items} runningBalance /><div className="flex flex-wrap items-end justify-between gap-1"><DisabledButtons labels={deposits ? ["Comentarios", "Imprimir Póliza"] : ["Comentarios", "Imprimir Póliza", "Imprimir Cheque"]} /><div className="flex gap-1"><ErpDataMetric label="Cargos" value={money(data.summary?.charges)} /><ErpDataMetric label="Abonos" value={money(data.summary?.credits)} /><ErpDataMetric label="Saldo" value={money(data.summary?.balance)} /></div></div></div>
-}
-
-function Reconciliation({ data }: { data: BankPanel }) {
-  return <div className="grid gap-1"><div className="flex flex-wrap justify-end gap-1"><ErpDataMetric label="Saldo BANCO" value={money(data.summary?.bankBalance)} /><ErpDataMetric label="Saldo tránsito" value={money(data.summary?.inTransitBalance)} /><ErpDataMetric label="Suma sel." value={money(0)} /></div><DataTable columns={[
-    { label: "Beneficiario", key: "beneficiary" }, { label: "OK", key: "reconciled" }, { label: "TM", key: "movementType" }, { label: "Cheque", key: "checkNumber" },
-    { label: "Póliza", key: "policyNumber" }, { label: "Fecha", key: "policyDate" }, { label: "Cargos", key: "charge", numeric: true }, { label: "Abonos", key: "credit", numeric: true },
-    { label: "C.C.", key: "costCenter" }, { label: "T", key: "inTransit" }, { label: "Fecha P.", key: "postdatedAt" }, { label: "T.C.", key: "accountingType" },
-  ]} rows={data.items} /><DisabledButtons labels={["Imprimir Póliza", "Imprimir Cheque", "Conciliar", "Registrar", "Tránsito", "Filtra tránsito", "Detalle", "FP"]} /></div>
 }
 
 function Ledger({ data, costCenter = false }: { data: BankPanel; costCenter?: boolean }) {
@@ -124,19 +84,20 @@ function Unavailable({ data }: { data: BankPanel }) {
   return <Alert><HugeiconsIcon icon={InformationCircleIcon} /><AlertTitle>{data.button}</AlertTitle><AlertDescription>{data.reason ?? "La acción no está disponible en modo lectura."}</AlertDescription></Alert>
 }
 
-const titles: Record<BankPanelKey, string> = {
-  movements: "Movimientos", deposits: "Depósitos", payments: "Pagos", auxiliary: "Auxiliar", reconciliation: "Conciliar",
+type ReadPanelKey = Exclude<BankPanelKey, "reconciliation">
+
+const titles: Record<ReadPanelKey, string> = {
+  movements: "Movimientos", deposits: "Depósitos", payments: "Pagos", auxiliary: "Auxiliar",
   "automatic-reconciliation": "Auxiliar", "supplier-expenses": "Pago a proveedores (cheque)", "general-ledger": "Mayor y presupuesto",
   "cost-center-ledger": "Mayor y presupuesto", "authorization-review": "Autorizar", classifiers: "Clasificadores",
   transfer: "Traspaso a cuentas propias", "unapplied-auxiliary": "Auxiliar movimientos no aplicados",
 }
 
-function PanelContent({ account, data, panelKey }: { account: BankAccount; data: BankPanel; panelKey: BankPanelKey }) {
+function PanelContent({ account, data, panelKey }: { account: BankAccount; data: BankPanel; panelKey: ReadPanelKey }) {
   if (!data.available) return <Unavailable data={data} />
   switch (panelKey) {
     case "auxiliary": case "payments": return <Auxiliary data={data} />
     case "deposits": return <Auxiliary data={data} deposits />
-    case "reconciliation": return <Reconciliation data={data} />
     case "automatic-reconciliation": return <AutomaticReconciliation data={data} />
     case "general-ledger": return <Ledger data={data} />
     case "cost-center-ledger": return <Ledger costCenter data={data} />
@@ -149,7 +110,11 @@ function PanelContent({ account, data, panelKey }: { account: BankAccount; data:
   }
 }
 
-export function BankPanelDialog({ account, panel, onOpenChange }: { account: BankAccount; panel: BankPanelDefinition; onOpenChange: (open: boolean) => void }) {
+type Props = { account: BankAccount; panel: BankPanelDefinition; onOpenChange: (open: boolean) => void }
+
+function BankReadPanelDialog({ account, panel, onOpenChange }: Omit<Props, "panel"> & {
+  panel: BankPanelDefinition & { key: ReadPanelKey }
+}) {
   const query = useQuery(bankPanelQueryOptions(account.id, panel.key))
   return <ErpDataDialog className="sm:max-w-[72rem]" description={`${panel.label} de la cuenta ${account.code}`} onOpenChange={onOpenChange} title={titles[panel.key]} tone="banking"><ErpDataDialogBody className="grid gap-1.5">
     {query.isPending && <div className="grid min-h-64 place-items-center"><Spinner /></div>}
@@ -157,4 +122,9 @@ export function BankPanelDialog({ account, panel, onOpenChange }: { account: Ban
     {query.data && <PanelContent account={account} data={query.data} panelKey={panel.key} />}
     <footer className="flex justify-end gap-1"><Button onClick={() => onOpenChange(false)} size="sm">OK</Button><Button onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button></footer>
   </ErpDataDialogBody></ErpDataDialog>
+}
+
+export function BankPanelDialog({ account, panel, onOpenChange }: Props) {
+  if (panel.key === "reconciliation") return <BankReconciliationDialog account={account} onOpenChange={onOpenChange} />
+  return <BankReadPanelDialog account={account} panel={{ ...panel, key: panel.key }} onOpenChange={onOpenChange} />
 }

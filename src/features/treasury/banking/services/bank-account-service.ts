@@ -1,4 +1,4 @@
-import type { BankAccount, BankAccountSearchResponse, BankPanel, BankPanelKey } from "@/features/treasury/banking/model"
+import type { BankAccount, BankAccountSearchResponse, BankPanel, BankPanelKey, BankReconciliation, BankReconciliationInput } from "@/features/treasury/banking/model"
 import { apiClient } from "@/shared/api/api-client"
 
 type ItemResponse<T> = { data: T }
@@ -51,4 +51,12 @@ export async function getAdjacentBankAccount(id: number, direction: "previous" |
 export async function getBankPanel(id: number, key: BankPanelKey, signal?: AbortSignal) {
   const response = await apiClient.get<BankPanel>(`/treasury/bank-accounts/${id}/${panelPaths[key]}`, { signal })
   return response.data
+}
+
+export async function registerBankReconciliation(id: number, input: BankReconciliationInput) {
+  const response = await apiClient.post<ItemResponse<BankReconciliation>>(
+    `/treasury/bank-accounts/${id}/${panelPaths.reconciliation}`,
+    input,
+  )
+  return response.data.data
 }

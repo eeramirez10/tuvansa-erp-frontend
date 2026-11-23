@@ -67,8 +67,25 @@ export type BankPanel = {
   section: "actions"
   source: string[]
   available: boolean
-  readOnly: true
+  readOnly: boolean
   items: Array<Record<string, unknown>>
   summary?: Record<string, unknown>
   reason?: string
+}
+
+export type BankReconciliationInput = {
+  requestKey: string
+  movementIds: number[]
+  statementDate: string
+  statementBalance: number
+  expectedBankBalance: number
+}
+
+export type BankReconciliation = {
+  id: number
+  movementIds: number[]
+  statementDate: string
+  bankBalance: number
+  previousBankBalance: number
+  netMovement: number
 }

@@ -1,5 +1,26 @@
 # Mapa de vistas, controles y endpoints
 
+## Bancos · Conciliar
+
+**Bancos → Conciliar** muestra los movimientos pendientes. La selección de
+movimientos habilitados calcula **Suma sel.** como cargos menos abonos y suma
+ese importe al saldo bancario actual para mostrar el saldo proyectado.
+
+| Control | Evento | Método y endpoint relativo a `/api` | Query key / archivo |
+| --- | --- | --- | --- |
+| Conciliar | Consultar pendientes y saldo bancario actual | GET `/treasury/bank-accounts/:bankAccountId/actions/reconciliation` | `bankAccountKeys.panel(accountId, "reconciliation")` |
+| Sel. | Cambiar movimientos seleccionados y saldo proyectado | Borrador local | `bank-reconciliation-dialog.tsx` |
+| Registrar | Guardar la conciliación cotejada con el estado de cuenta | POST en la misma ruta | `bank-account-service.ts` |
+| Actualizar pendientes | Recargar la consulta tras un conflicto | GET en la misma ruta | `bank-reconciliation-dialog.tsx` |
+| Cancelar / Escape | Descartar la selección | Sin petición de escritura | `bank-reconciliation-dialog.tsx` |
+
+**Registrar** envía los movimientos seleccionados, la fecha, el saldo del estado
+de cuenta, el saldo bancario consultado y una clave de solicitud que se conserva
+al reintentar. El saldo capturado debe coincidir al centavo con el proyectado.
+El resultado actualiza Bancos y las consultas de Contabilidad.
+**Auxiliar**, **Pagos** y **Depósitos** muestran **Fecha conc.** cuando la
+consulta devuelve una fecha de conciliación.
+
 ## Cuentas por cobrar · Saldo y Cobrar
 
 En **Clientes → Saldo**, **Cobrar** aparece en las remisiones web FAW con

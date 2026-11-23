@@ -39,3 +39,7 @@ export const bankPanelQueryOptions = (id: number, key: BankPanelKey) => queryOpt
   queryKey: bankAccountKeys.panel(id, key),
   queryFn: ({ signal }) => getBankPanel(id, key, signal),
 })
+
+const moneyFormat = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+export const bankMoney = (value: unknown) => moneyFormat.format(Number(value ?? 0))
