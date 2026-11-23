@@ -163,6 +163,9 @@ La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difie
 | Facturación / Facturar / Cancelar | Cerrar | Ninguno | Descarta la selección |
 | Pedidos / Auxiliar | Abrir folio de la remisión | GET `/sales/orders/:id/actions/auxiliar` | Permite abrir el documento asociado en Facturación |
 | Clientes / Saldo o Movimientos | Consultar el cliente | GET `/accounts-receivable/clients/:id/balance` o `/movements` | Incluye el cargo FA en el saldo del cliente |
+| Facturación / Sellar | Abrir la ventana de una remisión web en pruebas | GET `/sales/invoices/:id/actions/seal` | Muestra el importe y la referencia de simulación si existe |
+| Sellar / Simular timbrado | Ejecutar la prueba | POST `/sales/invoices/:id/actions/seal/simulation` | Muestra fecha y referencia `SIM-FE-…` con la leyenda **Sin validez fiscal** |
+| Sellar / Cancelar | Cerrar antes de simular | Ninguno | Descarta la ventana |
 
 ### Verifica fiscal: edición disponible, verificación pendiente
 

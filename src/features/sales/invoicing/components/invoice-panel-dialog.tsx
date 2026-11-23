@@ -1,9 +1,11 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { invoicePanelQueryOptions } from "@/features/sales/invoicing/logic"
-import type { Invoice, InvoicePanel, InvoicePanelDefinition } from "@/features/sales/invoicing/model"
+import { invoiceKeys, invoicePanelQueryOptions } from "@/features/sales/invoicing/logic"
+import type { Invoice, InvoicePanel, InvoicePanelDefinition, StampingSimulation } from "@/features/sales/invoicing/model"
+import { simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
+import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
@@ -25,6 +27,9 @@ type Props = {
 }
 
 const decimal = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const simulationDate = new Intl.DateTimeFormat("es-MX", {
+  dateStyle: "short", timeStyle: "short", timeZone: "America/Mexico_City",
+})
 const text = (value: unknown) => value === null || value === undefined ? "" : String(value)
 const number = (value: unknown) => decimal.format(Number(value ?? 0))
 const date = (value: unknown) => {
@@ -318,6 +323,32 @@ function GenericSummary({ data }: { data: InvoicePanel }) {
   )
 }
 
+function SealSimulation({ invoice, result }: { invoice: Invoice; result: StampingSimulation | null }) {
+  return (
+    <div className="grid gap-2">
+      <Alert>
+        <HugeiconsIcon icon={InformationCircleIcon} />
+        <AlertTitle>Simulación · Sin validez fiscal</AlertTitle>
+        <AlertDescription>
+          {result ? "Prueba de timbrado guardada en el ERP." : "Ensayo local para una factura de ingreso CFDI 4.0."}
+        </AlertDescription>
+      </Alert>
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+        <Field label="Remisión de origen" value={invoice.number} />
+        <Field label="Tipo de factura previsto" value="FE · Ingreso" />
+        <Field label="IVA (MXN)" value={number(invoice.totals.tax)} />
+        <Field label="Total (MXN)" value={number(invoice.totals.total)} />
+      </div>
+      {result && (
+        <div className="grid grid-cols-2 gap-1.5">
+          <Field label="Referencia de prueba" value={result.reference} />
+          <Field label="Fecha de simulación" value={simulationDate.format(new Date(result.simulatedAt))} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PanelContent({ data, invoice }: { data: InvoicePanel; invoice: Invoice }) {
   switch (data.key) {
     case "auxiliary": return <Auxiliary data={data} />
@@ -340,7 +371,18 @@ function PanelContent({ data, invoice }: { data: InvoicePanel; invoice: Invoice 
 }
 
 export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
+  const queryClient = useQueryClient()
   const query = useQuery(invoicePanelQueryOptions(invoice.id, panel.key))
+  const stamp = useMutation({
+    mutationFn: () => simulateInvoiceStamping(invoice.id),
+    onSuccess: (result) => {
+      queryClient.setQueryData<InvoicePanel>(invoiceKeys.panel(invoice.id, "seal"), (current) =>
+        current ? { ...current, stampingSimulation: { result }, readOnly: true } : current,
+      )
+    },
+  })
+  const simulation = query.data?.stampingSimulation
+
   return (
     <ErpDataDialog
       className="sm:max-w-[62rem]"
@@ -358,10 +400,21 @@ export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
             <AlertDescription>Revise la conexión con la API.</AlertDescription>
           </Alert>
         )}
-        {query.data && <PanelContent data={query.data} invoice={invoice} />}
+        {simulation
+          ? <SealSimulation invoice={invoice} result={simulation.result} />
+          : query.data && <PanelContent data={query.data} invoice={invoice} />}
+        {stamp.isError && (
+          <Alert variant="destructive">
+            <HugeiconsIcon icon={InformationCircleIcon} />
+            <AlertTitle>No fue posible simular el timbrado</AlertTitle>
+            <AlertDescription>{getApiErrorMessage(stamp.error)}</AlertDescription>
+          </Alert>
+        )}
         <footer className="flex justify-end gap-1">
-          <Button onClick={() => onOpenChange(false)} size="sm">OK</Button>
-          <Button onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button>
+          {simulation && !simulation.result
+            ? <Button disabled={stamp.isPending} onClick={() => stamp.mutate()} size="sm">{stamp.isPending ? "Simulando…" : "Simular timbrado"}</Button>
+            : <Button onClick={() => onOpenChange(false)} size="sm">{simulation ? "Cerrar" : "OK"}</Button>}
+          {!simulation?.result && <Button disabled={stamp.isPending} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button>}
         </footer>
       </ErpDataDialogBody>
     </ErpDataDialog>

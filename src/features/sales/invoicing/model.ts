@@ -117,6 +117,12 @@ export type InvoicePanelDefinition = {
   section: InvoicePanelSection
 }
 
+export type StampingSimulation = {
+  mode: "simulation"
+  reference: string
+  simulatedAt: string
+}
+
 export type InvoicePanel = {
   invoice: { id: number; number: string }
   key: InvoicePanelKey
@@ -128,4 +134,5 @@ export type InvoicePanel = {
   summary?: Record<string, unknown>
   readOnly?: boolean
   reason?: string
+  stampingSimulation?: { result: StampingSimulation | null }
 }

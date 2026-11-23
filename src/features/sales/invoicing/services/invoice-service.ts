@@ -6,6 +6,7 @@ import type {
   InvoicePanel,
   InvoicePanelKey,
   InvoiceSearchResponse,
+  StampingSimulation,
 } from "@/features/sales/invoicing/model"
 import { apiClient } from "@/shared/api/api-client"
 
@@ -86,6 +87,14 @@ export async function getInvoicePanel(
   const response = await apiClient.get<ItemResponse<InvoicePanel>>(
     `/sales/invoices/${invoiceId}/${panelPaths[key]}`,
     { signal },
+  )
+  return response.data.data
+}
+
+export async function simulateInvoiceStamping(invoiceId: number) {
+  const response = await apiClient.post<ItemResponse<StampingSimulation>>(
+    `/sales/invoices/${invoiceId}/actions/seal/simulation`,
+    {},
   )
   return response.data.data
 }
