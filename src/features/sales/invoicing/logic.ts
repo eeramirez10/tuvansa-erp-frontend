@@ -4,6 +4,7 @@ import {
   getFirstInvoice,
   getInvoice,
   getInvoiceByNumber,
+  getInvoiceFromOrderPreview,
   getInvoicePanel,
   searchInvoices,
   type InvoiceSearchCriteria,
@@ -15,6 +16,7 @@ export const invoiceKeys = {
   first: () => [...invoiceKeys.all, "first"] as const,
   byNumber: (invoiceNumber: string) => [...invoiceKeys.all, "by-number", invoiceNumber] as const,
   search: (criteria: InvoiceSearchCriteria) => [...invoiceKeys.all, "search", criteria] as const,
+  fromOrder: (orderNumber: string) => [...invoiceKeys.all, "from-order", orderNumber] as const,
   panel: (invoiceId: number, key: InvoicePanelKey) =>
     [...invoiceKeys.detail(invoiceId), "panel", key] as const,
 }
@@ -46,4 +48,14 @@ export const invoiceSearchQueryOptions = (criteria: InvoiceSearchCriteria) => qu
 export const invoicePanelQueryOptions = (invoiceId: number, key: InvoicePanelKey) => queryOptions({
   queryKey: invoiceKeys.panel(invoiceId, key),
   queryFn: ({ signal }) => getInvoicePanel(invoiceId, key, signal),
+})
+
+export const invoiceFromOrderQueryOptions = (orderNumber: string) => queryOptions({
+  queryKey: invoiceKeys.fromOrder(orderNumber),
+  queryFn: ({ signal }) => getInvoiceFromOrderPreview(orderNumber, signal),
+  enabled: orderNumber !== "",
+  gcTime: 0,
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  retry: false,
 })

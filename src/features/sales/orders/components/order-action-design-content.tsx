@@ -1,9 +1,16 @@
 import type { ReactNode } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Link } from "react-router"
+import { paths } from "@/app/router/paths"
+import { orderPanelQueryOptions } from "@/features/sales/orders/logic"
 import type { Order, OrderPanelDefinition } from "@/features/sales/orders/model"
+import { getApiErrorMessage } from "@/shared/api/api-error"
+import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
+import { Spinner } from "@/shared/ui/spinner"
 
 type ActionDesignProps = {
   order: Order
@@ -40,12 +47,26 @@ function Authorization() {
   )
 }
 
-function Invoices() {
+function Invoices({ order }: { order: Order }) {
+  const query = useQuery(orderPanelQueryOptions(order.id, "invoices"))
+  if (query.isPending) return <div className="grid h-32 place-items-center"><Spinner /></div>
+  if (query.isError) return <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>
+  const documents = query.data.data.items
   return (
     <ErpDataTableViewport className="h-[15rem]" axes="y">
       <Table className="text-[9px]">
         <TableHeader><TableRow><TableHead className="h-5 px-1">Docto</TableHead><TableHead className="h-5 px-1">Fecha</TableHead></TableRow></TableHeader>
-        <TableBody />
+        <TableBody>
+          {documents.map((row, index) => (
+            <TableRow key={typeof row.id === "number" ? row.id : index}>
+              <TableCell className="px-1 py-0.5">{typeof row.id === "number" ? (
+                <Link className="text-primary underline" to={paths.salesInvoice(row.id)}>{String(row.documentNumber ?? "")}</Link>
+              ) : String(row.documentNumber ?? "")}</TableCell>
+              <TableCell className="px-1 py-0.5">{String(row.date ?? "")}</TableCell>
+            </TableRow>
+          ))}
+          {!documents.length && <TableRow><TableCell className="px-1 py-1" colSpan={2}>Sin documentos</TableCell></TableRow>}
+        </TableBody>
       </Table>
     </ErpDataTableViewport>
   )
@@ -178,7 +199,7 @@ export function OrderActionDesignContent({ order, panel, onClose }: ActionDesign
   switch (panel.key) {
     case "assign-all": return <Confirmation onClose={onClose} question="¿Desea asignar todo el pedido?" />
     case "authorize": return <Authorization />
-    case "invoices": return <Invoices />
+    case "invoices": return <Invoices order={order} />
     case "boxes": return <Boxes order={order} />
     case "classifications": return <Classifications order={order} />
     case "quote-conversion": return <Confirmation onClose={onClose} question="¿Desea convertir el pedido/cotización?" />

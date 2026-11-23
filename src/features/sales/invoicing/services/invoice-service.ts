@@ -1,5 +1,8 @@
 import type {
+  CreateInvoiceFromOrderInput,
+  CreateInvoiceFromOrderResult,
   Invoice,
+  InvoiceFromOrderPreview,
   InvoicePanel,
   InvoicePanelKey,
   InvoiceSearchResponse,
@@ -84,5 +87,20 @@ export async function getInvoicePanel(
     `/sales/invoices/${invoiceId}/${panelPaths[key]}`,
     { signal },
   )
+  return response.data.data
+}
+
+const fromOrderPath = "/sales/invoices/from-order"
+
+export async function getInvoiceFromOrderPreview(orderNumber: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<InvoiceFromOrderPreview>>(fromOrderPath, {
+    params: { orderNumber },
+    signal,
+  })
+  return response.data.data
+}
+
+export async function createInvoiceFromOrder(input: CreateInvoiceFromOrderInput) {
+  const response = await apiClient.post<ItemResponse<CreateInvoiceFromOrderResult>>(fromOrderPath, input)
   return response.data.data
 }

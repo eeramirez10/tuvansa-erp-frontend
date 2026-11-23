@@ -154,6 +154,16 @@ En las ventanas ERP de Ventas, Enter ejecuta el botón habilitado cuyo texto vis
 
 La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difiere de OMNIS: la persistencia se aplaza al OK final para evitar altas parciales al cancelar. Los controles secundarios cuya escritura no fue validada permanecen de sólo lectura. La cuenta local actual no permite el bloqueo/escritura de FTIPMV: el guardado real devuelve 503; no se deben confundir las pruebas HTTP simuladas de éxito con una escritura real.
 
+### Remisión México desde Facturación
+
+| Vista o control | Evento | Endpoint | Resultado |
+|---|---|---|---|
+| Facturación / Facturar | Cargar pedido autorizado y asignado | GET `/sales/invoices/from-order?orderNumber=:number` | Obtiene la revisión del pedido y el máximo que se puede remitir por partida |
+| Facturación / Facturar / OK | Confirmar fecha y cantidades | POST `/sales/invoices/from-order` | Abre el folio FAW y actualiza las consultas de Facturación, Pedidos, Inventarios y Clientes |
+| Facturación / Facturar / Cancelar | Cerrar | Ninguno | Descarta la selección |
+| Pedidos / Auxiliar | Abrir folio de la remisión | GET `/sales/orders/:id/actions/auxiliar` | Permite abrir el documento asociado en Facturación |
+| Clientes / Saldo o Movimientos | Consultar el cliente | GET `/accounts-receivable/clients/:id/balance` o `/movements` | Incluye el cargo FA en el saldo del cliente |
+
 ### Verifica fiscal: edición disponible, verificación pendiente
 
 Prefijo: `/api/accounts-receivable/clients/:clientId/actions/fiscal-verification`.

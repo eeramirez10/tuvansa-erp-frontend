@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router"
 
 import { paths } from "@/app/router/paths"
 import { InvoiceCatalogDetails } from "@/features/sales/invoicing/components/invoice-catalog-details"
+import { InvoiceFromOrderDialog } from "@/features/sales/invoicing/components/invoice-from-order-dialog"
 import { InvoicePanelDialog } from "@/features/sales/invoicing/components/invoice-panel-dialog"
 import { InvoiceSearchDialog } from "@/features/sales/invoicing/components/invoice-search-dialog"
 import { InvoicePanelButtons } from "@/features/sales/invoicing/components/invoice-side-panels"
@@ -28,6 +29,7 @@ export function InvoiceCatalogPage() {
   const queryClient = useQueryClient()
   const { data: invoice } = useSuspenseQuery(invoiceQueryOptions(invoiceId))
   const [searchOpen, setSearchOpen] = useState(false)
+  const [fromOrderOpen, setFromOrderOpen] = useState(false)
   const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<InvoicePanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
 
@@ -70,6 +72,7 @@ export function InvoiceCatalogPage() {
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
       <InvoiceToolbar
         disabled={navigation.isPending}
+        onFromOrder={() => setFromOrderOpen(true)}
         onNext={() => navigation.mutate("next")}
         onPrevious={() => navigation.mutate("previous")}
         onSearch={() => setSearchOpen(true)}
@@ -93,6 +96,19 @@ export function InvoiceCatalogPage() {
 
       {searchOpen && (
         <DesktopWindowIdentity id="invoices:search"><InvoiceSearchDialog onOpenChange={setSearchOpen} onSelect={selectSearchResult} /></DesktopWindowIdentity>
+      )}
+      {fromOrderOpen && (
+        <DesktopWindowIdentity id="invoices:from-order">
+          <InvoiceFromOrderDialog onClose={() => setFromOrderOpen(false)} onCreated={({ invoice: saved, orderComplete }) => {
+            setFromOrderOpen(false)
+            setNotice({
+              kind: "success",
+              title: `Remisión ${saved.number} registrada`,
+              message: orderComplete ? "El pedido quedó surtido." : "El pedido conserva partidas por surtir.",
+            })
+            openFullInvoice(saved)
+          }} />
+        </DesktopWindowIdentity>
       )}
       {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><InvoicePanelDialog invoice={window.payload.invoice} onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} panel={window.payload.panel} /></DesktopWindowIdentity>)}
     </section>

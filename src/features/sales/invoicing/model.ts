@@ -73,6 +73,38 @@ export type InvoiceSearchResponse = {
   pagination: { page: number; pageSize: number; total: number; pages: number }
 }
 
+export type InvoiceFromOrderPreview = {
+  orderId: number
+  number: string
+  customer: { id: number; code: string; name: string }
+  warehouse: string
+  revision: number
+  canWrite: boolean
+  reason: string | null
+  defaults: { issuedAt: string }
+  lines: Array<{
+    orderLineId: number
+    productCode: string
+    description: string
+    unit: string
+    ordered: number
+    fulfilled: number
+    assigned: number
+    maximum: number
+    suggested: number
+  }>
+}
+
+export type CreateInvoiceFromOrderInput = {
+  orderNumber: string
+  requestKey: string
+  revision: number
+  issuedAt: string
+  lines: Array<{ orderLineId: number; quantity: number }>
+}
+
+export type CreateInvoiceFromOrderResult = { invoice: Invoice; orderComplete: boolean }
+
 export type InvoicePanelSection = "actions" | "summaries"
 export type InvoicePanelKey =
   | "auxiliary" | "boxes" | "classifications" | "comments" | "ct"
@@ -91,7 +123,7 @@ export type InvoicePanel = {
   section: InvoicePanelSection
   button: string
   available: boolean
-  source: "mysql" | "static"
+  source: "mysql" | "postgres" | "static"
   items: Array<Record<string, unknown>>
   summary?: Record<string, unknown>
   readOnly?: boolean

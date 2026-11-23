@@ -1,5 +1,6 @@
 import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon"
 import ArrowRight01Icon from "@hugeicons/core-free-icons/ArrowRight01Icon"
+import FileAddIcon from "@hugeicons/core-free-icons/FileAddIcon"
 import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ErpModuleToolbarPortal } from "@/features/workspace/components/erp-module-toolbar-portal"
@@ -11,6 +12,7 @@ type Props = {
   onNext: () => void
   onPrevious: () => void
   onSearch: () => void
+  onFromOrder: () => void
 }
 
 function Tool({
@@ -51,6 +53,7 @@ export function InvoiceToolbar(props: Props) {
         <Tool disabled={props.disabled} icon={ArrowLeft01Icon} label="Factura anterior" onClick={props.onPrevious} />
         <Tool disabled={props.disabled} icon={Search01Icon} label="Buscar factura" onClick={props.onSearch} />
         <Tool disabled={props.disabled} icon={ArrowRight01Icon} label="Factura siguiente" onClick={props.onNext} />
+        <Tool disabled={props.disabled} icon={FileAddIcon} label="Facturar de pedido" onClick={props.onFromOrder} />
       </div>
     </ErpModuleToolbarPortal>
   )
