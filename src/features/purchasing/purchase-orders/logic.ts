@@ -4,6 +4,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderAuthorization,
   getPurchaseOrderConfirmation,
+  getPurchaseOrderConversion,
   getPurchaseOrderEditor,
   getPurchaseOrderPanel,
   getPurchaseOrderRemoval,
@@ -22,6 +23,7 @@ export const purchaseOrderKeys = {
   editor: (id: number) => [...purchaseOrderKeys.detail(id), "edit"] as const,
   removal: (id: number) => [...purchaseOrderKeys.detail(id), "removal"] as const,
   confirmation: (id: number) => [...purchaseOrderKeys.detail(id), "confirmation"] as const,
+  conversion: (id: number) => [...purchaseOrderKeys.detail(id), "quote-conversion"] as const,
   authorization: (id: number) => [...purchaseOrderKeys.detail(id), "authorization"] as const,
   supplierAction: (id: number) => [...purchaseOrderKeys.detail(id), "supplier-action"] as const,
   authorizationSuppliers: (filters: PurchaseOrderSupplierSearch) => [...purchaseOrderKeys.all, "authorization", "suppliers", filters] as const,
@@ -69,6 +71,12 @@ export const purchaseOrderConfirmationQueryOptions = (id: number) => queryOption
   queryFn: ({ signal }) => getPurchaseOrderConfirmation(id, signal),
   refetchOnMount: "always",
   refetchOnWindowFocus: false,
+})
+
+export const purchaseOrderConversionQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseOrderKeys.conversion(id),
+  queryFn: ({ signal }) => getPurchaseOrderConversion(id, signal),
+  refetchOnMount: "always",
 })
 
 export const purchaseOrderAuthorizationQueryOptions = (id: number) => queryOptions({

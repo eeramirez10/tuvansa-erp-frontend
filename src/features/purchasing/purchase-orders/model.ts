@@ -141,6 +141,16 @@ export type PurchaseOrderConfirmation = {
   reason: string
 }
 
+export type PurchaseOrderConversionTarget = Exclude<PurchaseOrder["documentKind"], "unknown">
+
+export type PurchaseOrderConversion = {
+  revision: number
+  legacyVersion: string
+  documentKind: PurchaseOrder["documentKind"]
+  canWrite: boolean
+  reason: string
+}
+
 export type PurchaseOrderAuthorizationLevel = "A" | "B" | "C" | "D" | "E" | "F"
 export type PurchaseOrderAuthorizationDirection = "approve" | "revoke"
 

@@ -3,6 +3,7 @@ import { useState } from "react"
 import { PurchaseOrderClassificationsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-classifications-dialog"
 import { PurchaseOrderCommentsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-comments-dialog"
 import { PurchaseOrderConfirmationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-confirmation-dialog"
+import { PurchaseOrderConversionDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-conversion-dialog"
 import { PurchaseOrderAuthorizationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-authorization-dialog"
 import { PurchaseOrderSupplierActionDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-supplier-change-dialog"
 import { displayPurchaseOrderDate, purchaseOrderPanelQueryOptions } from "@/features/purchasing/purchase-orders/logic"
@@ -138,6 +139,15 @@ export function PurchaseOrderActionDialog({ purchaseOrder, action, onClose, conf
   confirmation?: PurchaseOrderConfirmationMode
 }) {
   if (action.key === "confirm-all") return <PurchaseOrderConfirmationDialog purchaseOrder={purchaseOrder} initialMode={confirmation ?? "confirm"} onClose={onClose} />
+  if (action.key === "quote") return <PurchaseOrderConversionDialog purchaseOrder={purchaseOrder} onClose={onClose} />
+  if (action.key === "generate-percent") return (
+    <ErpDataDialog defaultWidth={330} description={purchaseOrder.number} onOpenChange={(open) => !open && onClose()} title="Gen %">
+      <ErpDataDialogBody className="grid gap-2">
+        <p>bye</p>
+        <div className="flex justify-end"><Button autoFocus onClick={onClose} size="sm">OK</Button></div>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
+  )
   if (action.key === "authorize") return <PurchaseOrderAuthorizationDialog purchaseOrder={purchaseOrder} onClose={onClose} />
   if (action.key === "change-supplier") return <PurchaseOrderSupplierActionDialog purchaseOrder={purchaseOrder} onClose={onClose} />
   if (action.panelKey === "classifications") return <PurchaseOrderClassificationsDialog onClose={onClose} purchaseOrder={purchaseOrder} />

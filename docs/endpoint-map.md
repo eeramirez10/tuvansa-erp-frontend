@@ -1,5 +1,13 @@
 # Mapa de vistas, controles y endpoints
 
+## Órdenes de compra · Cotiz y Gen %
+
+**Cotiz** consulta `GET /purchasing/purchase-orders/:id/actions/quote-conversion`.
+**OK** ejecuta `PATCH` en la misma ruta, con revisión, versión de origen y tipo
+destino. **Cancelar** cierra la confirmación. Al guardar se actualizan la ficha,
+el buscador y los acumulados de Inventarios. **Gen %** en TUVANSA muestra el
+mensaje de Omnis y se cierra con **OK**.
+
 ## Comisiones por cobranza (2026-11-09)
 
 **Reportes de Ventas → Comisiones → Reporte Comisiones x Cobranza**;
