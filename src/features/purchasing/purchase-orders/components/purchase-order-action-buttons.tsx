@@ -12,7 +12,8 @@ export function PurchaseOrderActionButtons({ actions, onSelect }: {
       <CardContent className="grid gap-0.5 py-1">
         {actions.map((action) => (
           <Button className="w-full justify-start" key={action.key} onClick={(event) => onSelect(action, event.shiftKey)} size="xs" variant="outline"
-            title={action.key === "confirm-all" ? "Shift + clic para desconfirmar todo" : undefined}>
+            title={action.key === "confirm-all" ? "Shift + clic para desconfirmar todo"
+              : action.key === "duplicate" ? "Shift + clic para duplicar las partidas marcadas" : undefined}>
             {action.label}
           </Button>
         ))}

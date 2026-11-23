@@ -345,7 +345,13 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 | Clasificar / Guardar | `PATCH /:purchaseOrderId/actions/classifications` |
 | Comentarios | `GET /:purchaseOrderId/actions/comments` |
 | CT | `GET /:purchaseOrderId/actions/ct` |
+| CT / Cambio | `GET /:purchaseOrderId/actions/ct/editor`, `PATCH /:purchaseOrderId/actions/ct` |
+| Div. Sucursal y Sucursal | `GET/POST /:purchaseOrderId/actions/branches` |
+| Duplicar | `GET/POST /:purchaseOrderId/actions/duplicate` |
+| Split | `GET/POST /:purchaseOrderId/actions/split` |
+| Alta Piezas | `GET /:purchaseOrderId/actions/pieces/editor`, `PATCH /:purchaseOrderId/actions/pieces` |
 | Piezas | `GET /:purchaseOrderId/actions/pieces` |
+| Piezas / Confirmar | `GET/PATCH /:purchaseOrderId/actions/pieces/confirmation` |
 | Confirmar todo / validar | `GET /:purchaseOrderId/actions/confirmation` |
 | Confirmar todo o desconfirmar / Sí | `PATCH /:purchaseOrderId/actions/confirmation` |
 | Autorizar / consultar O.K. A–F | `GET /:purchaseOrderId/actions/authorization` |
@@ -363,9 +369,9 @@ La ruta web es `/ordenes-compra/:purchaseOrderId`. El resultado del buscador se 
 
 **Cambia Prv** en Acciones usa el mismo selector y su propio permiso. La ventana precarga el proveedor actual y permite varios cambios consecutivos con revisiones actualizadas. Al guardar actualiza la ficha, el buscador, Comentarios e Inventarios.
 
-Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador. Las acciones internas Cambio, Confirmar e Imprimir de CT/Piezas quedan fuera de esta entrega.
+Clasificar envía los nueve valores y la revisión de la ventana. El backend indica si puede guardar en PostgreSQL. Al guardar se actualizan la ficha, la consulta de clasificación y los resultados del buscador.
 
-Comentarios reproduce la distribución de `EOC#6` de Omnis 7. Usa las etiquetas del tipo de movimiento para las cuatro líneas y el texto largo. El número del proveedor aparece en Número ellos y Pedido cliente, como en el formato nativo. OK y Cancelar cierran la ventana de consulta.
+Comentarios reproduce la distribución de `EOC#6` de Omnis 7. Usa las etiquetas del tipo de movimiento para las cuatro líneas y el texto largo. El número del proveedor aparece en Número ellos y Pedido cliente, como en el formato nativo. OK guarda el borrador y Cancelar lo descarta.
 
 | Editor de órdenes de compra | Endpoint relativo a `/api/purchasing/purchase-orders` |
 | --- | --- |

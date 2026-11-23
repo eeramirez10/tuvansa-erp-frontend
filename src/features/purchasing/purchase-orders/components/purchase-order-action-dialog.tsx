@@ -4,6 +4,12 @@ import { PurchaseOrderClassificationsDialog } from "@/features/purchasing/purcha
 import { PurchaseOrderCommentsDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-comments-dialog"
 import { PurchaseOrderConfirmationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-confirmation-dialog"
 import { PurchaseOrderConversionDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-conversion-dialog"
+import { PurchaseOrderColorSizeChange } from "@/features/purchasing/purchase-orders/components/purchase-order-color-size-change-dialog"
+import { PurchaseOrderSplitDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-split-dialog"
+import { PurchaseOrderBranchTransferDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-branch-transfer-dialog"
+import { PurchaseOrderPieceEditorDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-piece-editor-dialog"
+import { PurchaseOrderPieceConfirmation } from "@/features/purchasing/purchase-orders/components/purchase-order-piece-confirmation"
+import { PurchaseOrderDuplicateDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-duplicate-dialog"
 import { PurchaseOrderAuthorizationDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-authorization-dialog"
 import { PurchaseOrderSupplierActionDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-supplier-change-dialog"
 import { displayPurchaseOrderDate, purchaseOrderPanelQueryOptions } from "@/features/purchasing/purchase-orders/logic"
@@ -43,7 +49,8 @@ const pieceColumns = [
   ["warehouse", "Alm."], ["document", "Docto."], ["receipt", "Recepción"],
 ] as const
 
-function Pieces({ panel }: { panel: PurchaseOrderPanel }) {
+function Pieces({ panel, purchaseOrder }: { panel: PurchaseOrderPanel; purchaseOrder: PurchaseOrder }) {
+  const [confirming, setConfirming] = useState(false)
   return (
     <>
       <ErpDataTableViewport axes="xy" className="h-[17rem]">
@@ -60,19 +67,22 @@ function Pieces({ panel }: { panel: PurchaseOrderPanel }) {
         </Table>
       </ErpDataTableViewport>
       <div className="flex items-end justify-between gap-2">
-        <div className="flex gap-1"><Button disabled size="sm" variant="outline">Confirmar</Button><Button disabled size="sm" variant="outline">Imprimir</Button></div>
+        <div className="flex gap-1"><Button disabled={confirming || !panel.items.length} onClick={() => setConfirming(true)}
+          size="sm" variant="outline">Confirmar</Button><Button disabled size="sm" variant="outline">Imprimir</Button></div>
         <Field label="Total" value={quantity.format(Number(panel.summary?.totalQuantity ?? 0))} />
       </div>
+      {confirming && <PurchaseOrderPieceConfirmation purchaseOrder={purchaseOrder} onClose={() => setConfirming(false)} />}
     </>
   )
 }
 
 const matrixModes = [["ordered", "Pedido"], ["fulfilled", "Surtido"], ["remaining", "Resta"]] as const
 
-function ColorSize({ panel }: { panel: PurchaseOrderPanel }) {
+function ColorSize({ panel, purchaseOrder }: { panel: PurchaseOrderPanel; purchaseOrder: PurchaseOrder }) {
   const groups = panel.items as PurchaseOrderColorSizeGroup[]
   const [selection, setSelection] = useState<string | undefined>()
   const [mode, setMode] = useState<typeof matrixModes[number][0]>("ordered")
+  const [editing, setEditing] = useState(false)
   const current = groups.find((group) => group.root === selection) ?? groups[0]
   return (
     <>
@@ -93,8 +103,10 @@ function ColorSize({ panel }: { panel: PurchaseOrderPanel }) {
       </ErpDataTableViewport>
       <div className="flex gap-1">
         {matrixModes.map(([key, label]) => <Button aria-pressed={mode === key} key={key} onClick={() => setMode(key)} size="sm" variant={mode === key ? "default" : "outline"}>{label}</Button>)}
-        <Button disabled size="sm" variant="outline">Cambio</Button>
+        <Button disabled={editing || !current?.sizes.length} onClick={() => setEditing(true)} size="sm" variant="outline">Cambio</Button>
       </div>
+      {editing && current && <PurchaseOrderColorSizeChange key={current.root} purchaseOrder={purchaseOrder} root={current.root}
+        onClose={() => { setEditing(false); setMode("ordered") }} />}
       {current && current.sizes.length > 0 && (
         <ErpDataTableViewport axes="xy" className="h-[9rem]">
           <Table className="text-[9px]">
@@ -124,22 +136,29 @@ function ReadPanel({ purchaseOrder, action, onClose, panelKey }: {
         {query.isPending && <div className="grid min-h-48 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive"><AlertTitle>No fue posible cargar</AlertTitle><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>}
         {panel && panelKey === "receipts" && <Receipts panel={panel} />}
-        {panel && panelKey === "ct" && <ColorSize panel={panel} />}
-        {panel && panelKey === "pieces" && <Pieces panel={panel} />}
+        {panel && panelKey === "ct" && <ColorSize panel={panel} purchaseOrder={purchaseOrder} />}
+        {panel && panelKey === "pieces" && <Pieces panel={panel} purchaseOrder={purchaseOrder} />}
         <footer className="flex justify-end gap-1"><Button onClick={onClose} size="sm">Cerrar</Button></footer>
       </ErpDataDialogBody>
     </ErpDataDialog>
   )
 }
 
-export function PurchaseOrderActionDialog({ purchaseOrder, action, onClose, confirmation }: {
+export function PurchaseOrderActionDialog({ purchaseOrder, action, onClose, confirmation, markedOnly, onOrderCreated }: {
   purchaseOrder: PurchaseOrder
   action: PurchaseOrderAction
   onClose: () => void
   confirmation?: PurchaseOrderConfirmationMode
+  markedOnly?: boolean
+  onOrderCreated: (order: PurchaseOrder) => void
 }) {
   if (action.key === "confirm-all") return <PurchaseOrderConfirmationDialog purchaseOrder={purchaseOrder} initialMode={confirmation ?? "confirm"} onClose={onClose} />
   if (action.key === "quote") return <PurchaseOrderConversionDialog purchaseOrder={purchaseOrder} onClose={onClose} />
+  if (action.key === "add-pieces") return <PurchaseOrderPieceEditorDialog purchaseOrder={purchaseOrder} onClose={onClose} />
+  if (action.key === "duplicate") return <PurchaseOrderDuplicateDialog purchaseOrder={purchaseOrder} markedOnly={markedOnly ?? false} onClose={onClose} onDuplicated={onOrderCreated} />
+  if (action.key === "split") return <PurchaseOrderSplitDialog purchaseOrder={purchaseOrder} onClose={onClose} onSplit={onOrderCreated} />
+  if (action.key === "divide-branch" || action.key === "branch") return <PurchaseOrderBranchTransferDialog purchaseOrder={purchaseOrder}
+    mode={action.key === "divide-branch" ? "divide" : "percentage"} onClose={onClose} />
   if (action.key === "generate-percent") return (
     <ErpDataDialog defaultWidth={330} description={purchaseOrder.number} onOpenChange={(open) => !open && onClose()} title="Gen %">
       <ErpDataDialogBody className="grid gap-2">

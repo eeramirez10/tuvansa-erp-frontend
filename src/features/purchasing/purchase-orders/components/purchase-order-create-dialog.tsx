@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRef, useState, type ReactNode } from "react"
 import { PurchaseOrderLineEditor, type PurchaseOrderDraftLine } from "@/features/purchasing/purchase-orders/components/purchase-order-line-editor"
+import { PurchaseOrderSupplierPicker } from "@/features/purchasing/purchase-orders/components/purchase-order-supplier-picker"
 import { PurchaseOrderWarehouseDialog } from "@/features/purchasing/purchase-orders/components/purchase-order-warehouse-dialog"
 import { purchaseOrderKeys } from "@/features/purchasing/purchase-orders/logic"
 import type { PurchaseOrder, PurchaseOrderCreateDefaults, PurchaseOrderCreateInput, PurchaseOrderCreateSupplier, PurchaseOrderEditLine } from "@/features/purchasing/purchase-orders/model"
@@ -11,10 +12,9 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
-import { ErpDataDialog, ErpDataDialogBody, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
+import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
-import { Table, TableBody, TableCell, TableRow } from "@/shared/ui/table"
 
 type Header = Omit<PurchaseOrderCreateInput, "requestKey" | "supplierCode" | "lines">
 
@@ -26,44 +26,6 @@ const supplierKey = (query: string) => [...purchaseOrderKeys.all, "create", "sup
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="grid min-w-0 gap-0.5"><span className="truncate">{label}</span>{children}</label>
-}
-
-function SupplierPicker({ initial, onSelect, onClose }: {
-  initial: string
-  onSelect: (supplier: PurchaseOrderCreateSupplier) => void
-  onClose: () => void
-}) {
-  const [query, setQuery] = useState(initial)
-  const [submitted, setSubmitted] = useState(initial)
-  const suppliers = useQuery({
-    queryKey: supplierKey(submitted),
-    queryFn: ({ signal }) => searchPurchaseOrderCreateSuppliers(submitted, signal),
-    enabled: submitted !== "",
-  })
-  return (
-    <ErpDataDialog title="Buscar proveedor" description={title} defaultWidth={550} onOpenChange={(open) => !open && onClose()}>
-      <ErpDataDialogBody className="grid gap-1.5">
-        <form className="flex gap-1" onSubmit={(event) => { event.preventDefault(); setSubmitted(query.trim()) }}>
-          <Input aria-label="Código o nombre" autoFocus value={query} onChange={(event) => setQuery(event.target.value)} maxLength={60} />
-          <Button disabled={!query.trim() || suppliers.isFetching} type="submit" size="sm">Buscar</Button>
-        </form>
-        {suppliers.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(suppliers.error)}</AlertDescription></Alert>}
-        <ErpDataTableViewport className="h-48">
-          <Table className="min-w-96">
-            <TableBody>
-              {suppliers.data?.map((supplier) => <TableRow key={supplier.id}><TableCell className="p-0">
-                <Button className="flex w-full justify-start text-left" onClick={() => onSelect(supplier)} variant="ghost" size="xs">
-                  <span className="w-20 shrink-0 font-mono">{supplier.code}</span>{supplier.name}
-                </Button>
-              </TableCell></TableRow>)}
-              {suppliers.data?.length === 0 && <TableRow><TableCell>Sin proveedores activos</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </ErpDataTableViewport>
-        <div className="flex justify-end"><Button onClick={onClose} variant="outline" size="sm">Cancelar</Button></div>
-      </ErpDataDialogBody>
-    </ErpDataDialog>
-  )
 }
 
 function Totals({ header, lines, supplier }: {
@@ -207,7 +169,7 @@ function CreateDraft({ defaults, warehouse, usedDefaultWarehouse, onClose, onCre
       }}
     />
     {windows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}>
-      <SupplierPicker initial={window.payload} onClose={() => closeWindow(window.id)} onSelect={(selected) => {
+      <PurchaseOrderSupplierPicker description={title} initial={window.payload} onClose={() => closeWindow(window.id)} onSelect={(selected) => {
         selectSupplier(selected); closeWindow(window.id)
       }} />
     </DesktopWindowIdentity>)}

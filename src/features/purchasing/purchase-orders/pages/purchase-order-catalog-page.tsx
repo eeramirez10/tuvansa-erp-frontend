@@ -19,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { title: string; message: string; error?: boolean }
-type PurchaseOrderActionWindow = { purchaseOrder: PurchaseOrder; action: PurchaseOrderAction; confirmation?: PurchaseOrderConfirmationMode }
+type PurchaseOrderActionWindow = { purchaseOrder: PurchaseOrder; action: PurchaseOrderAction; confirmation?: PurchaseOrderConfirmationMode; markedOnly?: boolean }
 
 export function PurchaseOrderCatalogPage() {
   const id = Number(useParams().purchaseOrderId)
@@ -80,8 +80,9 @@ export function PurchaseOrderCatalogPage() {
       />
       <aside>{purchaseOrder && <PurchaseOrderActionButtons actions={purchaseOrderActions} onSelect={(action, shift) => {
         const confirmation = action.key === "confirm-all" && shift ? "unconfirm" : undefined
-        const windowId = `purchase-orders:${purchaseOrder.id}:${action.key}${confirmation ? ":unconfirm" : ""}`
-        openActionWindow(windowId, { purchaseOrder, action, confirmation })
+        const markedOnly = action.key === "duplicate" && shift
+        const windowId = `purchase-orders:${purchaseOrder.id}:${action.key}${confirmation ? ":unconfirm" : markedOnly ? ":marked" : ""}`
+        openActionWindow(windowId, { purchaseOrder, action, confirmation, markedOnly })
       }} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
@@ -100,6 +101,8 @@ export function PurchaseOrderCatalogPage() {
       /></DesktopWindowIdentity>)}
       {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderActionDialog action={window.payload.action}
         confirmation={window.payload.confirmation} onClose={() => closeActionWindow(window.id)} purchaseOrder={window.payload.purchaseOrder}
+        markedOnly={window.payload.markedOnly}
+        onOrderCreated={(order) => { closeActionWindow(window.id); setNotice(null); openPurchaseOrder(order) }}
       /></DesktopWindowIdentity>)}
       {editWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderEditDialog id={window.payload} onClose={() => closeEditWindow(window.id)} /></DesktopWindowIdentity>)}
       {removalWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderRemovalDialog
