@@ -14,6 +14,6 @@ export const purchaseReceptionActions: readonly PurchaseReceptionAction[] = [
   { key: "ticket-to-invoice", label: "Tiket > Factura" },
   { key: "transfer", label: "Traspaso" },
   { key: "customs-report", label: "Reporte pedimento" },
-  { key: "customs-entry", label: "Pedimento" },
+  { key: "customs-entry", label: "Pedimento", panelKey: "pedimento" },
   { key: "edit-pieces", label: "Edita pzas" },
 ]

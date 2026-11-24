@@ -71,16 +71,68 @@ function Classifications({ reception, panel }: { reception: PurchaseReception; p
   )
 }
 
+function Pedimento({ panel }: { panel: PurchaseReceptionPanel }) {
+  const { summary, items } = panel
+  const data: [string, string][] = summary ? [
+    ["No. Pedimento", text(summary.number)],
+    ["Fecha", text(summary.date)],
+    ["Aduana", text(summary.customsOffice)],
+    ["Incrementables", money(summary.incrementables)],
+  ] : []
+  return (
+    <div className="grid gap-2">
+      {summary ? (
+        <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1">
+          {data.map(([label, value]) => <div className="contents" key={label}>
+            <dt className="font-medium">{label}</dt><dd>{value || "—"}</dd>
+          </div>)}
+        </dl>
+      ) : <p className="text-muted-foreground">Sin pedimento registrado.</p>}
+      {items.length > 0 && (
+        <section aria-label="Cargos de importación" className="grid gap-1">
+          <p className="font-medium">Cargos de importación</p>
+          <ErpDataTableViewport axes="xy" className="max-h-48">
+            <Table className="min-w-[32rem] text-[9px]">
+              <TableHeader><TableRow>
+                {["Documento", "Proveedor", "Moneda", "Cargo", "Abonos", "Saldo", "Póliza"].map((column) => (
+                  <TableHead className="h-5 px-1 text-[9px]" key={column}>{column}</TableHead>
+                ))}
+              </TableRow></TableHeader>
+              <TableBody>{items.map((row) => (
+                <TableRow key={text(row.id)}>
+                  <TableCell className="px-1 py-0.5">
+                    {typeof row.id === "number" ? <Link className="text-primary underline" to={paths.purchaseReception(row.id)}>
+                      {text(row.number)}
+                    </Link> : text(row.number)}
+                  </TableCell>
+                  <TableCell className="px-1 py-0.5">{text(row.supplierCode)} {text(row.supplierName)}</TableCell>
+                  <TableCell className="px-1 py-0.5">{row.currencyId === 1 ? "MXN" : row.currencyId === 2 ? "USD" : text(row.currencyId)}</TableCell>
+                  <TableCell className="px-1 py-0.5 text-right">{money(row.charge)}</TableCell>
+                  <TableCell className="px-1 py-0.5 text-right">{row.paid === undefined ? "—" : money(row.paid)}</TableCell>
+                  <TableCell className="px-1 py-0.5 text-right">{money(row.balance)}</TableCell>
+                  <TableCell className="px-1 py-0.5">{text(row.policyNumber) || "—"}</TableCell>
+                </TableRow>
+              ))}</TableBody>
+            </Table>
+          </ErpDataTableViewport>
+        </section>
+      )}
+    </div>
+  )
+}
+
 function ReadPanel({ reception, action, onClose }: { reception: PurchaseReception; action: PurchaseReceptionAction; onClose: () => void }) {
   const query = useQuery(purchaseReceptionPanelQueryOptions(reception.id, action.panelKey!))
   const panel = query.data
+  const title = action.key === "auxiliary" ? "Auxiliar del documento" : action.key === "classifications" ? "Clasificadores" : action.label
   return (
-    <ErpDataDialog className="sm:max-w-[38rem]" description={`${action.label} de ${reception.number}`} onOpenChange={(open) => !open && onClose()} title={action.key === "auxiliary" ? "Auxiliar del documento" : "Clasificadores"}>
+    <ErpDataDialog className="sm:max-w-[38rem]" description={`${action.label} de ${reception.number}`} onOpenChange={(open) => !open && onClose()} title={title}>
       <ErpDataDialogBody className="grid gap-1.5">
         {query.isPending && <div className="grid min-h-48 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive"><AlertTitle>No fue posible cargar</AlertTitle><AlertDescription>Revise la conexión con la API.</AlertDescription></Alert>}
         {panel && action.key === "auxiliary" && <Auxiliary panel={panel} />}
         {panel && action.key === "classifications" && <Classifications panel={panel} reception={reception} />}
+        {panel && action.key === "customs-entry" && <Pedimento panel={panel} />}
         <footer className="flex justify-end"><Button onClick={onClose} size="sm">Cerrar</Button></footer>
       </ErpDataDialogBody>
     </ErpDataDialog>

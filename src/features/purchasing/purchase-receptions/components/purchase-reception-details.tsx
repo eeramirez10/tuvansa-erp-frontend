@@ -101,7 +101,10 @@ export function PurchaseReceptionDetails({ reception, onCancel }: { reception: P
           <Field className="col-span-2" label="Documento" fieldValue={reception.number} />
           <Field className="col-span-2" label="Pedido" fieldValue={reception.orderNumber} />
           <Field className="col-span-2" label="Referencia" fieldValue={reception.supplierReference} />
-          <div className="col-span-6" />
+          {reception.pedimento ? <>
+            <Field className="col-span-3" label="No. Pedimento" fieldValue={reception.pedimento.number} />
+            <div className="col-span-3" />
+          </> : <div className="col-span-6" />}
           <Field className="col-span-2" label="Proveedor" fieldValue={reception.supplier.code} />
           <Field className="col-span-5" label="Nombre" fieldValue={reception.supplier.name} />
           <Field className="col-span-2" label="Departamento" fieldValue={reception.department} />

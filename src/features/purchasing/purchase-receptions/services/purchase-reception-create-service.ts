@@ -1,4 +1,4 @@
-import type { PurchaseReception } from "@/features/purchasing/purchase-receptions/model"
+import type { PurchaseReception, PurchaseReceptionPedimento } from "@/features/purchasing/purchase-receptions/model"
 import { apiClient } from "@/shared/api/api-client"
 
 export type PurchaseReceptionCreateLine = {
@@ -26,6 +26,7 @@ export type PurchaseReceptionCreatePreview = {
   warehouses: Array<{ code: string; name: string }>
   lines: PurchaseReceptionCreateLine[]
   canRetireCompletedOrder: boolean
+  pedimentoAvailable?: boolean
 }
 
 export type PurchaseReceptionCreateInput = Pick<PurchaseReceptionCreatePreview, "revision" | "legacyVersion"> & {
@@ -35,6 +36,7 @@ export type PurchaseReceptionCreateInput = Pick<PurchaseReceptionCreatePreview, 
   warehouse: string
   supplierReference: string
   lines: Array<{ orderLineId: number; quantity: number }>
+  pedimento?: PurchaseReceptionPedimento
 }
 
 type PurchaseReceptionCreateResult = {

@@ -36,6 +36,8 @@ type CreateDraftInput = Omit<PurchaseReceptionCreateInput, "requestKey">
 const fieldClass = "h-6 min-w-0 rounded-sm px-1 text-[10px]"
 const quantityFormat = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 3 })
 const normalizeFolio = (value: string) => value.trim().toUpperCase()
+const moneyPattern = /^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})$/
+const maximumIncrementables = 999999999999.99
 
 function draftSchema(preview: PurchaseReceptionCreatePreview) {
   return z.object({
@@ -45,8 +47,40 @@ function draftSchema(preview: PurchaseReceptionCreatePreview) {
       { error: "Selecciona un almacén." },
     ),
     supplierReference: z.string().trim().max(30, "La referencia admite hasta 30 caracteres."),
+    includePedimento: z.boolean(),
+    pedimento: z.object({
+      number: z.string().trim(),
+      date: z.string(),
+      customsOffice: z.string().trim(),
+      incrementables: z.string().trim(),
+    }),
     lines: z.array(z.object({ selected: z.boolean(), quantity: z.string() })),
-  }).superRefine(({ lines }, context) => {
+  }).superRefine(({ includePedimento, pedimento, lines }, context) => {
+    if (preview.pedimentoAvailable && includePedimento) {
+      if (pedimento.number.length < 1 || pedimento.number.length > 15) {
+        context.addIssue({
+          code: "custom", path: ["pedimento", "number"], message: "Captura un número de pedimento de 1 a 15 caracteres.",
+        })
+      }
+      if (pedimento.date && !z.iso.date().safeParse(pedimento.date).success) {
+        context.addIssue({
+          code: "custom", path: ["pedimento", "date"], message: "Captura una fecha válida.",
+        })
+      }
+      if (pedimento.customsOffice.length > 25) {
+        context.addIssue({
+          code: "custom", path: ["pedimento", "customsOffice"], message: "La aduana admite hasta 25 caracteres.",
+        })
+      }
+      if (pedimento.incrementables && (!moneyPattern.test(pedimento.incrementables)
+        || Number(pedimento.incrementables) > maximumIncrementables)) {
+        context.addIssue({
+          code: "custom",
+          path: ["pedimento", "incrementables"],
+          message: "Captura un importe de 0 a 999,999,999,999.99 con hasta 2 decimales.",
+        })
+      }
+    }
     if (!lines.some(({ selected }) => selected)) {
       context.addIssue({ code: "custom", path: ["root"], message: "Selecciona al menos una partida." })
     }
@@ -77,12 +111,15 @@ function PurchaseReceptionCreateDraft({ preview, saving, onSubmit, onClose }: {
       receivedAt: preview.defaults.receivedAt.slice(0, 10),
       warehouse: preview.defaults.warehouse,
       supplierReference: "",
+      includePedimento: false,
+      pedimento: { number: "", date: "", customsOffice: "", incrementables: "" },
       lines: preview.lines.map(({ suggested }) => ({
         selected: suggested > 0,
         quantity: suggested > 0 ? String(suggested) : "",
       })),
     },
   })
+  const includePedimento = useWatch({ control, name: "includePedimento" })
   const lines = useWatch({ control, name: "lines" })
   const selectedCount = lines.filter(({ selected }) => selected).length
   const allSelected = selectedCount === lines.length
@@ -95,6 +132,14 @@ function PurchaseReceptionCreateDraft({ preview, saving, onSubmit, onClose }: {
       receivedAt: values.receivedAt,
       warehouse: values.warehouse,
       supplierReference: values.supplierReference,
+      ...(preview.pedimentoAvailable && values.includePedimento && {
+        pedimento: {
+          number: values.pedimento.number,
+          date: values.pedimento.date || null,
+          customsOffice: values.pedimento.customsOffice,
+          incrementables: Number(values.pedimento.incrementables),
+        },
+      }),
       lines: preview.lines.flatMap(({ orderLineId }, index) => values.lines[index].selected
         ? [{ orderLineId, quantity: Number(values.lines[index].quantity) }]
         : []),
@@ -120,6 +165,68 @@ function PurchaseReceptionCreateDraft({ preview, saving, onSubmit, onClose }: {
             {errors.supplierReference && <span className="text-destructive" role="alert">{errors.supplierReference.message}</span>}
           </label>
         </div>
+
+        {preview.pedimentoAvailable && (
+          <div className="grid gap-1.5">
+            <label className="flex w-fit items-center gap-1.5">
+              <Checkbox
+                aria-label="Capturar datos de importación"
+                checked={includePedimento}
+                disabled={saving}
+                onCheckedChange={(checked) => setValue("includePedimento", checked === true)}
+              />
+              <span>Capturar datos de importación</span>
+            </label>
+            {includePedimento && (
+              <fieldset className="grid min-w-0 gap-1.5 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)_7rem]">
+                <legend className="sr-only">Datos de importación</legend>
+                <label className="grid min-w-0 content-start gap-0.5">
+                  <span>No. Pedimento</span>
+                  <Input
+                    aria-invalid={Boolean(errors.pedimento?.number)}
+                    className={fieldClass}
+                    maxLength={15}
+                    {...register("pedimento.number")}
+                  />
+                  {errors.pedimento?.number && <span className="text-destructive" role="alert">{errors.pedimento.number.message}</span>}
+                </label>
+                <label className="grid min-w-0 content-start gap-0.5">
+                  <span>Fecha</span>
+                  <Input
+                    aria-invalid={Boolean(errors.pedimento?.date)}
+                    className={fieldClass}
+                    type="date"
+                    {...register("pedimento.date")}
+                  />
+                  {errors.pedimento?.date && <span className="text-destructive" role="alert">{errors.pedimento.date.message}</span>}
+                </label>
+                <label className="grid min-w-0 content-start gap-0.5">
+                  <span>Aduana</span>
+                  <Input
+                    aria-invalid={Boolean(errors.pedimento?.customsOffice)}
+                    className={fieldClass}
+                    maxLength={25}
+                    {...register("pedimento.customsOffice")}
+                  />
+                  {errors.pedimento?.customsOffice && <span className="text-destructive" role="alert">{errors.pedimento.customsOffice.message}</span>}
+                </label>
+                <label className="grid min-w-0 content-start gap-0.5">
+                  <span>Incrementables (MXN)</span>
+                  <Input
+                    aria-invalid={Boolean(errors.pedimento?.incrementables)}
+                    className={fieldClass + " text-right tabular-nums"}
+                    max={maximumIncrementables}
+                    min={0}
+                    step={0.01}
+                    type="number"
+                    {...register("pedimento.incrementables")}
+                  />
+                  {errors.pedimento?.incrementables && <span className="text-destructive" role="alert">{errors.pedimento.incrementables.message}</span>}
+                </label>
+              </fieldset>
+            )}
+          </div>
+        )}
 
         <ErpDataTableViewport axes="xy" className="max-h-[50vh]">
           <Table className="min-w-[33rem] text-[10px]">

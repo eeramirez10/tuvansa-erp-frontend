@@ -539,10 +539,14 @@ El mismo identificador permite consultar el saldo y los movimientos en
 **Inventarios → Lotes**. **Cancelar recepción** explica si falta saldo en la
 capa de origen y actualiza los paneles al confirmar.
 
+La ficha web muestra el número de pedimento capturado. **Pedimento** permite consultar
+la fecha, la aduana, los incrementables y los cargos IMPORT históricos vinculados por folio.
+
 | Vista o botón | Endpoint relativo a `/api/purchasing/purchase-receptions` |
 | --- | --- |
 | Nueva recepción / Buscar orden | `GET /create?orderNumber=…` |
 | Nueva recepción / OK | `POST /` |
+| Nueva recepción / Capturar datos de importación | `GET /create` habilita la captura por `pedimentoAvailable`. `POST /` acepta `pedimento` con número, fecha, aduana e incrementables |
 | Gastos múltiples | `GET /general-expenses/create` |
 | Código proveedor / gasto | `GET /general-expenses/catalog?supplierCode=…&productCode=…` |
 | Gastos múltiples / OK | `POST /general-expenses` |
@@ -550,6 +554,7 @@ capa de origen y actualiza los paneles al confirmar.
 | Cancelar recepción RW o RA histórica habilitada | `GET y POST /:id/actions/cancel-reception` |
 | Ficha y partidas | `GET /:purchaseReceptionId` |
 | Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
+| Pedimento | `GET /:purchaseReceptionId/actions/pedimento` |
 
 **Gastos múltiples** permite capturar partidas por proveedor y referencia,
 IVA, retenciones y centro de costo. La confirmación enlaza los documentos

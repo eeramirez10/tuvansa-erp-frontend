@@ -2,6 +2,13 @@ import type { PostingReversal } from "@/features/accounts-payable/posting-revers
 
 export type PurchaseReceptionCancellationKind = "expense" | "reception"
 
+export type PurchaseReceptionPedimento = {
+  number: string
+  date: string | null
+  customsOffice: string
+  incrementables: number
+}
+
 export type PurchaseReceptionLine = {
   id: number
   productId: number
@@ -34,6 +41,7 @@ export type PurchaseReception = {
   status: string
   cancelled: boolean
   cancellationAvailable?: boolean
+  pedimento?: PurchaseReceptionPedimento
   cancellation?: PostingReversal | null
   dates: { receivedAt: string | null; dueAt: string | null; orderedAt: string | null }
   delayDays: number
@@ -64,14 +72,14 @@ export type PurchaseReceptionSearchResponse = {
   pagination: { page: number; pageSize: number; total: number; pages: number }
 }
 
-export type PurchaseReceptionPanelKey = "auxiliary" | "classifications"
+export type PurchaseReceptionPanelKey = "auxiliary" | "classifications" | "pedimento"
 
 export type PurchaseReceptionPanel = {
   purchaseReception: { id: number; number: string }
   key: PurchaseReceptionPanelKey
   section: "actions"
   button: string
-  source: "mysql"
+  source: "mysql" | "postgres"
   items: Array<Record<string, unknown>>
   summary?: Record<string, unknown>
 }

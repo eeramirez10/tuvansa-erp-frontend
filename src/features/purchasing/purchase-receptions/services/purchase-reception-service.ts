@@ -27,6 +27,7 @@ export type PurchaseReceptionSearchCriteria = {
 const panelPaths: Record<PurchaseReceptionPanelKey, string> = {
   auxiliary: "actions/auxiliary",
   classifications: "actions/classifications",
+  pedimento: "actions/pedimento",
 }
 
 export async function searchPurchaseReceptions(criteria: PurchaseReceptionSearchCriteria, signal?: AbortSignal) {
