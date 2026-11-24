@@ -3,6 +3,8 @@ import { getGeneralExpensesPreview, lookupGeneralExpensesCatalog } from "@/featu
 import type { PurchaseReceptionCancellationKind, PurchaseReceptionPanelKey } from "@/features/purchasing/purchase-receptions/model"
 import {
   getPurchaseReception,
+  getPurchaseReceptionComments,
+  getPurchaseReceptionDocumenting,
   getPurchaseReceptionPanel,
   getPurchaseReceptionPieceLine,
   searchPurchaseReceptions,
@@ -12,6 +14,8 @@ import {
 export const purchaseReceptionKeys = {
   all: ["purchasing", "purchase-receptions"] as const,
   detail: (id: number) => [...purchaseReceptionKeys.all, "detail", id] as const,
+  comments: (id: number) => [...purchaseReceptionKeys.detail(id), "comments"] as const,
+  documenting: (id: number) => [...purchaseReceptionKeys.detail(id), "documenting"] as const,
   search: (criteria: PurchaseReceptionSearchCriteria) => [...purchaseReceptionKeys.all, "search", criteria] as const,
   panel: (id: number, key: PurchaseReceptionPanelKey) => [...purchaseReceptionKeys.detail(id), "panel", key] as const,
   pieceLine: (id: number, lineId: number) => [...purchaseReceptionKeys.detail(id), "piece-line", lineId] as const,
@@ -21,6 +25,22 @@ export const purchaseReceptionKeys = {
 export const purchaseReceptionQueryOptions = (id: number) => queryOptions({
   queryKey: purchaseReceptionKeys.detail(id),
   queryFn: ({ signal }) => getPurchaseReception(id, signal),
+})
+
+export const purchaseReceptionCommentsQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseReceptionKeys.comments(id),
+  queryFn: ({ signal }) => getPurchaseReceptionComments(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  retry: false,
+})
+
+export const purchaseReceptionDocumentingQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseReceptionKeys.documenting(id),
+  queryFn: ({ signal }) => getPurchaseReceptionDocumenting(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  retry: false,
 })
 
 export const purchaseReceptionSearchQueryOptions = (criteria: PurchaseReceptionSearchCriteria) => queryOptions({

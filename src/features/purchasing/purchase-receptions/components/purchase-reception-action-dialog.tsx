@@ -15,6 +15,8 @@ import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric, ErpDataTableViewport }
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Spinner } from "@/shared/ui/spinner"
+import { PurchaseReceptionCommentsDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-comments-dialog"
+import { PurchaseReceptionDocumentDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-document-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 
 const text = (value: unknown) => value === null || value === undefined ? "" : String(value)
@@ -228,6 +230,8 @@ export function PurchaseReceptionActionDialog({ reception, action, onClose }: {
   action: PurchaseReceptionAction
   onClose: () => void
 }) {
+  if (action.key === "comments") return <PurchaseReceptionCommentsDialog reception={reception} onClose={onClose} />
+  if (action.key === "document") return <PurchaseReceptionDocumentDialog reception={reception} onClose={onClose} />
   if (action.panelKey) return <ReadPanel action={action} onClose={onClose} reception={reception} />
   return (
     <ErpDataDialog className="sm:max-w-[34rem]" description={`${action.label} de ${reception.number}`} onOpenChange={(open) => !open && onClose()} title={action.label}>

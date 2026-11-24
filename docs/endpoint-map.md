@@ -564,10 +564,16 @@ confirmada en la captura.
 | Cancelar recepción RW o RA histórica habilitada | `GET y POST /:id/actions/cancel-reception` |
 | Ficha y partidas | `GET /:purchaseReceptionId` |
 | Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
+| Comentarios / Abrir y OK | `GET/PATCH /:purchaseReceptionId/actions/comments` |
+| Documenta / Abrir y OK | `GET/POST /:purchaseReceptionId/actions/document` |
 | Pedimento | `GET /:purchaseReceptionId/actions/pedimento` |
 | Piezas | `GET /:purchaseReceptionId/actions/pieces` |
 | Alta Piezas / Edita pzas | `GET, POST y PATCH /:purchaseReceptionId/actions/pieces/lines/:lineId` |
 | Cambiar serie | `PATCH /:purchaseReceptionId/actions/pieces/:pieceId/serial` |
+
+**Comentarios** actualiza la ficha. **Documenta** reparte el cargo original en
+hasta cuatro folios con importes cuya suma coincide con el total. Al confirmar,
+el auxiliar muestra el abono DO y los folios se muestran en **Proveedores → Saldo**.
 
 **Gastos múltiples** permite capturar partidas por proveedor y referencia,
 IVA, retenciones y centro de costo. La confirmación enlaza los documentos

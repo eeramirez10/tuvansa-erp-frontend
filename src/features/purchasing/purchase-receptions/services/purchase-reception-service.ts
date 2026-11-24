@@ -2,6 +2,8 @@ import type { PostingReversal, PostingReversalInput, PostingReversalPreview } fr
 import type {
   PurchaseReception,
   PurchaseReceptionCancellationKind,
+  PurchaseReceptionComments,
+  PurchaseReceptionDocumenting,
   PurchaseReceptionPanel,
   PurchaseReceptionPanelKey,
   PurchaseReceptionPieceInput,
@@ -40,6 +42,32 @@ export async function searchPurchaseReceptions(criteria: PurchaseReceptionSearch
 
 export async function getPurchaseReception(id: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<PurchaseReception>>(`/purchasing/purchase-receptions/${id}`, { signal })
+  return response.data.data
+}
+
+const commentsPath = (id: number) => `/purchasing/purchase-receptions/${id}/actions/comments`
+
+export async function getPurchaseReceptionComments(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseReceptionComments>>(commentsPath(id), { signal })
+  return response.data.data
+}
+
+export async function savePurchaseReceptionComments(id: number, input: Pick<PurchaseReceptionComments, "fields" | "revision">) {
+  const response = await apiClient.patch<ItemResponse<PurchaseReceptionComments>>(commentsPath(id), input)
+  return response.data.data
+}
+
+const documentPath = (id: number) => `/purchasing/purchase-receptions/${id}/actions/document`
+
+export async function getPurchaseReceptionDocumenting(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseReceptionDocumenting>>(documentPath(id), { signal })
+  return response.data.data
+}
+
+export async function documentPurchaseReception(id: number, input: {
+  requestKey: string; revision: string; documents: Array<{ number: string; amount: number }>
+}) {
+  const response = await apiClient.post<ItemResponse<PurchaseReceptionDocumenting>>(documentPath(id), input)
   return response.data.data
 }
 

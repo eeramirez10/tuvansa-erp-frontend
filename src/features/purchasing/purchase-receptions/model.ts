@@ -90,6 +90,42 @@ export type PurchaseReceptionAction = {
   panelKey?: PurchaseReceptionPanelKey
 }
 
+export type PurchaseReceptionCommentsFields = {
+  dueAt: string | null
+  supplierReference: string
+  department: string
+  orderNumber: string
+  transportCode: string
+  processDate: string | null
+  otherLabel: string
+  boxes: number
+  volume: number
+  folio: string
+  folioAt: string | null
+  lines: [string, string, string, string, string]
+  amountInWords: string
+  warehouse: string
+}
+
+export type PurchaseReceptionComments = {
+  reception: { id: number; number: string; supplierCode: string }
+  fields: PurchaseReceptionCommentsFields
+  transportName: string
+  labels: [string, string, string, string, string]
+  revision: string
+  canWrite: boolean
+  reason: string | null
+}
+
+export type PurchaseReceptionDocumenting = {
+  reception: { id: number; number: string }
+  amount: number
+  revision: string
+  canWrite: boolean
+  reason: string | null
+  documents: Array<{ id: number; number: string; amount: number }>
+}
+
 export type PurchaseReceptionPieceLine = {
   lineId: number
   productCode: string
