@@ -8,11 +8,12 @@ import { PurchaseReceptionActionButtons } from "@/features/purchasing/purchase-r
 import { PurchaseReceptionActionDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-action-dialog"
 import { PurchaseReceptionCreateDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-create-dialog"
 import { PurchaseReceptionDetails } from "@/features/purchasing/purchase-receptions/components/purchase-reception-details"
+import { PurchaseReceptionPieceLineDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-piece-line-dialog"
 import { PurchaseReceptionSearchDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-search-dialog"
 import { PurchaseReceptionToolbar } from "@/features/purchasing/purchase-receptions/components/purchase-reception-toolbar"
 import { purchaseReceptionActions } from "@/features/purchasing/purchase-receptions/constants"
 import { purchaseReceptionKeys, purchaseReceptionQueryOptions } from "@/features/purchasing/purchase-receptions/logic"
-import type { PurchaseReception, PurchaseReceptionAction, PurchaseReceptionCancellationKind } from "@/features/purchasing/purchase-receptions/model"
+import type { PurchaseReception, PurchaseReceptionAction, PurchaseReceptionCancellationKind, PurchaseReceptionLine } from "@/features/purchasing/purchase-receptions/model"
 import {
   cancelPurchaseReception,
   getAdjacentPurchaseReception,
@@ -23,7 +24,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { title: string; message: string; error?: boolean }
-type PurchaseReceptionActionWindow = { reception: PurchaseReception; action: PurchaseReceptionAction }
+type PurchaseReceptionActionWindow = { reception: PurchaseReception; action: PurchaseReceptionAction; line?: PurchaseReceptionLine }
 type CancellationWindow = { id: number; kind: PurchaseReceptionCancellationKind }
 
 function cancellationKind(reception: PurchaseReception): PurchaseReceptionCancellationKind | null {
@@ -42,10 +43,23 @@ export function PurchaseReceptionCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [generalExpensesOpen, setGeneralExpensesOpen] = useState(false)
+  const [lineSelection, setLineSelection] = useState<{ receiptId: number; lineId: number } | null>(null)
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseReceptionActionWindow>()
   const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<CancellationWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
   const kind = reception ? cancellationKind(reception) : null
+  const selectLine = reception && !reception.cancelled && /^R[AW]\d/.test(reception.number) && reception.lines.length > 0
+  const selectedLine = selectLine && lineSelection?.receiptId === reception.id
+    ? reception.lines.find((line) => line.id === lineSelection.lineId)
+    : undefined
+
+  const openAction = (document: PurchaseReception, action: PurchaseReceptionAction) => {
+    const needsLine = action.key === "add-pieces" || action.key === "edit-pieces"
+    if (needsLine && !selectedLine) return
+    const line = needsLine ? selectedLine : undefined
+    const lineKey = line ? `:${line.id}` : ""
+    openActionWindow(`purchase-receptions:${document.id}:${action.key}${lineKey}`, { reception: document, action, line })
+  }
 
   const openReception = (next: PurchaseReception) => {
     queryClient.setQueryData(purchaseReceptionKeys.detail(next.id), next)
@@ -72,14 +86,17 @@ export function PurchaseReceptionCatalogPage() {
         onSearch={() => setSearchOpen(true)}
       />
       <aside>{reception && <PurchaseReceptionActionButtons actions={purchaseReceptionActions}
-        onSelect={(action) => openActionWindow(`purchase-receptions:${reception.id}:${action.key}`, { reception, action })} />}</aside>
+        canSelectLine={Boolean(selectLine)} hasSelectedLine={Boolean(selectedLine)}
+        onSelect={(action) => openAction(reception, action)} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
         {reception && <PurchaseReceptionDetails
           onCancel={kind
             ? () => openCancellation(`purchase-receptions:${reception.id}:cancel-${kind}`, { id: reception.id, kind })
             : undefined}
+          onSelectLine={selectLine ? (lineId) => setLineSelection({ receiptId: reception.id, lineId }) : undefined}
           reception={reception}
+          selectedLineId={selectedLine?.id}
         />}
       </section>
 
@@ -111,7 +128,14 @@ export function PurchaseReceptionCatalogPage() {
           />
         </DesktopWindowIdentity>
       ))}
-      {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseReceptionActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} reception={window.payload.reception} /></DesktopWindowIdentity>)}
+      {actionWindows.map(({ id: windowId, payload: { action, line, reception: document } }) => (
+        <DesktopWindowIdentity id={windowId} key={windowId}>
+          {line && (action.key === "add-pieces" || action.key === "edit-pieces")
+            ? <PurchaseReceptionPieceLineDialog line={line} mode={action.key === "add-pieces" ? "add" : "edit"}
+                onClose={() => closeActionWindow(windowId)} reception={document} />
+            : <PurchaseReceptionActionDialog action={action} onClose={() => closeActionWindow(windowId)} reception={document} />}
+        </DesktopWindowIdentity>
+      ))}
     </main>
   )
 }

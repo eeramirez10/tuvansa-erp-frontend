@@ -1,11 +1,17 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState, type FormEvent } from "react"
 import { Link } from "react-router"
 import { paths } from "@/app/router/paths"
-import { purchaseReceptionPanelQueryOptions } from "@/features/purchasing/purchase-receptions/logic"
+import { ProductQueryTable } from "@/features/inventories/products/components/product-query-table"
+import { productKeys } from "@/features/inventories/products/logic"
+import { formatDate, formatNumber, numberValue, type QueryColumn } from "@/features/inventories/products/query-formatters"
+import { purchaseReceptionKeys, purchaseReceptionPanelQueryOptions } from "@/features/purchasing/purchase-receptions/logic"
 import type { PurchaseReception, PurchaseReceptionAction, PurchaseReceptionPanel } from "@/features/purchasing/purchase-receptions/model"
+import { renamePurchaseReceptionPiece } from "@/features/purchasing/purchase-receptions/services/purchase-reception-service"
+import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
-import { ErpDataDialog, ErpDataDialogBody, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
+import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Spinner } from "@/shared/ui/spinner"
@@ -121,18 +127,96 @@ function Pedimento({ panel }: { panel: PurchaseReceptionPanel }) {
   )
 }
 
+const pieceColumns: QueryColumn[] = [
+  { key: "productCode", label: "Código", width: "7rem" },
+  { key: "serialNumber", label: "Número", width: "8rem" },
+  { key: "pieces", label: "Pzas.", width: "3.5rem", align: "right", render: (row) => formatNumber(row.pieces) },
+  { key: "quantity", label: "Cantidad", align: "right", render: (row) => formatNumber(row.quantity) },
+  { key: "warehouse", label: "Alm.", width: "3rem" },
+  { key: "orderNumber", label: "Pedido", width: "6rem" },
+  { key: "reference", label: "Refer.", width: "7rem" },
+  { key: "date", label: "Alta", render: (row) => formatDate(row.date) },
+  { key: "receiptNumber", label: "Recepción", width: "7rem" },
+  { key: "invoiceNumber", label: "Factura", width: "7rem" },
+  { key: "customsEntry", label: "Pedimento", width: "8rem" },
+  { key: "importDate", label: "Fecha", render: (row) => formatDate(row.importDate) },
+  { key: "customsOffice", label: "Aduana", width: "5rem" },
+  { key: "notes", label: "Obs.", width: "10rem" },
+]
+
+function Pieces({ panel, reception }: { panel: PurchaseReceptionPanel; reception: PurchaseReception }) {
+  const queryClient = useQueryClient()
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [filteredCode, setFilteredCode] = useState<string | null>(null)
+  const [editing, setEditing] = useState<{ id: number; productId: number; previousSerial: string } | null>(null)
+  const rows = filteredCode === null ? panel.items : panel.items.filter((row) => row.productCode === filteredCode)
+  const selected = rows.find((row) => Number(row.id) === selectedId)
+  const selectedCode = selected ? text(selected.productCode) : null
+  const canRename = selected && selected.serialEditable !== false && !reception.cancelled && /^R[AW]\d/.test(reception.number)
+  const totals = rows.reduce<{ pieces: number; quantity: number }>((total, row) => ({
+    pieces: total.pieces + numberValue(row.pieces),
+    quantity: total.quantity + numberValue(row.quantity),
+  }), { pieces: 0, quantity: 0 })
+  const save = useMutation({
+    mutationFn: ({ id, serial, previousSerial }: { id: number; productId: number; serial: string; previousSerial: string }) =>
+      renamePurchaseReceptionPiece(reception.id, id, { serial, previousSerial }),
+    onSuccess: async (_, { productId }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: purchaseReceptionKeys.panel(reception.id, "pieces") }),
+        productId > 0 && queryClient.invalidateQueries({ queryKey: productKeys.panel(productId, "fulfilled-pieces") }),
+      ])
+      setEditing(null)
+    },
+  })
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!editing || save.isPending) return
+    const serial = String(new FormData(event.currentTarget).get("serial") ?? "").trim()
+    if (serial && serial !== editing.previousSerial) save.mutate({ ...editing, serial })
+  }
+  return (
+    <>
+      <ProductQueryTable className="h-[min(52vh,23rem)]" columns={pieceColumns}
+        emptyMessage="Sin piezas físicas registradas para esta recepción." rows={rows} tableClassName="w-[79rem]"
+        selection={{ id: selectedId, column: "serialNumber", label: (row) => `Seleccionar pieza ${text(row.serialNumber)}`,
+          onSelect: (id) => { if (!editing) setSelectedId(id) } }} />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button disabled={selectedCode === null || selectedCode === filteredCode || Boolean(editing)}
+          onClick={() => setFilteredCode(selectedCode)} size="xs" type="button" variant="outline">Filtrar producto</Button>
+        <ErpDataMetric label="Pzas." value={formatNumber(totals.pieces)} />
+        <ErpDataMetric label="Cantidad" value={formatNumber(totals.quantity)} />
+        {editing ? (
+          <form className="flex items-center gap-1" onSubmit={submit}>
+            <Input aria-label="Número de serie" autoFocus className="h-6 w-36" defaultValue={editing.previousSerial}
+              disabled={save.isPending} maxLength={30} name="serial" required />
+            <Button disabled={save.isPending} size="xs" type="submit">OK</Button>
+            <Button disabled={save.isPending} onClick={() => { save.reset(); setEditing(null) }} size="xs" type="button" variant="outline">Cancelar</Button>
+          </form>
+        ) : (
+          <Button disabled={!canRename} onClick={() => {
+            if (selected) setEditing({ id: Number(selected.id), productId: Number(selected.productId), previousSerial: text(selected.serialNumber) })
+          }} size="xs" type="button" variant="outline">Cambiar serie</Button>
+        )}
+      </div>
+      {save.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(save.error)}</AlertDescription></Alert>}
+    </>
+  )
+}
+
 function ReadPanel({ reception, action, onClose }: { reception: PurchaseReception; action: PurchaseReceptionAction; onClose: () => void }) {
   const query = useQuery(purchaseReceptionPanelQueryOptions(reception.id, action.panelKey!))
   const panel = query.data
   const title = action.key === "auxiliary" ? "Auxiliar del documento" : action.key === "classifications" ? "Clasificadores" : action.label
   return (
-    <ErpDataDialog className="sm:max-w-[38rem]" description={`${action.label} de ${reception.number}`} onOpenChange={(open) => !open && onClose()} title={title}>
+    <ErpDataDialog defaultWidth={action.key === "pieces" ? 960 : undefined} className={action.key === "pieces" ? "sm:max-w-[68rem]" : "sm:max-w-[38rem]"}
+      description={`${action.label} de ${reception.number}`} onOpenChange={(open) => !open && onClose()} title={title}>
       <ErpDataDialogBody className="grid gap-1.5">
         {query.isPending && <div className="grid min-h-48 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive"><AlertTitle>No fue posible cargar</AlertTitle><AlertDescription>Revise la conexión con la API.</AlertDescription></Alert>}
         {panel && action.key === "auxiliary" && <Auxiliary panel={panel} />}
         {panel && action.key === "classifications" && <Classifications panel={panel} reception={reception} />}
         {panel && action.key === "customs-entry" && <Pedimento panel={panel} />}
+        {panel && action.key === "pieces" && <Pieces panel={panel} reception={reception} />}
         <footer className="flex justify-end"><Button onClick={onClose} size="sm">Cerrar</Button></footer>
       </ErpDataDialogBody>
     </ErpDataDialog>

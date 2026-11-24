@@ -36,7 +36,12 @@ function CancellationControl({ reception, expense, onOpen }: { reception: Purcha
   )
 }
 
-export function PurchaseReceptionDetails({ reception, onCancel }: { reception: PurchaseReception; onCancel?: () => void }) {
+export function PurchaseReceptionDetails({ reception, onCancel, selectedLineId, onSelectLine }: {
+  reception: PurchaseReception
+  onCancel?: () => void
+  selectedLineId?: number
+  onSelectLine?: (lineId: number) => void
+}) {
   const hasLayers = reception.lines.some(({ lotId }) => lotId > 0)
   const expenseTaxes = reception.totals.expenseTaxes
   if (expenseTaxes) {
@@ -129,8 +134,13 @@ export function PurchaseReceptionDetails({ reception, onCancel }: { reception: P
               </TableRow></TableHeader>
               <TableBody>
                 {reception.lines.map((line) => (
-                  <TableRow key={line.id}>
-                    <TableCell className="px-1 py-0.5 font-mono">{line.productCode}</TableCell>
+                  <TableRow className={onSelectLine ? "cursor-pointer" : undefined} data-state={line.id === selectedLineId ? "selected" : undefined}
+                    key={line.id} onClick={onSelectLine ? () => onSelectLine(line.id) : undefined}>
+                    <TableCell className="px-1 py-0.5 font-mono">
+                      {onSelectLine ? <Button aria-label={`Seleccionar partida ${line.productCode}`} aria-pressed={line.id === selectedLineId}
+                        className="h-4 px-0 font-mono text-[9px]" size="xs" type="button" variant="ghost">{line.productCode}</Button>
+                        : line.productCode}
+                    </TableCell>
                     <TableCell className="max-w-[310px] truncate px-1 py-0.5">{line.description}</TableCell>
                     <TableCell className="px-1 py-0.5 text-right">{number.format(line.quantity)}</TableCell>
                     <TableCell className="px-1 py-0.5">{line.unit}</TableCell>

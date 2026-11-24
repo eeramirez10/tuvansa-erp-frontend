@@ -542,6 +542,11 @@ capa de origen y actualiza los paneles al confirmar.
 La ficha web muestra el número de pedimento capturado. **Pedimento** permite consultar
 la fecha, la aduana, los incrementables y los cargos IMPORT históricos vinculados por folio.
 
+Selecciona una partida de una recepción vigente para usar **Alta Piezas** o
+**Edita pzas**. **Piezas** muestra las series enlazadas, permite filtrar por
+el producto seleccionado y cambiar la serie de una fila. En **Inventarios →
+Piezas surtidas**, la columna **Recepción** muestra el folio.
+
 | Vista o botón | Endpoint relativo a `/api/purchasing/purchase-receptions` |
 | --- | --- |
 | Nueva recepción / Buscar orden | `GET /create?orderNumber=…` |
@@ -555,6 +560,9 @@ la fecha, la aduana, los incrementables y los cargos IMPORT históricos vinculad
 | Ficha y partidas | `GET /:purchaseReceptionId` |
 | Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
 | Pedimento | `GET /:purchaseReceptionId/actions/pedimento` |
+| Piezas | `GET /:purchaseReceptionId/actions/pieces` |
+| Alta Piezas / Edita pzas | `GET, POST y PATCH /:purchaseReceptionId/actions/pieces/lines/:lineId` |
+| Cambiar serie | `PATCH /:purchaseReceptionId/actions/pieces/:pieceId/serial` |
 
 **Gastos múltiples** permite capturar partidas por proveedor y referencia,
 IVA, retenciones y centro de costo. La confirmación enlaza los documentos

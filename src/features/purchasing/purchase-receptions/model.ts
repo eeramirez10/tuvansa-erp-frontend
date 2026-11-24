@@ -72,7 +72,7 @@ export type PurchaseReceptionSearchResponse = {
   pagination: { page: number; pageSize: number; total: number; pages: number }
 }
 
-export type PurchaseReceptionPanelKey = "auxiliary" | "classifications" | "pedimento"
+export type PurchaseReceptionPanelKey = "auxiliary" | "classifications" | "pedimento" | "pieces"
 
 export type PurchaseReceptionPanel = {
   purchaseReception: { id: number; number: string }
@@ -88,6 +88,28 @@ export type PurchaseReceptionAction = {
   key: string
   label: string
   panelKey?: PurchaseReceptionPanelKey
+}
+
+export type PurchaseReceptionPieceLine = {
+  lineId: number
+  productCode: string
+  description: string
+  pieces: string
+  remaining: number
+  suggestedSerial: string
+  canAdd: boolean
+  addReason: string | null
+  canEdit: boolean
+  editReason: string | null
+  revision: string
+}
+
+export type PurchaseReceptionPieceInput = {
+  serial: string
+  quantity: number
+  reference: string
+  requestKey: string
+  revision: string
 }
 
 export type GeneralExpensesTaxAccount = "vat" | "vatWithholding" | "incomeWithholding"

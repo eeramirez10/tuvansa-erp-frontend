@@ -723,8 +723,9 @@ function availablePresentation(
           numberColumn("quantity", "Cantidad"), { key: "warehouse", label: "Alm", width: "3rem" },
           { key: "inventoryDocument", label: "I.F.", width: "5rem" }, { key: "orderNumber", label: "Pedido", width: "5rem" },
           { key: "reference", label: "Refer.", width: "7rem" }, dateColumn("date", "Alta"),
-          dateColumn("receivedAt", "Recepcion"), { key: "invoiceNumber", label: "Factura", width: "6rem" },
-        ]} rows={rows} tableClassName="w-[55rem]" /><footer className="mt-1 flex items-end gap-2"><SummaryMetrics values={[sum(rows, "pieces"), sum(rows, "quantity")]} /><QueryButtons className="ml-auto" labels={["Etiqueta", "Devolucion", "Baja", "Filtrar almacen"]} /></footer></>,
+          { key: "receiptNumber", label: "Recepción", width: "6rem", render: row => textValue(row.receiptNumber ?? row.receivedAt) },
+          { key: "invoiceNumber", label: "Factura", width: "6rem" },
+        ]} emptyMessage="Sin piezas surtidas para este producto." rows={rows} tableClassName="w-[55rem]" /><footer className="mt-1 flex items-end gap-2"><SummaryMetrics values={[sum(rows, "pieces"), sum(rows, "quantity")]} /><QueryButtons className="ml-auto" labels={["Etiqueta", "Devolucion", "Baja", "Filtrar almacen"]} /></footer></>,
       }
     case "work-in-progress":
       return {

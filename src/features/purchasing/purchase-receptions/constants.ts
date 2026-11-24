@@ -10,7 +10,7 @@ export const purchaseReceptionActions: readonly PurchaseReceptionAction[] = [
   { key: "labels", label: "Etiquetas" },
   { key: "document", label: "Documenta" },
   { key: "print", label: "Imprimir" },
-  { key: "pieces", label: "Piezas" },
+  { key: "pieces", label: "Piezas", panelKey: "pieces" },
   { key: "ticket-to-invoice", label: "Tiket > Factura" },
   { key: "transfer", label: "Traspaso" },
   { key: "customs-report", label: "Reporte pedimento" },

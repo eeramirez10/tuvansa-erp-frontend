@@ -4,6 +4,8 @@ import type {
   PurchaseReceptionCancellationKind,
   PurchaseReceptionPanel,
   PurchaseReceptionPanelKey,
+  PurchaseReceptionPieceInput,
+  PurchaseReceptionPieceLine,
   PurchaseReceptionSearchResponse,
 } from "@/features/purchasing/purchase-receptions/model"
 import { apiClient } from "@/shared/api/api-client"
@@ -28,6 +30,7 @@ const panelPaths: Record<PurchaseReceptionPanelKey, string> = {
   auxiliary: "actions/auxiliary",
   classifications: "actions/classifications",
   pedimento: "actions/pedimento",
+  pieces: "actions/pieces",
 }
 
 export async function searchPurchaseReceptions(criteria: PurchaseReceptionSearchCriteria, signal?: AbortSignal) {
@@ -50,6 +53,29 @@ export async function getPurchaseReceptionPanel(id: number, key: PurchaseRecepti
     `/purchasing/purchase-receptions/${id}/${panelPaths[key]}`,
     { signal },
   )
+  return response.data.data
+}
+
+const piecePath = (id: number) => `/purchasing/purchase-receptions/${id}/actions/pieces`
+const pieceLinePath = (id: number, lineId: number) => `${piecePath(id)}/lines/${lineId}`
+
+export async function getPurchaseReceptionPieceLine(id: number, lineId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseReceptionPieceLine>>(pieceLinePath(id, lineId), { signal })
+  return response.data.data
+}
+
+export async function addPurchaseReceptionPiece(id: number, lineId: number, input: PurchaseReceptionPieceInput) {
+  const response = await apiClient.post<ItemResponse<{ serialNumber: string }>>(pieceLinePath(id, lineId), input)
+  return response.data.data
+}
+
+export async function editPurchaseReceptionLinePieces(id: number, lineId: number, input: { pieces: string; revision: string }) {
+  const response = await apiClient.patch<ItemResponse<{ pieces: string }>>(pieceLinePath(id, lineId), input)
+  return response.data.data
+}
+
+export async function renamePurchaseReceptionPiece(id: number, pieceId: number, input: { serial: string; previousSerial: string }) {
+  const response = await apiClient.patch<ItemResponse<{ serialNumber: string }>>(`${piecePath(id)}/${pieceId}/serial`, input)
   return response.data.data
 }
 
