@@ -60,6 +60,8 @@ ese importe al saldo bancario actual para mostrar el saldo proyectado.
 | --- | --- | --- | --- |
 | Conciliar | Consultar pendientes y saldo bancario actual | GET `/treasury/bank-accounts/:bankAccountId/actions/reconciliation` | `bankAccountKeys.panel(accountId, "reconciliation")` |
 | Sel. | Cambiar movimientos seleccionados y saldo proyectado | Borrador local | `bank-reconciliation-dialog.tsx` |
+| Tránsito | Marcar o desmarcar la partida resaltada | PATCH `/treasury/bank-accounts/:bankAccountId/actions/reconciliation/transit` | `bank-account-service.ts` |
+| Filtra tránsito | Mostrar sólo filas con asterisco en T | Filtro local sobre la consulta de Conciliar | `bank-reconciliation-dialog.tsx` |
 | Registrar | Guardar la conciliación cotejada con el estado de cuenta | POST en la misma ruta | `bank-account-service.ts` |
 | Actualizar pendientes | Recargar la consulta tras un conflicto | GET en la misma ruta | `bank-reconciliation-dialog.tsx` |
 | Cancelar / Escape | Descartar la selección | Sin petición de escritura | `bank-reconciliation-dialog.tsx` |
@@ -70,6 +72,11 @@ al reintentar. El saldo capturado debe coincidir al centavo con el proyectado.
 El resultado actualiza Bancos y las consultas de Contabilidad.
 **Auxiliar**, **Pagos** y **Depósitos** muestran **Fecha conc.** cuando la
 consulta devuelve una fecha de conciliación.
+
+La marca cambia **Saldo tránsito** en **Conciliar** y en la ficha bancaria.
+Las partidas marcadas se excluyen de la selección de corte y de **Concilia
+Automático**. Al quitar la marca, las partidas web pendientes vuelven a
+estar disponibles para registrar un corte.
 
 ## Cuentas por cobrar · Alta, Cambio, Baja y Bloquear clientes
 

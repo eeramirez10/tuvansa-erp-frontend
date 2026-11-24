@@ -1,6 +1,6 @@
 import type {
   BankAccount, BankAccountFormPreview, BankAccountSearchResponse, BankPanel, BankPanelKey, BankReconciliation,
-  BankReconciliationInput, BankTransfer, BankTransferInput, BankTransferPreview, CreateBankAccountInput, UpdateBankAccountInput,
+  BankReconciliationInput, BankTransfer, BankTransferInput, BankTransferPreview, BankTransitInput, CreateBankAccountInput, UpdateBankAccountInput,
 } from "@/features/treasury/banking/model"
 import { apiClient } from "@/shared/api/api-client"
 
@@ -82,6 +82,13 @@ export async function registerBankReconciliation(id: number, input: BankReconcil
   const response = await apiClient.post<ItemResponse<BankReconciliation>>(
     `/treasury/bank-accounts/${id}/${panelPaths.reconciliation}`,
     input,
+  )
+  return response.data.data
+}
+
+export async function setBankTransit(id: number, input: BankTransitInput) {
+  const response = await apiClient.patch<ItemResponse<BankTransitInput>>(
+    `/treasury/bank-accounts/${id}/actions/reconciliation/transit`, input,
   )
   return response.data.data
 }

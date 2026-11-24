@@ -34,12 +34,15 @@ function withRunningBalances(rows: Array<Record<string, unknown>>): Array<Record
   })
 }
 
-export function BankPanelTable({ columns, rows, minWidth = "min-w-[1080px]", height = "h-[24rem]", runningBalance = false }: {
+export function BankPanelTable({ columns, rows, minWidth = "min-w-[1080px]", height = "h-[24rem]", runningBalance = false,
+  onSelect, selectedId }: {
   columns: BankPanelColumn[]
   rows: Array<Record<string, unknown>>
   minWidth?: string
   height?: string
   runningBalance?: boolean
+  onSelect?: (row: Record<string, unknown>) => void
+  selectedId?: number | null
 }) {
   const displayRows = runningBalance ? withRunningBalances(rows) : rows
   return (
@@ -54,7 +57,15 @@ export function BankPanelTable({ columns, rows, minWidth = "min-w-[1080px]", hei
         </TableHeader>
         <TableBody>
           {displayRows.map((row, index) => (
-            <TableRow key={text(row.movementId ?? row.code ?? index)}>
+            <TableRow key={text(row.movementId ?? row.code ?? index)} data-state={row.movementId === selectedId ? "selected" : undefined}
+              className={onSelect ? "cursor-pointer" : undefined} tabIndex={onSelect ? 0 : undefined}
+              onClick={onSelect ? () => onSelect(row) : undefined}
+              onKeyDown={onSelect ? (event) => {
+                if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+                  event.preventDefault()
+                  onSelect(row)
+                }
+              } : undefined}>
               {columns.map((column) => (
                 <TableCell className={`whitespace-nowrap px-1 py-0.5 ${column.numeric ? "text-right tabular-nums" : ""}`} key={column.key}>
                   {cellValue(row, column)}

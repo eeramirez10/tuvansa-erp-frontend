@@ -8,8 +8,8 @@ import { z } from "zod"
 
 import { BankPanelTable, type BankPanelColumn } from "@/features/treasury/banking/components/bank-panel-table"
 import { bankAccountKeys, bankMoney, bankPanelQueryOptions } from "@/features/treasury/banking/logic"
-import type { BankAccount, BankPanel, BankReconciliationInput } from "@/features/treasury/banking/model"
-import { registerBankReconciliation } from "@/features/treasury/banking/services/bank-account-service"
+import type { BankAccount, BankPanel, BankReconciliationInput, BankTransitInput } from "@/features/treasury/banking/model"
+import { registerBankReconciliation, setBankTransit } from "@/features/treasury/banking/services/bank-account-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -29,7 +29,6 @@ const columns: BankPanelColumn[] = [
   { label: "C.C.", key: "costCenter" }, { label: "T", key: "inTransit" },
   { label: "Fecha P.", key: "postdatedAt" }, { label: "T.C.", key: "accountingType" },
 ]
-const readOnlyActions = ["Imprimir Póliza", "Imprimir Cheque", "Tránsito", "Filtra tránsito", "Detalle", "FP"]
 const mexicoDate = new Intl.DateTimeFormat("sv-SE", { dateStyle: "short", timeZone: "America/Mexico_City" })
 const fieldClass = "h-6 w-full"
 
@@ -67,16 +66,22 @@ function reconciliationSchema({ earliest, latest, projected }: { earliest: strin
   })
 }
 
-function ReconciliationDraft({ data, locked, saving, onClose, onSave }: {
+function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, onSave, onTransit }: {
   data: BankPanel
   locked: boolean
   saving: boolean
+  changingTransit: boolean
   onClose: () => void
   onSave: (input: DraftInput) => void
+  onTransit: (input: BankTransitInput) => Promise<boolean>
 }) {
   const dateId = useId()
   const balanceId = useId()
   const [selected, setSelected] = useState(new Set<number>())
+  const [focusedId, setFocusedId] = useState<number | null>(null)
+  const [transitOnly, setTransitOnly] = useState(false)
+  const rows = transitOnly ? data.items.filter((row) => row.inTransit === "*") : data.items
+  const focused = rows.find((row) => row.movementId === focusedId)
   const movements = useMemo(() => {
     const result = new Map<number, { net: number; date: string }>()
     for (const row of data.items) {
@@ -136,7 +141,9 @@ function ReconciliationDraft({ data, locked, saving, onClose, onSave }: {
         <ErpDataMetric label="Suma sel." value={displayCents(validNet ? net : null)} />
         <ErpDataMetric label="Saldo banco proyectado" value={displayCents(projected)} />
       </div>
-      <BankPanelTable columns={movements.size ? [selectionColumn, ...columns] : columns} rows={data.items} />
+      <BankPanelTable columns={movements.size ? [selectionColumn, ...columns] : columns} rows={rows}
+        onSelect={(row) => setFocusedId(typeof row.movementId === "number" ? row.movementId : null)} selectedId={focusedId} />
+      {transitOnly && rows.length === 0 && <p className="text-muted-foreground" role="status">Sin movimientos en tránsito.</p>}
       {changed && (
         <Alert><AlertDescription className="flex items-center justify-between gap-2">
           La lista de movimientos cambió. Revisa la selección.
@@ -166,10 +173,31 @@ function ReconciliationDraft({ data, locked, saving, onClose, onSave }: {
       </fieldset>
       <footer className="flex flex-wrap items-end justify-between gap-1">
         <div className="flex flex-wrap gap-1">
-          {readOnlyActions.map((label) => <Button disabled key={label} size="xs" type="button" variant="outline">{label}</Button>)}
+          <Button disabled size="xs" type="button" variant="outline">Imprimir Póliza</Button>
+          <Button disabled size="xs" type="button" variant="outline">Imprimir Cheque</Button>
+          <Button disabled={locked || focused?.canChangeTransit !== true} size="xs" type="button" variant="outline"
+            aria-pressed={focused?.inTransit === "*"} onClick={async () => {
+              if (!focused || typeof focused.movementId !== "number") return
+              const movementId = focused.movementId
+              const inTransit = focused.inTransit !== "*"
+              if (await onTransit({ movementId, inTransit }) && inTransit) {
+                setSelected((previous) => {
+                  const next = new Set(previous)
+                  next.delete(movementId)
+                  return next
+                })
+                clearErrors()
+              }
+            }}>
+            {changingTransit && <Spinner />}Tránsito
+          </Button>
+          <Button aria-pressed={transitOnly} disabled={locked} onClick={() => setTransitOnly((value) => !value)}
+            size="xs" type="button" variant="outline">Filtra tránsito</Button>
+          <Button disabled size="xs" type="button" variant="outline">Detalle</Button>
+          <Button disabled size="xs" type="button" variant="outline">FP</Button>
         </div>
         <div className="ml-auto flex gap-1">
-          <Button disabled={saving} onClick={onClose} size="sm" type="button" variant="outline">Cancelar</Button>
+          <Button disabled={saving || changingTransit} onClick={onClose} size="sm" type="button" variant="outline">Cancelar</Button>
           <Button disabled={disabled} size="sm" type="submit">{saving && <Spinner />}Registrar</Button>
         </div>
       </footer>
@@ -203,6 +231,12 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
     },
     onSettled: () => { inFlight.current = false },
   })
+  const transit = useMutation({
+    networkMode: "always",
+    mutationFn: (input: BankTransitInput) => setBankTransit(account.id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: bankAccountKeys.all }),
+    onSettled: () => { inFlight.current = false },
+  })
 
   function close() {
     if (!inFlight.current) onOpenChange(false)
@@ -211,6 +245,7 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
   function submit(input: DraftInput) {
     if (inFlight.current || query.isFetching) return
 
+    transit.reset()
     const signature = JSON.stringify(input)
     const requestKey = requestKeys.current.get(signature) ?? crypto.randomUUID()
     requestKeys.current.set(signature, requestKey)
@@ -218,8 +253,21 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
     save.mutate({ ...input, requestKey })
   }
 
+  async function changeTransit(input: BankTransitInput) {
+    if (inFlight.current || query.isFetching) return false
+    save.reset()
+    inFlight.current = true
+    try {
+      await transit.mutateAsync(input)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const ready = query.data?.available && !query.isError
-  const conflict = isAxiosError(save.error) && save.error.response?.status === 409
+  const mutationError = save.error ?? transit.error
+  const conflict = isAxiosError(mutationError) && mutationError.response?.status === 409
   return (
     <ErpDataDialog description={`Conciliar movimientos de la cuenta ${account.code}`} onOpenChange={close} title="Conciliar" tone="banking">
       <ErpDataDialogBody className="grid gap-1.5" onKeyDown={(event) => {
@@ -232,16 +280,17 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
         {query.isPending && <div className="grid min-h-64 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>}
         {query.data && !query.data.available && <Alert><AlertDescription>{query.data.reason || "Conciliación no disponible."}</AlertDescription></Alert>}
-        {save.isError && <Alert variant="destructive"><AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-          {getApiErrorMessage(save.error)}
+        {mutationError && <Alert variant="destructive"><AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+          {getApiErrorMessage(mutationError)}
           {conflict && <Button disabled={query.isFetching} onClick={() => {
             save.reset()
+            transit.reset()
             void query.refetch()
           }} size="xs" type="button" variant="outline">Actualizar pendientes</Button>}
         </AlertDescription></Alert>}
         {ready && query.data ? (
-          <ReconciliationDraft data={query.data} key={draftVersion} locked={query.isFetching || save.isPending}
-            onClose={close} onSave={submit} saving={save.isPending} />
+          <ReconciliationDraft data={query.data} key={draftVersion} locked={query.isFetching || save.isPending || transit.isPending}
+            onClose={close} onSave={submit} onTransit={changeTransit} saving={save.isPending} changingTransit={transit.isPending} />
         ) : (
           <div className="flex justify-end gap-1">
             <Button onClick={close} size="sm" type="button" variant="outline">Cancelar</Button>

@@ -108,6 +108,11 @@ export type BankReconciliationInput = {
   expectedBankBalance: number
 }
 
+export type BankTransitInput = {
+  movementId: number
+  inTransit: boolean
+}
+
 export type BankReconciliation = {
   id: number
   movementIds: number[]
