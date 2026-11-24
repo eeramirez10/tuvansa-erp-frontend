@@ -28,7 +28,7 @@ Al confirmar **Baja**, el catálogo abre su primera cuenta disponible.
 | Mayor → Iguales o Cambiar | GET y PATCH `/treasury/bank-accounts/:id/actions/general-ledger` | Revisión y doce importes del primer periodo |
 | Mayor C.C. → Iguales o Cambiar | GET y PATCH `/treasury/bank-accounts/:id/actions/cost-center-ledger?costCenter=:code` | Presupuesto por centro configurado |
 | Clasificar → Guardar Todos | GET y PATCH `/treasury/bank-accounts/:id/actions/classifiers` | Revisión y nueve valores del catálogo |
-| Revisar → Registrar | GET y PATCH `/treasury/bank-accounts/:id/actions/authorization-review` | Revisión y partidas web seleccionadas con marca `*` |
+| Revisar → Registrar | GET y PATCH `/treasury/bank-accounts/:id/actions/authorization-review` | Guarda `*` para las partidas históricas y web seleccionadas. La póliza se abre desde su número |
 | Gastos por prv. | GET `/treasury/bank-accounts/:id/actions/supplier-expenses` | Consulta Compras por proveedor y totales del auxiliar |
 | Gastos por prv. → Pagar recepción | GET `/treasury/bank-accounts/:id/actions/supplier-expenses/capture`, POST `/treasury/bank-accounts/:id/actions/supplier-expenses` | Pago por cheque de la recepción seleccionada desde la cuenta abierta |
 | Concilia Automático → Registra | GET `/treasury/bank-accounts/:id/actions/automatic-reconciliation?asOfDate=YYYY-MM-DD`, POST `/treasury/bank-accounts/:id/actions/reconciliation` | Partidas web emparejadas desde CSV o TSV y saldo de corte validado |

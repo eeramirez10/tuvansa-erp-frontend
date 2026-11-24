@@ -10,11 +10,17 @@ import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Checkbox } from "@/shared/ui/checkbox"
 
+const pageSize = 100
+
 export function BankReviewPanel({ accountId, data }: { accountId: number; data: BankPanel }) {
   const queryClient = useQueryClient()
   const [selected, setSelected] = useState(new Set<number>())
   const [showReviewed, setShowReviewed] = useState(false)
+  const [page, setPage] = useState(1)
   const rows = data.items.filter((row) => showReviewed ? row.reviewed === true : row.reviewed !== true)
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const visibleRows = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const eligible = rows.filter((row) => row.canReview === true)
   const selectedIds = eligible.flatMap((row) =>
     typeof row.movementId === "number" && selected.has(row.movementId) ? [row.movementId] : [],
@@ -23,6 +29,7 @@ export function BankReviewPanel({ accountId, data }: { accountId: number; data: 
     mutationFn: () => saveBankReview(accountId, Number(data.summary?.revision ?? 0), selectedIds),
     onSuccess: async () => {
       setSelected(new Set())
+      setPage(1)
       toast.success("Revisión registrada.")
       await queryClient.invalidateQueries({ queryKey: bankAccountKeys.all })
     },
@@ -47,13 +54,18 @@ export function BankReviewPanel({ accountId, data }: { accountId: number; data: 
       { label: "Póliza", key: "policyNumber" }, { label: "Fecha", key: "policyDate" },
       { label: "Cargos", key: "charge", numeric: true }, { label: "Abonos", key: "credit", numeric: true },
       { label: "A", key: "authorized" }, { label: "T", key: "inTransit" },
-    ]} rows={rows} />
-    {showReviewed && rows.length === 0 && <p className="text-muted-foreground">Sin movimientos web revisados.</p>}
+    ]} rows={visibleRows} />
+    {rows.length === 0 && <p className="text-muted-foreground">{showReviewed ? "Sin movimientos revisados." : "Sin movimientos pendientes de revisar."}</p>}
     {save.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(save.error)}</AlertDescription></Alert>}
-    <div className="flex gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       <Button disabled={selectedIds.length === 0 || save.isPending} onClick={() => save.mutate()} size="xs">Registrar</Button>
-      <Button aria-pressed={showReviewed} disabled={save.isPending} onClick={() => { setShowReviewed(!showReviewed) }}
+      <Button aria-pressed={showReviewed} disabled={save.isPending} onClick={() => { setShowReviewed(!showReviewed); setPage(1) }}
         size="xs" variant="outline">Filtra *</Button>
+      {pageCount > 1 && <div className="ml-auto flex items-center gap-1">
+        <Button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} size="xs" variant="outline">Anterior</Button>
+        <span className="text-xs" aria-live="polite">Página {currentPage} de {pageCount}</span>
+        <Button disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)} size="xs" variant="outline">Siguiente</Button>
+      </div>}
     </div>
   </div>
 }
