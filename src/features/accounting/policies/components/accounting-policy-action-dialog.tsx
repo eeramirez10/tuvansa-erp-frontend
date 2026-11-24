@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { AccountingPolicyCommentsDialog } from "@/features/accounting/policies/components/accounting-policy-comments-dialog"
 import { accountingPolicyClassificationsQueryOptions } from "@/features/accounting/policies/logic"
 import type { AccountingPolicy, AccountingPolicyAction } from "@/features/accounting/policies/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -34,6 +35,7 @@ export function AccountingPolicyActionDialog({ policy, action, onClose }: {
   action: AccountingPolicyAction
   onClose: () => void
 }) {
+  if (action.key === "comments") return <AccountingPolicyCommentsDialog onClose={onClose} policy={policy} />
   if (action.panel === "classifications") return <Classifications onClose={onClose} policy={policy} />
   return (
     <ErpDataDialog className="sm:max-w-[34rem]" description={`${action.label} de ${policy.number}`} onOpenChange={(open) => !open && onClose()} title={action.label}>

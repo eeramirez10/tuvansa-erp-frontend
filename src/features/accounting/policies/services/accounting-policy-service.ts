@@ -1,6 +1,8 @@
 import type {
   AccountingPolicy,
   AccountingPolicyClassifications,
+  AccountingPolicyComments,
+  AccountingPolicyCommentsInput,
   AccountingPolicySearchResponse,
   DuplicatePolicyInput,
   DuplicatePolicyPreview,
@@ -50,6 +52,16 @@ export async function getAccountingPolicyClassifications(id: number, signal?: Ab
 }
 
 const policyPath = "/accounting/policies"
+
+export async function getAccountingPolicyComments(id: number, signal?: AbortSignal) {
+  const { data } = await apiClient.get<ItemResponse<AccountingPolicyComments>>(`${policyPath}/${id}/actions/comments`, { signal })
+  return data.data
+}
+
+export async function updateAccountingPolicyComments(id: number, input: AccountingPolicyCommentsInput) {
+  const { data } = await apiClient.patch<ItemResponse<AccountingPolicy>>(`${policyPath}/${id}/actions/comments`, input)
+  return data.data
+}
 
 export async function getManualPolicyCaptureOptions(signal?: AbortSignal) {
   const { data } = await apiClient.get<ItemResponse<ManualPolicyCaptureOptions>>(`${policyPath}/capture`, { signal })

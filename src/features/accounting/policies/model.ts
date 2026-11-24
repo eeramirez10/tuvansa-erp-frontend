@@ -72,6 +72,25 @@ export type ManualPolicyActionInput = { requestKey: string; revision: number; co
 
 export type DuplicatePolicyInput = { requestKey: string; revision: string; date: string; confirmed: true }
 
+export type AccountingPolicyComments = {
+  policy: { id: number; number: string }
+  fields: Pick<AccountingPolicy, "date" | "cheque" | "report" | "postDate" | "origin" | "beneficiary" | "family" | "concept" | "amountInWords">
+    & { comments: [string, string, string, string, string, string] }
+  revision: number | null
+  applied: boolean
+  canWrite: boolean
+  reason: string | null
+  userId: number
+  auditAt: string | null
+  exchangeRate: number
+}
+
+export type AccountingPolicyCommentsInput = {
+  fields: AccountingPolicyComments["fields"] & { date: string }
+  requestKey: string
+  revision: number
+}
+
 export type DuplicatePolicyPreview = {
   policy: { id: number; number: string }
   date: string

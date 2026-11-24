@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import {
   getAccountingPolicy,
   getAccountingPolicyClassifications,
+  getAccountingPolicyComments,
   getDuplicatePolicyPreview,
   getManualPolicyCaptureOptions,
   getManualPolicyPreview,
@@ -15,6 +16,7 @@ export const accountingPolicyKeys = {
   detail: (id: number) => [...accountingPolicyKeys.all, "detail", id] as const,
   search: (criteria: AccountingPolicySearchCriteria) => [...accountingPolicyKeys.all, "search", criteria] as const,
   classifications: (id: number) => [...accountingPolicyKeys.detail(id), "classifications"] as const,
+  comments: (id: number) => [...accountingPolicyKeys.detail(id), "comments"] as const,
   capture: () => [...accountingPolicyKeys.all, "capture"] as const,
   accounts: (q: string) => [...accountingPolicyKeys.capture(), "accounts", q] as const,
   manual: (id: number) => [...accountingPolicyKeys.detail(id), "manual"] as const,
@@ -34,6 +36,14 @@ export const accountingPolicySearchQueryOptions = (criteria: AccountingPolicySea
 export const accountingPolicyClassificationsQueryOptions = (id: number) => queryOptions({
   queryKey: accountingPolicyKeys.classifications(id),
   queryFn: ({ signal }) => getAccountingPolicyClassifications(id, signal),
+})
+
+export const accountingPolicyCommentsQueryOptions = (id: number) => queryOptions({
+  queryKey: accountingPolicyKeys.comments(id),
+  queryFn: ({ signal }) => getAccountingPolicyComments(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  retry: false,
 })
 
 export const manualPolicyCaptureQueryOptions = () => queryOptions({
