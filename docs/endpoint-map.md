@@ -547,6 +547,11 @@ Selecciona una partida de una recepción vigente para usar **Alta Piezas** o
 el producto seleccionado y cambiar la serie de una fila. En **Inventarios →
 Piezas surtidas**, la columna **Recepción** muestra el folio.
 
+Al guardar la primera recepción de una orden con piezas, **Piezas** muestra
+las series trasladadas desde la orden. La recepción puede ser parcial. El
+traspaso conserva la identidad de cada pieza y la entrada usa la cantidad
+confirmada en la captura.
+
 | Vista o botón | Endpoint relativo a `/api/purchasing/purchase-receptions` |
 | --- | --- |
 | Nueva recepción / Buscar orden | `GET /create?orderNumber=…` |
