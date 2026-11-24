@@ -28,6 +28,7 @@ type CancellationWindow = { id: number; kind: PurchaseReceptionCancellationKind 
 
 function cancellationKind(reception: PurchaseReception): PurchaseReceptionCancellationKind | null {
   if (reception.number.startsWith("GAW") && reception.totals.expenseTaxes) return "expense"
+  if (reception.number.startsWith("RA") && reception.cancellationAvailable === true) return "reception"
   return /^RW\d{8}$/.test(reception.number) && reception.id >= 6_700_000_000_000 && reception.id < 6_700_100_000_000
     ? "reception"
     : null

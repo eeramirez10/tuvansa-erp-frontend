@@ -525,7 +525,7 @@ La ruta web es `/recepciones/:purchaseReceptionId`. **Nueva recepción** abre el
 | Código proveedor / gasto | `GET /general-expenses/catalog?supplierCode=…&productCode=…` |
 | Gastos múltiples / OK | `POST /general-expenses` |
 | Cancelar GA | `GET y POST /:id/actions/cancel-expense` |
-| Cancelar recepción RW | `GET y POST /:id/actions/cancel-reception` |
+| Cancelar recepción RW o RA histórica habilitada | `GET y POST /:id/actions/cancel-reception` |
 | Ficha y partidas | `GET /:purchaseReceptionId` |
 | Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
 
@@ -533,6 +533,15 @@ La ruta web es `/recepciones/:purchaseReceptionId`. **Nueva recepción** abre el
 IVA, retenciones y centro de costo. La confirmación enlaza los documentos
 guardados, el proveedor y la póliza aplicada. Los documentos aparecen en
 la búsqueda de Recepciones y en **Proveedores → Saldo** para registrar un PP.
+
+La ficha de una RA histórica muestra **Cancelar recepción** cuando el detalle
+devuelve `cancellationAvailable: true`. El GET de la acción valida el saldo,
+los pagos y las demás restricciones, y muestra el motivo cuando bloquea la
+operación. El POST registra fecha, motivo y confirmación con una clave de
+reintento. **Ver cancelación** conserva la consulta de la fecha, el motivo y la
+póliza asociada. Al confirmar se actualizan Recepciones, Órdenes de compra,
+Inventarios, Proveedores, Bancos y Contabilidad. El movimiento K de una RA
+histórica enlaza la póliza inversa desde **Proveedores → Movimientos**.
 
 ### Órdenes de compra
 

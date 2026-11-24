@@ -33,6 +33,7 @@ export type PurchaseReception = {
   branch: number
   status: string
   cancelled: boolean
+  cancellationAvailable?: boolean
   cancellation?: PostingReversal | null
   dates: { receivedAt: string | null; dueAt: string | null; orderedAt: string | null }
   delayDays: number

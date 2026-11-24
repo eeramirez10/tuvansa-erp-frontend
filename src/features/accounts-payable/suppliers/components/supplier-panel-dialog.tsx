@@ -33,6 +33,16 @@ function panelRowKey(row: Record<string, unknown>, index: number, movements: boo
   return movements ? JSON.stringify([row.id ?? index, row.document, row.movementType]) : String(row.id ?? index)
 }
 
+function historicalReceptionCancellationPolicyId(row: Record<string, unknown>) {
+  const { movementType, document, receiptId, policyId, policy } = row
+  return movementType === "K" && typeof document === "string" && document.startsWith("RA") &&
+    typeof receiptId === "number" && Number.isSafeInteger(receiptId) && receiptId > 0 &&
+    typeof policyId === "number" && Number.isSafeInteger(policyId) && policyId > 0 &&
+    typeof policy === "string" && policy.trim()
+    ? policyId
+    : null
+}
+
 function valueText(value: unknown, column?: SupplierPanelColumn) {
   if (value === null || value === undefined || value === "") return ""
   if (column?.format === "money") return moneyFormatter.format(Number(value) || 0)
@@ -69,6 +79,7 @@ function PanelTable({ columns, rows, height = "21rem", movements = false, select
           {rows.map((row, rowIndex) => {
             const rowKey = panelRowKey(row, rowIndex, movements)
             const selected = rowIndex === (selection?.index ?? 0)
+            const cancellationPolicyId = movements ? historicalReceptionCancellationPolicyId(row) : null
             const selectRow = selection && (!selection.allowsRow || selection.allowsRow(row))
               ? () => selection.onSelect(rowKey)
               : undefined
@@ -85,6 +96,8 @@ function PanelTable({ columns, rows, height = "21rem", movements = false, select
                         size="xs" type="button" variant="ghost">
                         {value}
                       </Button>
+                    ) : column.key === "policy" && cancellationPolicyId !== null ? (
+                      <Link className="underline underline-offset-2" to={paths.accountingPolicy(cancellationPolicyId)}>{value}</Link>
                     ) : value}
                   </td>
                 })}
