@@ -27,6 +27,10 @@ la oferta vigente con `*` cuando el detalle devuelve `prices.hasActiveOffer`
 en `true`. **Unidad** muestra el código enlazado y la opción que Omnis
 encuentra en el catálogo de unidades, cuando existe.
 
+Las fechas de Alta, Baja, Última compra y Última venta se muestran como
+fechas de calendario. La ficha muestra un guion cuando no puede interpretar
+la fecha recibida.
+
 **Nuevo producto** habilita **Alta de productos** en las mismas tarjetas.
 Se enfoca en Código y empieza con M.P., unidad UNO del catálogo y monedas en cero.
 Foto, fechas, existencias y demás acumulados calculados quedan en gris.

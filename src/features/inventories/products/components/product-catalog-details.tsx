@@ -32,6 +32,7 @@ const wholeNumbers = numberFormatter(0)
 const quantities = numberFormatter(2)
 const stock = numberFormatter(3)
 const prices = numberFormatter(4)
+const calendarDate = new Intl.DateTimeFormat("es-MX", { timeZone: "UTC" })
 
 function formatUnit({ code, description, catalogOption }: Product["classification"]["unit"]) {
   if (catalogOption === null) return code
@@ -42,10 +43,12 @@ function formatUnit({ code, description, catalogOption }: Product["classificatio
 }
 
 function formatDate(value: string | null) {
-  if (!value) return "—"
-  return new Intl.DateTimeFormat("es-MX", { timeZone: "UTC" }).format(
-    new Date(`${value}T00:00:00Z`),
-  )
+  if (typeof value !== "string") return "—"
+  const day = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(value)?.[1]
+  if (!day || day.startsWith("0000-") || day === "1900-12-31") return "—"
+  const date = new Date(`${day}T00:00:00Z`)
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== day) return "—"
+  return calendarDate.format(date)
 }
 
 export function ProductCatalogDetails({ product, editor }: ProductCatalogDetailsProps) {
