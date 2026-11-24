@@ -366,8 +366,11 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | Inventarios PT | Documentos | Resultado de Búsqueda | Código exacto único, OK o doble clic en renglón | `GET /inventories/movements/:id` | `['inventories', 'movements', 'detail', id]` | Encabezado, partidas y totales del movimiento |
 | Inventarios PT / MP | Documentos | Capturar movimiento | Abrir captura y cargar tipos EI/SI/TR según configuración, fecha y almacenes | `GET /inventories/movements/capture` | `movementKeys.capture()` | La consulta indica por qué se bloquea la captura |
 | Inventarios PT / MP | Captura de movimientos | OK / Cancelar | Registrar entrada, salida o traspaso con productos activos y abrir su ficha | `POST /inventories/movements` | Actualiza búsquedas, existencias y reportes | Envía `requestKey`, tipo, fecha, almacén y partidas. TR agrega `destinationWarehouse`. Reintentar la misma captura conserva el UUID |
-| Inventarios PT / MP | Documentos | Detalle de TR | Revisar origen, destino y partidas | `GET /inventories/movements/:id` | `movementKeys.detail(id)` | Un folio contiene una salida del origen y una entrada al destino por producto |
+| Inventarios PT / MP | Documentos | Detalle de TR | Revisar origen, destino y partidas | `GET /inventories/movements/:id` | `movementKeys.detail(id)` | Un folio contiene una salida del origen y una entrada al destino por producto, incluido PEPS automático |
 | Inventarios PT | Documentos | Cancelar | Clic y confirmación Sí | `DELETE /inventories/movements/:id` | Invalida movimientos y productos después del éxito | Disponible según `cancellationAvailable` de la ficha |
+
+Para cancelar un TR debe quedar existencia libre suficiente en el almacén
+destino. La reversión registra las dos cantidades inversas por almacén.
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
 
