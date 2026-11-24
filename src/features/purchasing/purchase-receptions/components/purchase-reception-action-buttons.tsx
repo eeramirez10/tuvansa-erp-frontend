@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 
 export function PurchaseReceptionActionButtons({ actions, onSelect, canSelectLine, hasSelectedLine }: {
   actions: readonly PurchaseReceptionAction[]
-  onSelect: (action: PurchaseReceptionAction) => void
+  onSelect: (action: PurchaseReceptionAction, selectedOnly: boolean) => void
   canSelectLine: boolean
   hasSelectedLine: boolean
 }) {
@@ -24,9 +24,9 @@ export function PurchaseReceptionActionButtons({ actions, onSelect, canSelectLin
               className={`${index === 12 || index === 14 ? "mt-2" : ""} w-full justify-start`}
               disabled={Boolean(reason)}
               key={action.key}
-              onClick={() => onSelect(action)}
+              onClick={(event) => onSelect(action, action.key === "labels" && event.shiftKey)}
               size="xs"
-              title={reason}
+              title={reason ?? (action.key === "labels" ? "Mayús para imprimir solo la partida seleccionada" : undefined)}
               variant="outline"
             >
               {action.label}

@@ -2,6 +2,7 @@ import type { PostingReversal, PostingReversalInput, PostingReversalPreview } fr
 import type {
   PurchaseReception,
   PurchaseReceptionCancellationKind,
+  PurchaseReceptionClassificationPanel,
   PurchaseReceptionComments,
   PurchaseReceptionDocumenting,
   PurchaseReceptionPanel,
@@ -44,6 +45,15 @@ export async function searchPurchaseReceptions(criteria: PurchaseReceptionSearch
 
 export async function getPurchaseReception(id: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<PurchaseReception>>(`/purchasing/purchase-receptions/${id}`, { signal })
+  return response.data.data
+}
+
+export async function savePurchaseReceptionClassifications(
+  id: number, input: Pick<PurchaseReceptionClassificationPanel["summary"], "current" | "revision">,
+) {
+  const response = await apiClient.patch<ItemResponse<PurchaseReceptionClassificationPanel>>(
+    `/purchasing/purchase-receptions/${id}/actions/classifications`, input,
+  )
   return response.data.data
 }
 

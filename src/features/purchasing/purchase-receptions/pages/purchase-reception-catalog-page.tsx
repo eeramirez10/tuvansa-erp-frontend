@@ -24,7 +24,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { title: string; message: string; error?: boolean }
-type PurchaseReceptionActionWindow = { reception: PurchaseReception; action: PurchaseReceptionAction; line?: PurchaseReceptionLine }
+type PurchaseReceptionActionWindow = {
+  reception: PurchaseReception
+  action: PurchaseReceptionAction
+  line?: PurchaseReceptionLine
+  labelLineIds?: readonly number[]
+}
 type CancellationWindow = { id: number; kind: PurchaseReceptionCancellationKind }
 
 function cancellationKind(reception: PurchaseReception): PurchaseReceptionCancellationKind | null {
@@ -53,12 +58,13 @@ export function PurchaseReceptionCatalogPage() {
     ? reception.lines.find((line) => line.id === lineSelection.lineId)
     : undefined
 
-  const openAction = (document: PurchaseReception, action: PurchaseReceptionAction) => {
+  const openAction = (document: PurchaseReception, action: PurchaseReceptionAction, selectedOnly: boolean) => {
     const needsLine = action.key === "add-pieces" || action.key === "edit-pieces"
     if (needsLine && !selectedLine) return
     const line = needsLine ? selectedLine : undefined
-    const lineKey = line ? `:${line.id}` : ""
-    openActionWindow(`purchase-receptions:${document.id}:${action.key}${lineKey}`, { reception: document, action, line })
+    const labelLineIds = selectedOnly ? selectedLine ? [selectedLine.id] : [] : undefined
+    const lineKey = line ? `:${line.id}` : selectedOnly ? `:selected:${selectedLine?.id ?? ""}` : ""
+    openActionWindow(`purchase-receptions:${document.id}:${action.key}${lineKey}`, { reception: document, action, line, labelLineIds })
   }
 
   const openReception = (next: PurchaseReception) => {
@@ -87,7 +93,7 @@ export function PurchaseReceptionCatalogPage() {
       />
       <aside>{reception && <PurchaseReceptionActionButtons actions={purchaseReceptionActions}
         canSelectLine={Boolean(selectLine)} hasSelectedLine={Boolean(selectedLine)}
-        onSelect={(action) => openAction(reception, action)} />}</aside>
+        onSelect={(action, selectedOnly) => openAction(reception, action, selectedOnly)} />}</aside>
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
         {reception && <PurchaseReceptionDetails
@@ -128,12 +134,13 @@ export function PurchaseReceptionCatalogPage() {
           />
         </DesktopWindowIdentity>
       ))}
-      {actionWindows.map(({ id: windowId, payload: { action, line, reception: document } }) => (
+      {actionWindows.map(({ id: windowId, payload: { action, line, labelLineIds, reception: document } }) => (
         <DesktopWindowIdentity id={windowId} key={windowId}>
           {line && (action.key === "add-pieces" || action.key === "edit-pieces")
             ? <PurchaseReceptionPieceLineDialog line={line} mode={action.key === "add-pieces" ? "add" : "edit"}
                 onClose={() => closeActionWindow(windowId)} reception={document} />
-            : <PurchaseReceptionActionDialog action={action} onClose={() => closeActionWindow(windowId)} reception={document} />}
+            : <PurchaseReceptionActionDialog action={action} labelLineIds={labelLineIds}
+                onClose={() => closeActionWindow(windowId)} reception={document} />}
         </DesktopWindowIdentity>
       ))}
     </main>

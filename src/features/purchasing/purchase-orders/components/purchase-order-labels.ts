@@ -11,9 +11,8 @@ export const purchaseOrderLabelTypes: readonly { value: PurchaseOrderLabelType; 
   { value: "F", label: "F · Descripción, localización, EAN y UPC" },
 ]
 
-export type PurchaseOrderLabelLine = {
+type PurchaseLabelProduct = {
   lineId: number
-  assigned: number
   productCode: string
   description: string
   extendedDescription: string
@@ -22,6 +21,9 @@ export type PurchaseOrderLabelLine = {
   upc: string
   location: string
 }
+
+export type PurchaseOrderLabelLine = PurchaseLabelProduct & { assigned: number }
+export type PurchaseLabelLine = PurchaseLabelProduct & { quantity: number }
 
 export type PurchaseOrderLabelsOptions = {
   type: PurchaseOrderLabelType
@@ -100,7 +102,7 @@ function code128(value: string, left: number, top: number, height: number, modul
   }
 }
 
-function renderLabel(line: PurchaseOrderLabelLine, type: PurchaseOrderLabelType) {
+function renderLabel(line: PurchaseLabelProduct, type: PurchaseOrderLabelType) {
   const ean = line.ean.trim()
   const code = line.productCode.trim()
   let width = 440
@@ -166,27 +168,45 @@ export function buildPurchaseOrderLabelsDocument(
   lines: readonly PurchaseOrderLabelLine[],
   { type, orderNumber, selectedLineIds }: PurchaseOrderLabelsOptions,
 ) {
+  return buildPurchaseLabelsDocument(lines.map(({ assigned, ...line }) => ({ ...line, quantity: assigned })),
+    { type, number: orderNumber, document: "order", selectedLineIds })
+}
+
+export function buildPurchaseLabelsDocument(
+  lines: readonly PurchaseLabelLine[],
+  { type, number, document, selectedLineIds }: {
+    type: PurchaseOrderLabelType
+    number: string
+    document: "order" | "reception"
+    selectedLineIds?: readonly number[]
+  },
+) {
   const selected = selectedLineIds && new Set(selectedLineIds)
   const labels = lines.flatMap((line) => {
-    if ((selected && !selected.has(line.lineId)) || !Number.isFinite(line.assigned) || line.assigned <= 0) return []
-    const copies = Math.round(line.assigned)
+    if ((selected && !selected.has(line.lineId)) || !Number.isFinite(line.quantity) || line.quantity <= 0) return []
+    const copies = Math.round(line.quantity)
     return copies > 0 ? [{ line, copies }] : []
   })
   const copies = labels.reduce((total, label) => total + label.copies, 0)
 
-  if (copies === 0) throw new Error("No hay partidas con cantidad confirmada para imprimir etiquetas.")
+  if (copies === 0) {
+    throw new Error(document === "order" ? "No hay partidas con cantidad confirmada para imprimir etiquetas."
+      : selected?.size === 0 ? "Selecciona una partida antes de usar Mayús con Etiquetas."
+      : "No hay partidas con cantidad facturada para imprimir etiquetas.")
+  }
   if (copies > 5000) throw new Error("La vista previa admite hasta 5,000 etiquetas. Reduce la selección para imprimir por grupos.")
+  const documentLabel = document === "order" ? "de la orden" : "de la recepción"
 
   return `<!doctype html>
     <html lang="es">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>Etiquetas ${escapeHtml(orderNumber)}</title>
+      <title>Etiquetas ${escapeHtml(number)}</title>
       <style>${styles}</style>
     </head>
     <body data-format="PCL_Z201_BI${type}">
-      <main aria-label="Etiquetas de la orden ${escapeHtml(orderNumber)}">
+      <main aria-label="Etiquetas ${documentLabel} ${escapeHtml(number)}">
         ${labels.map(({ line, copies }) => renderLabel(line, type).repeat(copies)).join("")}
       </main>
     </body>

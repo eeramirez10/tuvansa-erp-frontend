@@ -16,7 +16,9 @@ import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Spinner } from "@/shared/ui/spinner"
 import { PurchaseReceptionCommentsDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-comments-dialog"
+import { PurchaseReceptionClassificationsDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-classifications-dialog"
 import { PurchaseReceptionDocumentDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-document-dialog"
+import { PurchaseReceptionLabelsDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-labels-dialog"
 import { PurchaseReceptionSupplierChangeDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-supplier-change-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 
@@ -50,32 +52,6 @@ function Auxiliary({ panel }: { panel: PurchaseReceptionPanel }) {
         <Label className="text-right text-[9px]">Total</Label>
         <Input className="h-5 text-right text-[9px]" readOnly value={money(panel.summary?.total)} />
       </div>
-    </div>
-  )
-}
-
-const classifierLabels = ["AGENTE", "TIPO CLIENTE", "SUCURSAL", "", "", "TIPO", "FLETE", "TIPO DE PROVEE", "PROYECTO"]
-
-function Classifications({ reception, panel }: { reception: PurchaseReception; panel: PurchaseReceptionPanel }) {
-  const optionsByClassifier = new Map<string, Array<Record<string, unknown>>>()
-  panel.items.forEach((item) => {
-    const key = text(item.classifier)
-    optionsByClassifier.set(key, [...(optionsByClassifier.get(key) ?? []), item])
-  })
-  return (
-    <div className="grid gap-1 py-1">
-      {classifierLabels.map((label, index) => (
-        <div className="grid grid-cols-[8rem_minmax(0,1fr)] items-center gap-1" key={index}>
-          <Label className="text-right text-[9px]">{label}</Label>
-          <select className="h-6 min-w-0 rounded border bg-background px-1 text-[9px] disabled:opacity-100" disabled value={reception.classifications[index] ?? ""}>
-            <option value="" />
-            {(optionsByClassifier.get(String(index + 1)) ?? []).map((option, optionIndex) => (
-              <option key={optionIndex} value={text(option.compositeCode || option.code)}>{text(option.code)} {text(option.description)}</option>
-            ))}
-          </select>
-        </div>
-      ))}
-      <div className="flex justify-end"><Button disabled size="sm">Guardar</Button></div>
     </div>
   )
 }
@@ -209,7 +185,7 @@ function Pieces({ panel, reception }: { panel: PurchaseReceptionPanel; reception
 function ReadPanel({ reception, action, onClose }: { reception: PurchaseReception; action: PurchaseReceptionAction; onClose: () => void }) {
   const query = useQuery(purchaseReceptionPanelQueryOptions(reception.id, action.panelKey!))
   const panel = query.data
-  const title = action.key === "auxiliary" ? "Auxiliar del documento" : action.key === "classifications" ? "Clasificadores" : action.label
+  const title = action.key === "auxiliary" ? "Auxiliar del documento" : action.label
   return (
     <ErpDataDialog defaultWidth={action.key === "pieces" ? 960 : undefined} className={action.key === "pieces" ? "sm:max-w-[68rem]" : "sm:max-w-[38rem]"}
       description={`${action.label} de ${reception.number}`} onOpenChange={(open) => !open && onClose()} title={title}>
@@ -217,7 +193,6 @@ function ReadPanel({ reception, action, onClose }: { reception: PurchaseReceptio
         {query.isPending && <div className="grid min-h-48 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive"><AlertTitle>No fue posible cargar</AlertTitle><AlertDescription>Revise la conexión con la API.</AlertDescription></Alert>}
         {panel && action.key === "auxiliary" && <Auxiliary panel={panel} />}
-        {panel && action.key === "classifications" && <Classifications panel={panel} reception={reception} />}
         {panel && action.key === "customs-entry" && <Pedimento panel={panel} />}
         {panel && action.key === "pieces" && <Pieces panel={panel} reception={reception} />}
         <footer className="flex justify-end"><Button onClick={onClose} size="sm">Cerrar</Button></footer>
@@ -226,13 +201,17 @@ function ReadPanel({ reception, action, onClose }: { reception: PurchaseReceptio
   )
 }
 
-export function PurchaseReceptionActionDialog({ reception, action, onClose }: {
+export function PurchaseReceptionActionDialog({ reception, action, labelLineIds, onClose }: {
   reception: PurchaseReception
   action: PurchaseReceptionAction
+  labelLineIds?: readonly number[]
   onClose: () => void
 }) {
+  if (action.key === "classifications") return <PurchaseReceptionClassificationsDialog reception={reception} onClose={onClose} />
   if (action.key === "comments") return <PurchaseReceptionCommentsDialog reception={reception} onClose={onClose} />
   if (action.key === "document") return <PurchaseReceptionDocumentDialog reception={reception} onClose={onClose} />
+  if (action.key === "labels") return <PurchaseReceptionLabelsDialog id={reception.id} number={reception.number}
+    selectedLineIds={labelLineIds} onClose={onClose} />
   if (action.key === "change-supplier") return <PurchaseReceptionSupplierChangeDialog reception={reception} onClose={onClose} />
   if (action.panelKey) return <ReadPanel action={action} onClose={onClose} reception={reception} />
   return (

@@ -84,6 +84,12 @@ export type PurchaseReceptionPanel = {
   summary?: Record<string, unknown>
 }
 
+export type PurchaseReceptionClassificationPanel = Omit<PurchaseReceptionPanel, "items" | "summary"> & {
+  key: "classifications"
+  items: Array<{ classifier: number; code: string; description: string; compositeCode: string }>
+  summary: { current: string[]; labels: string[]; revision: string; canWrite: boolean }
+}
+
 export type PurchaseReceptionAction = {
   key: string
   label: string

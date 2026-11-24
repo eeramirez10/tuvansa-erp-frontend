@@ -534,6 +534,10 @@ saldo contable conciliado ni se sustituye un costo faltante por el actual.
 
 La ruta web es `/recepciones/:purchaseReceptionId`. **Nueva recepción** abre el borrador por folio de una orden confirmada. **OK** registra las cantidades seleccionadas y navega a la ficha guardada. **Cancelar** descarta el borrador.
 
+**Clasificar** usa GET y PATCH en `/purchasing/purchase-receptions/:id/actions/classifications`.
+El GET trae los valores, rótulos, catálogos y revisión de los nueve clasificadores.
+**Guardar** actualiza el detalle y refresca el flete en **Comentarios**.
+
 Cuando una partida lleva PEPS, la ficha muestra su identificador en **Capa**.
 El mismo identificador permite consultar el saldo y los movimientos en
 **Inventarios → Lotes**. **Cancelar recepción** explica si falta saldo en la
@@ -567,6 +571,7 @@ confirmada en la captura.
 | Cambia Prv / Confirmar | `GET /:purchaseReceptionId/actions/change-supplier` |
 | Cambia Prv / Buscar proveedor | `GET /:purchaseReceptionId/actions/change-supplier/suppliers?code=…&name=…` |
 | Cambia Prv / OK | `PATCH /:purchaseReceptionId/actions/change-supplier` |
+| Etiquetas | `GET /:purchaseReceptionId/actions/labels` |
 | Comentarios / Abrir y OK | `GET/PATCH /:purchaseReceptionId/actions/comments` |
 | Documenta / Abrir y OK | `GET/POST /:purchaseReceptionId/actions/document` |
 | Pedimento | `GET /:purchaseReceptionId/actions/pedimento` |
@@ -577,6 +582,10 @@ confirmada en la captura.
 **Comentarios** actualiza la ficha. **Documenta** reparte el cargo original en
 hasta cuatro folios con importes cuya suma coincide con el total. Al confirmar,
 el auxiliar muestra el abono DO y los folios se muestran en **Proveedores → Saldo**.
+
+**Etiquetas** abre la vista previa con los formatos configurados y toma las
+copias de la cantidad facturada. **Mayús** limita las etiquetas a la partida
+seleccionada. **Imprimir** usa la impresión del navegador.
 
 **Cambia Prv** pide confirmación y precarga el proveedor actual. El selector
 busca por código o nombre y **OK** actualiza la ficha, Cuentas por Pagar y
