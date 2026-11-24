@@ -169,6 +169,7 @@ export function InvoiceFromOrderDialog({ onClose, onCreated }: {
         queryClient.invalidateQueries({ queryKey: orderKeys.all }),
         queryClient.invalidateQueries({ queryKey: productKeys.all }),
         queryClient.invalidateQueries({ queryKey: movementKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["inventories", "reports"] }),
         queryClient.invalidateQueries({ queryKey: clientKeys.all }),
       ])
       onCreated(result)

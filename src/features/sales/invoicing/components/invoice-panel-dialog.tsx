@@ -273,6 +273,7 @@ function Lots({ data }: { data: InvoicePanel }) {
         { label: "Producto", key: "productCode" },
         { label: "Descripción", key: "description" },
         { label: "Cantidad", key: "quantity", format: number, numeric: true },
+        ...(data.items.some(row => row.layerId) ? [{ label: "Capa", key: "layerId", numeric: true }] : []),
         { label: "Lote", key: "lot" },
         { label: "Fecha", key: "date", format: date },
         { label: "Caducidad", key: "expiresAt", format: date },
