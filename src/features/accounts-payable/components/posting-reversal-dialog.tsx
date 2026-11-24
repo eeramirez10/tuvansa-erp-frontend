@@ -132,9 +132,10 @@ function ReversalForm({ preview, confirmation, disabled, pending, onSubmit, onCl
         <div className="grid gap-1">
           <div className="flex items-center gap-2">
             <Checkbox aria-describedby={fieldState.error ? `${id}-confirmed-error` : undefined} aria-invalid={fieldState.invalid}
+              aria-labelledby={`${id}-confirmed-label`}
               checked={field.value} disabled={pending} id={`${id}-confirmed`} onBlur={field.onBlur}
               onCheckedChange={field.onChange} ref={field.ref} />
-            <Label htmlFor={`${id}-confirmed`}>{confirmation}</Label>
+            <Label htmlFor={`${id}-confirmed`} id={`${id}-confirmed-label`}>{confirmation}</Label>
           </div>
           {fieldState.error && <p className="text-destructive" id={`${id}-confirmed-error`}>{fieldState.error.message}</p>}
         </div>
@@ -190,7 +191,9 @@ export function PostingReversalDialog({ kind, tone = "payable", queryKey, load, 
   const close = () => { if (!inFlight.current) onClose() }
   const submit = ({ date, reason, confirmed }: Draft) => {
     if (inFlight.current || !confirmed || recorded || !preview?.canWrite || previewQuery.isFetching || previewQuery.isError) return
-    const expectedReconciliationId = kind === "collection" ? preview.originalReconciliation?.id : undefined
+    const expectedReconciliationId = kind === "collection" || kind === "payment"
+      ? preview.originalReconciliation?.id
+      : undefined
     const signature = JSON.stringify([date, reason, expectedReconciliationId])
     if (submission.current?.signature !== signature) {
       submission.current = { signature, requestKey: crypto.randomUUID() }

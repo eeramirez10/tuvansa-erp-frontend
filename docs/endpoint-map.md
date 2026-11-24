@@ -47,6 +47,9 @@ movimiento para consultar el concepto de su póliza o preparar el documento.
 | Imprimir Póliza | Abrir la impresión del navegador con las partidas y totales | GET en la misma ruta | `bank-policy-print.ts` |
 | Folio / Ver póliza | Abrir el detalle contable | GET en la misma ruta | `/contabilidad/polizas/:policyId` |
 
+En **Pagos**, el PP original conserva su marca **X** y su fecha de conciliación
+al revertirse. El movimiento **RP** queda pendiente para el siguiente corte.
+
 ## Bancos · Conciliar
 
 **Bancos → Conciliar** muestra los movimientos pendientes. La selección de
@@ -136,9 +139,14 @@ La ficha actualiza los catálogos dependientes de Compras y Bancos.
 | Paga | Consultar saldo, bancos y valores iniciales | GET `/accounts-payable/suppliers/:supplierId/payments/:receiptId` | `supplier-payment-dialog.tsx` |
 | OK | Registrar pago completo o parcial de la recepción | POST en la misma ruta | `supplier-service.ts` |
 | Cancelar / Escape | Cerrar la captura | Sin petición de escritura | `supplier-payment-dialog.tsx` |
-| Movimientos / Revertir PP | Consultar y registrar la contrapartida de un PP web pendiente de conciliación | GET y POST `/accounts-payable/suppliers/:supplierId/payments/:paymentId/reversal` | `posting-reversal-dialog.tsx` |
+| Movimientos / Revertir PP | Consultar y registrar la contrapartida de un PP web pendiente o conciliado | GET y POST `/accounts-payable/suppliers/:supplierId/payments/:paymentId/reversal` | `posting-reversal-dialog.tsx` |
 
 **Bancos → Pagos → Revertir PP** usa las mismas rutas y abre la confirmación a partir del pago seleccionado.
+
+Para un PP conciliado, la consulta muestra la fecha del corte original, la
+fecha mínima de reversión y el efecto bancario. Al confirmar se envía
+`expectedReconciliationId` para ese corte. Si la conciliación cambia durante
+la captura, se vuelve a consultar y se pide confirmar otra vez.
 
 La captura incluye cuenta bancaria, transferencia o cheque, importe, fecha y
 concepto. El POST conserva la revisión de la consulta y la clave de solicitud en
