@@ -5,6 +5,7 @@ import { paths } from "@/app/router/paths"
 import { AccountingPolicyActionButtons } from "@/features/accounting/policies/components/accounting-policy-action-buttons"
 import { AccountingPolicyActionDialog } from "@/features/accounting/policies/components/accounting-policy-action-dialog"
 import { AccountingPolicyDetails } from "@/features/accounting/policies/components/accounting-policy-details"
+import { AccountingPolicyDuplicateDialog } from "@/features/accounting/policies/components/accounting-policy-duplicate-dialog"
 import { AccountingPolicySearchDialog } from "@/features/accounting/policies/components/accounting-policy-search-dialog"
 import { AccountingPolicyToolbar } from "@/features/accounting/policies/components/accounting-policy-toolbar"
 import { ManualPolicyCaptureDialog } from "@/features/accounting/policies/components/manual-policy-capture-dialog"
@@ -46,8 +47,9 @@ export function AccountingPolicyCatalogPage() {
     onError: (error) => setNotice({ title: "No fue posible navegar", message: getApiErrorMessage(error), error: true }),
   })
 
-  function saved(result: AccountingPolicy, operation: "create" | "edit" | ManualPolicyOperation) {
-    const titles = { create: "Póliza registrada", edit: "Póliza actualizada", apply: "Póliza aplicada", unapply: "Póliza desaplicada", delete: "Póliza dada de baja" }
+  function saved(result: AccountingPolicy, operation: "create" | "edit" | "duplicate" | ManualPolicyOperation) {
+    const titles = { create: "Póliza registrada", edit: "Póliza actualizada", duplicate: "Póliza duplicada",
+      apply: "Póliza aplicada", unapply: "Póliza desaplicada", delete: "Póliza dada de baja" }
     queryClient.setQueryData(accountingPolicyKeys.detail(result.id), result)
     setCapture(null)
     setTransition(null)
@@ -55,7 +57,7 @@ export function AccountingPolicyCatalogPage() {
     void queryClient.invalidateQueries({ queryKey: accountingPolicyKeys.all })
     void queryClient.invalidateQueries({ queryKey: ["accounting", "reports"] })
     void queryClient.invalidateQueries({ queryKey: bankAccountKeys.all })
-    if (operation === "create") void navigate(paths.accountingPolicy(result.id))
+    if (operation === "create" || operation === "duplicate") void navigate(paths.accountingPolicy(result.id))
   }
 
   const busy = Boolean(capture || transition) || navigation.isPending
@@ -82,7 +84,14 @@ export function AccountingPolicyCatalogPage() {
       </section>
 
       {searchOpen && <DesktopWindowIdentity id="accounting:search"><AccountingPolicySearchDialog onOpenChange={setSearchOpen} onSelect={(selected) => { setSearchOpen(false); void navigate(paths.accountingPolicy(selected.id)) }} /></DesktopWindowIdentity>}
-      {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><AccountingPolicyActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} policy={window.payload.policy} /></DesktopWindowIdentity>)}
+      {actionWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}>
+        {window.payload.action.key === "duplicate" ? <AccountingPolicyDuplicateDialog
+          onClose={() => closeActionWindow(window.id)} onSaved={result => {
+            closeActionWindow(window.id)
+            saved(result, "duplicate")
+          }} policy={window.payload.policy} />
+          : <AccountingPolicyActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} policy={window.payload.policy} />}
+      </DesktopWindowIdentity>)}
       {capture && <DesktopWindowIdentity id={`accounting:manual-capture:${capture.id ?? "new"}`}>
         <ManualPolicyCaptureDialog onClose={() => setCapture(null)} onSaved={result => saved(result, capture.id ? "edit" : "create")} policyId={capture.id} />
       </DesktopWindowIdentity>}

@@ -404,6 +404,8 @@ El SQL del buscador es derivado. No se efectuó una nueva captura OMNIS. El alma
 | Alta de póliza de diario | Cargar fecha, periodo, tipo 3 y centros de costo | GET `/accounting/policies/capture` |
 | Código o Buscar cuenta | Buscar cuentas de captura por código o nombre | GET `/accounting/policies/capture/accounts?q=…` |
 | Alta / OK | Registrar una póliza con cargos y abonos iguales | POST `/accounting/policies` |
+| Duplicar | Consultar fecha y revisión de una póliza tipo 3 | GET `/accounting/policies/:id/actions/duplicate` |
+| Duplicar / Confirmar | Guardar una copia aplicada y abrir su folio | POST `/accounting/policies/:id/actions/duplicate` |
 | Cambio, Aplicar, Des - Aplicar o Baja | Consultar permisos, revisión y motivo de restricción | GET `/accounting/policies/:id/actions/manual` |
 | Cambio / OK | Guardar los datos de una póliza pendiente de aplicar | PATCH `/accounting/policies/:id` |
 | Aplicar o Des - Aplicar | Confirmar la operación con revisión y UUID | POST `/accounting/policies/:id/actions/apply` o `/unapply` |

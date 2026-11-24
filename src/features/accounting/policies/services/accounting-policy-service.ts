@@ -2,6 +2,8 @@ import type {
   AccountingPolicy,
   AccountingPolicyClassifications,
   AccountingPolicySearchResponse,
+  DuplicatePolicyInput,
+  DuplicatePolicyPreview,
   ManualPolicyAccount,
   ManualPolicyActionInput,
   ManualPolicyCaptureOptions,
@@ -61,6 +63,16 @@ export async function searchManualPolicyAccounts(q: string, signal?: AbortSignal
 
 export async function getManualPolicyPreview(id: number, signal?: AbortSignal) {
   const { data } = await apiClient.get<ItemResponse<ManualPolicyPreview>>(`${policyPath}/${id}/actions/manual`, { signal })
+  return data.data
+}
+
+export async function getDuplicatePolicyPreview(id: number, signal?: AbortSignal) {
+  const { data } = await apiClient.get<ItemResponse<DuplicatePolicyPreview>>(`${policyPath}/${id}/actions/duplicate`, { signal })
+  return data.data
+}
+
+export async function duplicateAccountingPolicy(id: number, input: DuplicatePolicyInput) {
+  const { data } = await apiClient.post<ItemResponse<AccountingPolicy>>(`${policyPath}/${id}/actions/duplicate`, input)
   return data.data
 }
 

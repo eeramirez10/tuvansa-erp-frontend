@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import {
   getAccountingPolicy,
   getAccountingPolicyClassifications,
+  getDuplicatePolicyPreview,
   getManualPolicyCaptureOptions,
   getManualPolicyPreview,
   searchManualPolicyAccounts,
@@ -17,6 +18,7 @@ export const accountingPolicyKeys = {
   capture: () => [...accountingPolicyKeys.all, "capture"] as const,
   accounts: (q: string) => [...accountingPolicyKeys.capture(), "accounts", q] as const,
   manual: (id: number) => [...accountingPolicyKeys.detail(id), "manual"] as const,
+  duplicate: (id: number) => [...accountingPolicyKeys.detail(id), "duplicate"] as const,
 }
 
 export const accountingPolicyQueryOptions = (id: number) => queryOptions({
@@ -51,6 +53,13 @@ export const manualPolicyAccountsQueryOptions = (q: string) => queryOptions({
 export const manualPolicyPreviewQueryOptions = (id: number) => queryOptions({
   queryKey: accountingPolicyKeys.manual(id),
   queryFn: ({ signal }) => getManualPolicyPreview(id, signal),
+  refetchOnMount: "always",
+  retry: false,
+})
+
+export const duplicatePolicyPreviewQueryOptions = (id: number) => queryOptions({
+  queryKey: accountingPolicyKeys.duplicate(id),
+  queryFn: ({ signal }) => getDuplicatePolicyPreview(id, signal),
   refetchOnMount: "always",
   retry: false,
 })

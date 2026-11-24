@@ -70,6 +70,18 @@ export type ManualPolicyInput = {
 
 export type ManualPolicyActionInput = { requestKey: string; revision: number; confirmed: true }
 
+export type DuplicatePolicyInput = { requestKey: string; revision: string; date: string; confirmed: true }
+
+export type DuplicatePolicyPreview = {
+  policy: { id: number; number: string }
+  date: string
+  fiscalStart: string | null
+  fiscalEnd: string | null
+  revision: string
+  canWrite: boolean
+  reason: string | null
+}
+
 export type AccountingPolicySearchResponse = {
   data: AccountingPolicy[]
   pagination: { page: number; pageSize: number; total: number; pages: number }
