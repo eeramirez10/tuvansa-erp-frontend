@@ -155,7 +155,10 @@ export function ErpDataDialog({
       minWidth={320}
       onDragStart={() => focusWindow(windowId)}
       onDragStop={(_, data) => setPosition({ x: data.x, y: data.y })}
-      onMouseDown={() => focusWindow(windowId)}
+      onMouseDown={(event) => {
+        // Portal events also bubble through the parent dialog's React tree.
+        if (rndRef.current?.getSelfElement()?.contains(event.target as Node)) focusWindow(windowId)
+      }}
       onResizeStart={() => focusWindow(windowId)}
       onResizeStop={(_, __, element, ___, nextPosition) => {
         setPosition(nextPosition)
