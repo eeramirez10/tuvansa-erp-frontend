@@ -37,6 +37,7 @@ function CancellationControl({ reception, expense, onOpen }: { reception: Purcha
 }
 
 export function PurchaseReceptionDetails({ reception, onCancel }: { reception: PurchaseReception; onCancel?: () => void }) {
+  const hasLayers = reception.lines.some(({ lotId }) => lotId > 0)
   const expenseTaxes = reception.totals.expenseTaxes
   if (expenseTaxes) {
     return (
@@ -121,6 +122,7 @@ export function PurchaseReceptionDetails({ reception, onCancel }: { reception: P
                 {["Producto", "Descripción", "Cantidad", "U.M.", "Precio", "Dto", "Importe", "Pzas.", "C.C.", "Sucursal"].map((column) => (
                   <TableHead className="h-5 whitespace-nowrap px-1 text-[9px]" key={column}>{column}</TableHead>
                 ))}
+                {hasLayers && <TableHead className="h-5 px-1 text-[9px]">Capa</TableHead>}
               </TableRow></TableHeader>
               <TableBody>
                 {reception.lines.map((line) => (
@@ -135,6 +137,7 @@ export function PurchaseReceptionDetails({ reception, onCancel }: { reception: P
                     <TableCell className="px-1 py-0.5">{line.pieces}</TableCell>
                     <TableCell className="px-1 py-0.5 text-right">{line.costCenter}</TableCell>
                     <TableCell className="px-1 py-0.5 text-right">{line.branch}</TableCell>
+                    {hasLayers && <TableCell className="whitespace-nowrap px-1 py-0.5">{line.lotId || ""}</TableCell>}
                   </TableRow>
                 ))}
               </TableBody>

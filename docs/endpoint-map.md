@@ -531,6 +531,11 @@ saldo contable conciliado ni se sustituye un costo faltante por el actual.
 
 La ruta web es `/recepciones/:purchaseReceptionId`. **Nueva recepción** abre el borrador por folio de una orden confirmada. **OK** registra las cantidades seleccionadas y navega a la ficha guardada. **Cancelar** descarta el borrador.
 
+Cuando una partida lleva PEPS, la ficha muestra su identificador en **Capa**.
+El mismo identificador permite consultar el saldo y los movimientos en
+**Inventarios → Lotes**. **Cancelar recepción** explica si falta saldo en la
+capa de origen y actualiza los paneles al confirmar.
+
 | Vista o botón | Endpoint relativo a `/api/purchasing/purchase-receptions` |
 | --- | --- |
 | Nueva recepción / Buscar orden | `GET /create?orderNumber=…` |

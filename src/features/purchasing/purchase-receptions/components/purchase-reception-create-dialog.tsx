@@ -4,6 +4,8 @@ import { useId, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 
+import { supplierKeys } from "@/features/accounts-payable/suppliers/logic"
+import { accountingPolicyKeys } from "@/features/accounting/policies/logic"
 import { movementKeys } from "@/features/inventories/movements/logic"
 import { productKeys } from "@/features/inventories/products/logic"
 import { purchaseOrderKeys } from "@/features/purchasing/purchase-orders/logic"
@@ -219,6 +221,9 @@ export function PurchaseReceptionCreateDialog({ initialOrderNumber = "", onClose
       void queryClient.invalidateQueries({ queryKey: purchaseOrderKeys.all })
       void queryClient.invalidateQueries({ queryKey: productKeys.all })
       void queryClient.invalidateQueries({ queryKey: movementKeys.all })
+      void queryClient.invalidateQueries({ queryKey: supplierKeys.all })
+      void queryClient.invalidateQueries({ queryKey: accountingPolicyKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ["inventories", "reports"] })
       onCreated(reception)
     },
     onSettled: () => { inFlight.current = false },
