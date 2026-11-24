@@ -289,13 +289,18 @@ La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difie
 | Facturación / Facturar | Cargar pedido autorizado y asignado | GET `/sales/invoices/from-order?orderNumber=:number` | Obtiene la revisión del pedido y el máximo que se puede remitir por partida |
 | Facturación / Facturar / OK | Confirmar fecha y cantidades | POST `/sales/invoices/from-order` | Abre el folio FAW y actualiza las consultas de Facturación, Pedidos, Inventarios y Clientes |
 | Facturación / Facturar / Cancelar | Cerrar | Ninguno | Descarta la selección |
-| Facturación / Cancelar remisión | Consultar una remisión web FAW | GET `/sales/invoices/:id/actions/cancel-remission` | Muestra la fecha, el cargo, el pedido de origen y cualquier bloqueo |
+| Facturación / Cancelar remisión | Consultar una remisión web FAW o una FA histórica habilitada | GET `/sales/invoices/:id/actions/cancel-remission` | Muestra la fecha, el cargo, el pedido de origen, si se puede regenerar y cualquier bloqueo |
 | Facturación / Cancelar remisión / Confirmar | Registrar la cancelación | POST `/sales/invoices/:id/actions/cancel-remission` | Envía motivo, fecha, confirmación, UUID y la opción de regenerar el pedido. Actualiza Facturación, Pedidos, Inventarios y Clientes |
 | Pedidos / Auxiliar | Abrir folio de la remisión | GET `/sales/orders/:id/actions/auxiliar` | Permite abrir el documento asociado en Facturación |
 | Clientes / Saldo o Movimientos | Consultar el cliente | GET `/accounts-receivable/clients/:id/balance` o `/movements` | Incluye el cargo FA en el saldo del cliente |
 | Facturación / Sellar | Abrir la ventana de una remisión web en pruebas | GET `/sales/invoices/:id/actions/seal` | Muestra el importe y la referencia de simulación si existe |
 | Sellar / Simular timbrado | Ejecutar la prueba | POST `/sales/invoices/:id/actions/seal/simulation` | Muestra fecha y referencia `SIM-FE-…` con la leyenda **Sin validez fiscal** |
 | Sellar / Cancelar | Cerrar antes de simular | Ninguno | Descarta la ventana |
+
+El detalle habilita la cancelación de una FA histórica con
+`cancellationAvailable: true`. **Ver cancelación** abre el resultado ya
+registrado. La [guía de remisiones](ventas-facturacion-remisiones.md) describe
+la confirmación y el pedido regenerado.
 
 ### Verifica fiscal: edición disponible, verificación pendiente
 

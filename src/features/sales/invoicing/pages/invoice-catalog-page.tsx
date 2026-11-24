@@ -14,7 +14,7 @@ import { InvoicePanelButtons } from "@/features/sales/invoicing/components/invoi
 import { InvoiceToolbar } from "@/features/sales/invoicing/components/invoice-toolbar"
 import { RemissionCancellationDialog } from "@/features/sales/invoicing/components/remission-cancellation-dialog"
 import { invoiceActionPanels, invoiceSummaryPanels } from "@/features/sales/invoicing/constants"
-import { invoiceKeys, invoiceQueryOptions } from "@/features/sales/invoicing/logic"
+import { invoiceKeys, invoiceQueryOptions, isLocalRemission } from "@/features/sales/invoicing/logic"
 import type { Invoice, InvoicePanelDefinition } from "@/features/sales/invoicing/model"
 import { getAdjacentInvoice } from "@/features/sales/invoicing/services/invoice-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
@@ -34,7 +34,7 @@ export function InvoiceCatalogPage() {
   const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<InvoicePanelWindow>()
   const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
-  const localRemission = /^FAW\d{8}$/.test(invoice.number) && invoice.id >= 7_100_000_000_000 && invoice.id <= 7_100_099_999_998
+  const cancellationAvailable = isLocalRemission(invoice) || invoice.cancellationAvailable === true
 
   const openFullInvoice = (next: Invoice) => {
     queryClient.setQueryData(invoiceKeys.detail(next.id), next)
@@ -94,7 +94,7 @@ export function InvoiceCatalogPage() {
           <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceActionPanels} title="Acciones" />
           <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceSummaryPanels} title="Sumarios" />
         </aside>
-        <InvoiceCatalogDetails invoice={invoice} onCancelRemission={localRemission
+        <InvoiceCatalogDetails invoice={invoice} onCancelRemission={cancellationAvailable
           ? () => openCancellation(`invoices:${invoice.id}:cancel-remission`, invoice.id)
           : undefined} />
       </div>

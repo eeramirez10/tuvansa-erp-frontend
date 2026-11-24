@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { InvoicePanelKey } from "@/features/sales/invoicing/model"
+import type { Invoice, InvoicePanelKey } from "@/features/sales/invoicing/model"
 import {
   getFirstInvoice,
   getInvoice,
@@ -10,6 +10,10 @@ import {
   searchInvoices,
   type InvoiceSearchCriteria,
 } from "@/features/sales/invoicing/services/invoice-service"
+
+export function isLocalRemission({ id, number }: Pick<Invoice, "id" | "number">) {
+  return /^FAW\d{8}$/.test(number) && id >= 7_100_000_000_000 && id <= 7_100_099_999_998
+}
 
 export const invoiceKeys = {
   all: ["sales", "invoices"] as const,

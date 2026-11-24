@@ -30,6 +30,7 @@ export type Invoice = {
   movementType: string
   status: string
   canceled: boolean
+  cancellationAvailable?: boolean
   cancellation?: RemissionCancellation | null
   dates: {
     issuedAt: string | null

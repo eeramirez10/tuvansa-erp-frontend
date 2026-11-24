@@ -77,9 +77,10 @@ function CancellationForm({ preview, loading, saving, onClose, onSubmit }: {
           <div className="grid gap-1">
             <div className="flex items-center gap-2">
               <Checkbox aria-describedby={unavailable && preview.order.reason ? `${id}-order-reason` : undefined}
+                aria-labelledby={`${id}-order-label`}
                 checked={field.value} disabled={saving || unavailable} id={`${id}-order`} onBlur={field.onBlur}
                 onCheckedChange={field.onChange} ref={field.ref} />
-              <Label htmlFor={`${id}-order`}>Regenerar pedido {preview.order.number}</Label>
+              <Label htmlFor={`${id}-order`} id={`${id}-order-label`}>Regenerar pedido {preview.order.number}</Label>
             </div>
             {unavailable && preview.order.reason && <p className="text-muted-foreground" id={`${id}-order-reason`}>{preview.order.reason}</p>}
             <FieldError errors={[fieldState.error]} />
@@ -91,9 +92,9 @@ function CancellationForm({ preview, loading, saving, onClose, onSubmit }: {
       <Controller control={form.control} name="confirmed" render={({ field, fieldState }) => (
         <div className="grid gap-1">
           <div className="flex items-center gap-2">
-            <Checkbox aria-invalid={fieldState.invalid} checked={field.value} disabled={saving} id={`${id}-confirmed`}
+            <Checkbox aria-invalid={fieldState.invalid} aria-labelledby={`${id}-confirmed-label`} checked={field.value} disabled={saving} id={`${id}-confirmed`}
               onBlur={field.onBlur} onCheckedChange={field.onChange} ref={field.ref} />
-            <Label htmlFor={`${id}-confirmed`}>Confirmo la cancelación de la remisión.</Label>
+            <Label htmlFor={`${id}-confirmed`} id={`${id}-confirmed-label`}>Confirmo la cancelación de la remisión.</Label>
           </div>
           <FieldError errors={[fieldState.error]} />
         </div>
@@ -119,6 +120,9 @@ export function RemissionCancellationDialog({ invoiceId, onClose }: { invoiceId:
     onSuccess: result => {
       queryClient.setQueryData<Invoice>(invoiceKeys.detail(invoiceId), current => current
         ? { ...current, canceled: true, status: "CANCELADA", cancellation: result, totals: { ...current.totals, balance: 0 } }
+        : current)
+      queryClient.setQueryData<RemissionCancellationPreview>(invoiceKeys.remissionCancellation(invoiceId), current => current
+        ? { ...current, canWrite: false, alreadyRecorded: result }
         : current)
       void queryClient.invalidateQueries({ queryKey: invoiceKeys.all })
       void queryClient.invalidateQueries({ queryKey: orderKeys.all })

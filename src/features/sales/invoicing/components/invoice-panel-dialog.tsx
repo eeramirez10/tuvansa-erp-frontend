@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "react-router"
 
 import { paths } from "@/app/router/paths"
-import { invoiceKeys, invoicePanelQueryOptions } from "@/features/sales/invoicing/logic"
+import { invoiceKeys, invoicePanelQueryOptions, isLocalRemission } from "@/features/sales/invoicing/logic"
 import type { Invoice, InvoicePanel, InvoicePanelDefinition, StampingSimulation } from "@/features/sales/invoicing/model"
 import { simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
@@ -389,7 +389,7 @@ export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
       )
     },
   })
-  const simulation = query.data?.stampingSimulation
+  const simulation = panel.key === "seal" && isLocalRemission(invoice) ? query.data?.stampingSimulation : undefined
 
   return (
     <ErpDataDialog
@@ -420,7 +420,7 @@ export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
         )}
         <footer className="flex justify-end gap-1">
           {simulation && !simulation.result
-            ? <Button disabled={stamp.isPending} onClick={() => stamp.mutate()} size="sm">{stamp.isPending ? "Simulando…" : "Simular timbrado"}</Button>
+            ? <Button disabled={query.isFetching || query.isError || stamp.isPending} onClick={() => stamp.mutate()} size="sm">{stamp.isPending ? "Simulando…" : "Simular timbrado"}</Button>
             : <Button onClick={() => onOpenChange(false)} size="sm">{simulation ? "Cerrar" : "OK"}</Button>}
           {!simulation?.result && <Button disabled={stamp.isPending} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button>}
         </footer>
