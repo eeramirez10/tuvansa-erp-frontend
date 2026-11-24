@@ -238,7 +238,11 @@ export async function getProductPanel(
     `/inventories/products/${productId}/${productPanelPaths[panel]}`,
     { params: { page, pageSize, ...filters }, signal },
   )
-  if (filters && "warehouse" in filters && filters.warehouse !== undefined && typeof response.data.data.openingStock !== "number") {
+  const lotScoped = filters && "lotId" in filters && filters.lotId !== undefined
+  if (lotScoped && !response.data.data.lotTotals) {
+    throw new Error("La API no devolvió los totales del lote.")
+  }
+  if (!lotScoped && filters && "warehouse" in filters && filters.warehouse !== undefined && typeof response.data.data.openingStock !== "number") {
     throw new Error("La API no devolvió el saldo inicial del almacén.")
   }
   return response.data

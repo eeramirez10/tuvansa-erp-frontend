@@ -149,6 +149,7 @@ export type ProductPanel = {
   source: "mysql" | "product-cache" | "not-available"
   items: Array<Record<string, unknown>>
   openingStock?: number
+  lotTotals?: { count: number; entries: number; exits: number; net: number }
   customerOrdersTotals?: { assigned: number; remaining: number }
   supplierOrdersTotals?: { remaining: number }
   customerSalesTotals?: { quantity: number; amount: number }
@@ -229,6 +230,7 @@ export type ProductLedgerFilters = {
   warehouse?: string
   movementType?: "R"
   openingMovementType?: "R"
+  lotId?: number
 }
 
 export type ProductLedgerItem = {

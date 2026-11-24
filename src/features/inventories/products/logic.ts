@@ -131,6 +131,20 @@ export function productLedgerQueryOptions(productId: number, filters: ProductLed
     queryFn: ({ pageParam, signal }) =>
       getProductPanel(productId, "ledger", signal, pageParam, filters),
     initialPageParam: 1,
+    getNextPageParam: ({ data, pagination }) => {
+      const hasMore = data.lotTotals
+        ? pagination.page * pagination.pageSize < data.lotTotals.count
+        : pagination.returned === pagination.pageSize
+      return hasMore ? pagination.page + 1 : undefined
+    },
+  })
+}
+
+export function productLotsQueryOptions(productId: number) {
+  return infiniteQueryOptions({
+    queryKey: [...productKeys.panel(productId, "lots"), "pages"],
+    queryFn: ({ pageParam, signal }) => getProductPanel(productId, "lots", signal, pageParam),
+    initialPageParam: 1,
     getNextPageParam: ({ pagination }) =>
       pagination.returned === pagination.pageSize ? pagination.page + 1 : undefined,
   })

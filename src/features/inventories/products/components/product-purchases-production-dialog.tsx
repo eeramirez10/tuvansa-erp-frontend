@@ -1,9 +1,9 @@
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
-import type { ReactNode } from "react"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
+import { useState, type ReactNode } from "react"
 
-import { productPanelQueryOptions } from "@/features/inventories/products/logic"
+import { productLedgerQueryOptions, productLotsQueryOptions, productPanelQueryOptions } from "@/features/inventories/products/logic"
 import type {
   Product,
   ProductPanelDefinition,
@@ -38,9 +38,9 @@ type ProductPurchasesProductionDialogProps = {
 
 const compactButtonClass = "h-5 min-w-16 px-2 text-[9px]"
 
-function PanelButton({ children, className }: { children: ReactNode; className?: string }) {
+function PanelButton({ children, className, disabled }: { children: ReactNode; className?: string; disabled?: boolean }) {
   return (
-    <Button className={cn(compactButtonClass, className)} type="button" variant="outline">
+    <Button className={cn(compactButtonClass, className)} disabled={disabled} type="button" variant="outline">
       {children}
     </Button>
   )
@@ -292,17 +292,33 @@ function ImplosionView({ product, rows }: { product: Product; rows: QueryRow[] }
   )
 }
 
-function LotsView({ product, rows }: { product: Product; rows: QueryRow[] }) {
-  const ledgerQuery = useQuery(productPanelQueryOptions(product.id, "ledger"))
-  const movements: QueryRow[] = (ledgerQuery.data?.data.items ?? []).map(
-    (row): QueryRow => ({
+function LotsView({ product }: { product: Product }) {
+  const [lotId, setLotId] = useState<number | null>(null)
+  const lots = useInfiniteQuery(productLotsQueryOptions(product.id))
+  const ledger = useInfiniteQuery({
+    ...productLedgerQueryOptions(product.id, lotId === null ? {} : { lotId }),
+    enabled: lotId !== null,
+  })
+  const rows = lots.data?.pages.flatMap(({ data }) => data.items) ?? []
+  const movementPages = lotId === null ? [] : ledger.data?.pages ?? []
+  const movements = movementPages.flatMap(({ data }) => data.items).map(
+    (row) => ({
       ...row,
       entries: numberValue(row.quantity) > 0 ? row.quantity : 0,
       exits: numberValue(row.quantity) < 0 ? Math.abs(numberValue(row.quantity)) : 0,
     }),
   )
   const available = rows.reduce((total, row) => total + numberValue(row.availableQuantity), 0)
-  const movementTotal = movements.reduce((total, row) => total + numberValue(row.quantity), 0)
+  const movementTotal = movementPages.at(-1)?.data.lotTotals?.net
+
+  if (lots.isPending) return <div className="flex min-h-36 items-center justify-center gap-1.5" role="status">
+    <Spinner /> Cargando lotes…
+  </div>
+  if (lots.isError && !lots.data) return <Alert variant="destructive">
+    <AlertTitle>No fue posible cargar los lotes</AlertTitle>
+    <AlertDescription>{getApiErrorMessage(lots.error)}</AlertDescription>
+    <Button onClick={() => void lots.refetch()} size="xs" type="button" variant="outline">Reintentar</Button>
+  </Alert>
 
   return (
     <>
@@ -319,6 +335,14 @@ function LotsView({ product, rows }: { product: Product; rows: QueryRow[] }) {
             { key: "warehouse", label: "Alm", width: "3rem" },
           ]}
           rows={rows}
+          selection={{
+            id: lotId, column: "date", label: row => {
+              const lot = textValue(row.lot)
+              const name = (lot === "0" ? "" : lot) || textValue(row.number)
+              return `Seleccionar lote ${name ? `${name} (${row.id})` : row.id} en almacén ${textValue(row.warehouse)}`
+            },
+            onSelect: setLotId,
+          }}
           tableClassName="w-[35rem]"
         />
         <ProductQueryTable
@@ -330,14 +354,38 @@ function LotsView({ product, rows }: { product: Product; rows: QueryRow[] }) {
             numberColumn("exits", "Salidas", "5rem"),
             { key: "warehouse", label: "Alm", width: "3rem" },
           ]}
-          emptyMessage={ledgerQuery.isPending ? "Cargando movimientos…" : "Sin movimientos"}
+          emptyMessage={lotId === null ? "Selecciona un lote" : ledger.isPending ? "Cargando movimientos…" : ledger.isError ? "" : "Sin movimientos para este lote"}
           rows={movements}
           tableClassName="w-[25rem]"
         />
       </div>
       <footer className="mt-1 grid grid-cols-[3fr_2fr] gap-1">
-        <div className="flex items-center gap-1"><PanelButton>Cambiar</PanelButton><PanelButton className="min-w-28">Rellena pedimentos</PanelButton><output className="ml-auto h-4 min-w-20 border border-input bg-background px-1 text-right shadow-inner">{formatNumber(available)}</output></div>
-        <output className="ml-auto h-4 min-w-20 border border-input bg-background px-1 text-right shadow-inner">{formatNumber(movementTotal)}</output>
+        <div className="flex flex-wrap items-center gap-1">
+          <PanelButton disabled>Cambiar</PanelButton>
+          <PanelButton className="min-w-28" disabled>Rellena pedimentos</PanelButton>
+          {lots.hasNextPage && <Button className={compactButtonClass} disabled={lots.isFetching}
+            onClick={() => void lots.fetchNextPage()} size="xs" type="button" variant="outline">
+            {lots.isFetchingNextPage ? "Cargando…" : lots.isFetchNextPageError ? "Reintentar lotes" : "Cargar más lotes"}
+          </Button>}
+          <output aria-label="Disponible en los lotes cargados"
+            className="ml-auto h-4 min-w-20 border border-input bg-background px-1 text-right shadow-inner">
+            {formatNumber(available)}
+          </output>
+        </div>
+        <div className="flex items-center gap-1">
+          {lotId !== null && ledger.isError && !ledger.isFetchNextPageError && <div className="grid gap-1" role="alert">
+            <span className="text-destructive">{getApiErrorMessage(ledger.error)}</span>
+            <Button className={compactButtonClass} onClick={() => void ledger.refetch()} size="xs" type="button" variant="outline">Reintentar movimientos</Button>
+          </div>}
+          {lotId !== null && ledger.hasNextPage && <Button className={compactButtonClass} disabled={ledger.isFetching}
+            onClick={() => void ledger.fetchNextPage()} size="xs" type="button" variant="outline">
+            {ledger.isFetchingNextPage ? "Cargando…" : ledger.isFetchNextPageError ? "Reintentar movimientos" : "Cargar más movimientos"}
+          </Button>}
+          <output aria-label="Total neto de movimientos del lote"
+            className="ml-auto h-4 min-w-20 border border-input bg-background px-1 text-right shadow-inner">
+            {movementTotal === undefined ? "" : formatNumber(movementTotal)}
+          </output>
+        </div>
       </footer>
     </>
   )
@@ -404,7 +452,6 @@ function PanelContent({ panel, product, rows }: { panel: ProductPanelDefinition;
     case "components": return <ComponentsView product={product} rows={rows} />
     case "quality-specifications": return <QualitySpecificationsView rows={rows} />
     case "implosion": return <ImplosionView product={product} rows={rows} />
-    case "lots": return <LotsView product={product} rows={rows} />
     case "inventory-layers": return <InventoryLayersView rows={rows} />
     default: return null
   }
@@ -415,7 +462,7 @@ export function ProductPurchasesProductionDialog({
   product,
   onOpenChange,
 }: ProductPurchasesProductionDialogProps) {
-  const panelQuery = useQuery(productPanelQueryOptions(product.id, panel.key))
+  const panelQuery = useQuery({ ...productPanelQueryOptions(product.id, panel.key), enabled: panel.key !== "lots" })
 
   return (
     <ErpDataDialog
@@ -425,7 +472,7 @@ export function ProductPurchasesProductionDialog({
       title={panelTitle(panel.key)}
     >
       <ErpDataDialogBody>
-        {panelQuery.isPending ? (
+        {panel.key === "lots" ? <LotsView key={product.id} product={product} /> : panelQuery.isPending ? (
           <div className="flex min-h-36 items-center justify-center gap-1.5 border border-input bg-background text-muted-foreground">
             <Spinner /> Cargando {panel.label.toLowerCase()}…
           </div>

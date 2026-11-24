@@ -6,7 +6,7 @@ import { useState } from "react"
 import { InventoryMovementSearchDialog } from "@/features/inventories/movements/components/inventory-movement-search-dialog"
 import { MovementCaptureDialog } from "@/features/inventories/movements/components/movement-capture-dialog"
 import { movementDetailsQueryOptions, movementKeys } from "@/features/inventories/movements/logic"
-import { isLocalInventoryAdjustment, movementCaptureWindowId, movementSearchWindowId, movementWindowId } from "@/features/inventories/movements/model"
+import { isLocalInventoryAdjustment, movementCaptureWindowId, movementSearchWindowId, movementWindowId, type InventoryMovementLine } from "@/features/inventories/movements/model"
 import { cancelMovement } from "@/features/inventories/movements/services/movement-service"
 import { ProductQueryTable } from "@/features/inventories/products/components/product-query-table"
 import { productKeys } from "@/features/inventories/products/logic"
@@ -36,7 +36,7 @@ type InventoryMovementsDialogProps = {
   onCloseSearch: () => void
 }
 
-const lineColumns = (precision: number): QueryColumn[] => [
+const lineColumns = (precision: number, lines?: InventoryMovementLine[]): QueryColumn[] => [
   { key: "productCode", label: "Producto", width: "6rem" },
   { key: "description", label: "Descripción", width: "12rem" },
   {
@@ -65,6 +65,10 @@ const lineColumns = (precision: number): QueryColumn[] => [
       : numberValue(row.pieces) ? formatNumber(row.pieces) : "",
   },
   { key: "warehouse", label: "Alm.", width: "3rem" },
+  ...(lines?.some(line => line.lotId)
+    ? [{ key: "lotId", label: "Capa", width: "8rem", render: (row: Record<string, unknown>) => row.lotId ? String(row.lotId) : "" }] : []),
+  ...(lines?.some(line => line.lotWarehouse && line.lotWarehouse !== line.warehouse)
+    ? [{ key: "lotWarehouse", label: "Alm. capa", width: "5rem" }] : []),
 ]
 
 function MovementField({
@@ -184,7 +188,7 @@ export function InventoryMovementsDialog({
           ) : (
             <ProductQueryTable
               className="h-auto min-h-36 flex-1"
-              columns={lineColumns(precision)}
+              columns={lineColumns(precision, movement?.lines)}
               emptyMessage={movement ? "Sin partidas en este documento" : ""}
               rows={movement?.lines ?? []}
               tableClassName="w-[43rem]"

@@ -31,6 +31,8 @@ export type InventoryMovementLine = {
   pieces: number
   piecesText?: string
   warehouse: string
+  lotId?: number
+  lotWarehouse?: string
 }
 
 export type InventoryMovement = {
@@ -46,6 +48,7 @@ export type MovementCaptureType = "EI" | "SI" | "TR"
 export type MovementCaptureOptions = {
   writable: boolean
   reason: string | null
+  automaticPeps?: boolean
   defaultDate: string
   defaultWarehouse: string
   types: Array<{ code: MovementCaptureType; name: string; sign: 1 | 0 | -1 }>

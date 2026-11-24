@@ -367,10 +367,16 @@ misma distribución compacta observada en OMNIS:
 | Lotes | Lotes disponibles a la izquierda y movimientos de inventario a la derecha |
 | UEPS / PEPS | Capas con cantidad inicial, costo, advalorem, fecha, documento, lote, caducidad y llave |
 
-El frontend pide hasta 500 registros por modal. En **Lotes**, la tabla derecha
-reutiliza el endpoint de Auxiliar y separa cantidades positivas y negativas en
-Entradas y Salidas. Los comandos internos son visuales por ahora; cerrar la
-ventana sí funciona.
+En **Lotes**, selecciona una fila de la tabla izquierda para consultar sus
+movimientos a la derecha. La consulta envía el identificador del lote en
+`lotId` al endpoint de Auxiliar. Las cantidades positivas aparecen en
+**Entradas** y las negativas en **Salidas**. **Cargar más movimientos**
+consulta otra página del mismo lote. El saldo neto se calcula sobre todos sus
+movimientos, incluso si todavía quedan páginas por cargar.
+
+La lista de lotes muestra los saldos históricos con los ajustes web y las
+capas nuevas cuando existen. **Cambiar** y **Rellena pedimentos** permanecen
+deshabilitados.
 
 ## Botón Buscar producto
 

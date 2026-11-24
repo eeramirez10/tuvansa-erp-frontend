@@ -15,6 +15,7 @@ type ProductQueryTableProps = {
   className?: string
   tableClassName?: string
   sorting?: { key: string; onSort: (key: string) => void }
+  selection?: { id: number | null; column: string; label: (row: QueryRow) => string; onSelect: (id: number) => void }
 }
 
 export function ProductQueryTable({
@@ -25,6 +26,7 @@ export function ProductQueryTable({
   className,
   tableClassName,
   sorting,
+  selection,
 }: ProductQueryTableProps) {
   return (
     <ErpDataTableViewport axes={axes} className={cn("h-64", className)}>
@@ -71,29 +73,45 @@ export function ProductQueryTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => (
-            <tr
-              className={cn(
-                "h-4 hover:bg-muted/55",
-                index === 0 && "bg-module-inventory text-module-inventory-foreground",
-              )}
-              key={textValue(row.id) || index}
-            >
-              {columns.map((column) => (
-                <td
-                  className={cn(
-                    "truncate border-r border-input px-1 last:border-r-0",
-                    column.align === "right" && "text-right",
-                    column.align === "center" && "text-center",
-                  )}
-                  key={column.key}
-                  title={textValue(row[column.key])}
-                >
-                  {column.render ? column.render(row) : textValue(row[column.key])}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {rows.map((row, index) => {
+            const id = Number(row.id)
+            const choose = selection && Number.isSafeInteger(id) && id > 0
+              ? () => selection.onSelect(id)
+              : undefined
+            const selected = selection ? selection.id === id : index === 0
+            return (
+              <tr
+                className={cn(
+                  "h-4 hover:bg-muted/55",
+                  choose && "cursor-pointer",
+                  selected && "bg-module-inventory text-module-inventory-foreground",
+                )}
+                key={textValue(row.id) || index}
+                onClick={choose}
+              >
+                {columns.map((column) => {
+                  const cell = column.render ? column.render(row) : textValue(row[column.key])
+                  return (
+                    <td
+                      className={cn(
+                        "truncate border-r border-input px-1 last:border-r-0",
+                        column.align === "right" && "text-right",
+                        column.align === "center" && "text-center",
+                      )}
+                      key={column.key}
+                      title={textValue(row[column.key])}
+                    >
+                      {choose && selection?.column === column.key
+                        ? <Button aria-label={selection.label(row)} aria-pressed={selected}
+                            className="h-4 w-full justify-start rounded-none px-0 text-[9px] font-normal"
+                            size="xs" type="button" variant="ghost">{cell}</Button>
+                        : cell}
+                    </td>
+                  )
+                })}
+              </tr>
+            )
+          })}
           {rows.length === 0 && emptyMessage && (
             <tr>
               <td className="h-48 text-center text-muted-foreground" colSpan={columns.length}>

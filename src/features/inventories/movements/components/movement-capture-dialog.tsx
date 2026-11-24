@@ -139,6 +139,9 @@ function CaptureForm({ options, locked, saving, onClose, onSubmit }: {
             ))}</TableBody>
           </Table>
         </ErpDataTableViewport>
+        {options.automaticPeps && type === "SI" && (
+          <p className="text-xs text-muted-foreground">Para productos con PEPS, deja vacío el costo. La salida usa el costo promedio y consume las capas automáticamente.</p>
+        )}
         <div className="flex flex-wrap justify-between gap-1">
           <Button disabled={disabled || fields.length >= movementLineLimit} onClick={() => append(emptyMovementCaptureLine(), {
             focusName: `lines.${fields.length}.code`,
