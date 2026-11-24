@@ -1,12 +1,13 @@
 import { queryOptions } from "@tanstack/react-query"
 import { getGeneralExpensesPreview, lookupGeneralExpensesCatalog } from "@/features/purchasing/purchase-receptions/services/general-expenses-service"
-import type { PurchaseReceptionCancellationKind, PurchaseReceptionPanelKey } from "@/features/purchasing/purchase-receptions/model"
+import type { PurchaseReceptionCancellationKind, PurchaseReceptionPanelKey, PurchaseReceptionSupplierSearch } from "@/features/purchasing/purchase-receptions/model"
 import {
   getPurchaseReception,
   getPurchaseReceptionComments,
   getPurchaseReceptionDocumenting,
   getPurchaseReceptionPanel,
   getPurchaseReceptionPieceLine,
+  getPurchaseReceptionSupplierChange,
   searchPurchaseReceptions,
   type PurchaseReceptionSearchCriteria,
 } from "@/features/purchasing/purchase-receptions/services/purchase-reception-service"
@@ -14,6 +15,8 @@ import {
 export const purchaseReceptionKeys = {
   all: ["purchasing", "purchase-receptions"] as const,
   detail: (id: number) => [...purchaseReceptionKeys.all, "detail", id] as const,
+  supplierChange: (id: number) => [...purchaseReceptionKeys.detail(id), "change-supplier"] as const,
+  supplierChoices: (id: number, filters: PurchaseReceptionSupplierSearch) => [...purchaseReceptionKeys.supplierChange(id), "suppliers", filters] as const,
   comments: (id: number) => [...purchaseReceptionKeys.detail(id), "comments"] as const,
   documenting: (id: number) => [...purchaseReceptionKeys.detail(id), "documenting"] as const,
   search: (criteria: PurchaseReceptionSearchCriteria) => [...purchaseReceptionKeys.all, "search", criteria] as const,
@@ -25,6 +28,14 @@ export const purchaseReceptionKeys = {
 export const purchaseReceptionQueryOptions = (id: number) => queryOptions({
   queryKey: purchaseReceptionKeys.detail(id),
   queryFn: ({ signal }) => getPurchaseReception(id, signal),
+})
+
+export const purchaseReceptionSupplierChangeQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseReceptionKeys.supplierChange(id),
+  queryFn: ({ signal }) => getPurchaseReceptionSupplierChange(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  retry: false,
 })
 
 export const purchaseReceptionCommentsQueryOptions = (id: number) => queryOptions({

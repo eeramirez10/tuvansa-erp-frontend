@@ -90,6 +90,16 @@ export type PurchaseReceptionAction = {
   panelKey?: PurchaseReceptionPanelKey
 }
 
+export type PurchaseReceptionSupplierSearch = { code: string; name: string }
+
+export type PurchaseReceptionSupplierChange = {
+  reception: { id: number; number: string }
+  supplier: PurchaseReception["supplier"]
+  canWrite: boolean
+  reason: string | null
+  revision: string
+}
+
 export type PurchaseReceptionCommentsFields = {
   dueAt: string | null
   supplierReference: string

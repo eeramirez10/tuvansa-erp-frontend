@@ -9,7 +9,6 @@ import {
   getPurchaseOrderPanel,
   getPurchaseOrderRemoval,
   getPurchaseOrderSupplierAction,
-  searchAuthorizationSuppliers,
   searchPurchaseOrders,
   type PurchaseOrderSearchCriteria,
 } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
@@ -84,12 +83,6 @@ export const purchaseOrderAuthorizationQueryOptions = (id: number) => queryOptio
   queryFn: ({ signal }) => getPurchaseOrderAuthorization(id, signal),
   refetchOnMount: "always",
   refetchOnWindowFocus: false,
-})
-
-export const purchaseOrderAuthorizationSupplierQueryOptions = (filters: PurchaseOrderSupplierSearch) => queryOptions({
-  queryKey: purchaseOrderKeys.authorizationSuppliers(filters),
-  queryFn: ({ signal }) => searchAuthorizationSuppliers(filters, signal),
-  enabled: Boolean(filters.code || filters.name),
 })
 
 export const purchaseOrderSupplierActionQueryOptions = (id: number) => queryOptions({

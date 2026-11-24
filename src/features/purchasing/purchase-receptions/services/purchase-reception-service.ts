@@ -9,6 +9,8 @@ import type {
   PurchaseReceptionPieceInput,
   PurchaseReceptionPieceLine,
   PurchaseReceptionSearchResponse,
+  PurchaseReceptionSupplierChange,
+  PurchaseReceptionSupplierSearch,
 } from "@/features/purchasing/purchase-receptions/model"
 import { apiClient } from "@/shared/api/api-client"
 
@@ -42,6 +44,26 @@ export async function searchPurchaseReceptions(criteria: PurchaseReceptionSearch
 
 export async function getPurchaseReception(id: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<PurchaseReception>>(`/purchasing/purchase-receptions/${id}`, { signal })
+  return response.data.data
+}
+
+const supplierChangePath = (id: number) => `/purchasing/purchase-receptions/${id}/actions/change-supplier`
+
+export async function getPurchaseReceptionSupplierChange(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PurchaseReceptionSupplierChange>>(supplierChangePath(id), { signal })
+  return response.data.data
+}
+
+export async function searchPurchaseReceptionSuppliers(id: number, filters: PurchaseReceptionSupplierSearch, signal?: AbortSignal) {
+  const params = { code: filters.code || undefined, name: filters.name || undefined }
+  const response = await apiClient.get<ItemResponse<Array<PurchaseReception["supplier"]>>>(
+    `${supplierChangePath(id)}/suppliers`, { params, signal },
+  )
+  return response.data.data
+}
+
+export async function changePurchaseReceptionSupplier(id: number, input: { supplierCode: string; revision: string }) {
+  const response = await apiClient.patch<ItemResponse<PurchaseReceptionSupplierChange>>(supplierChangePath(id), input)
   return response.data.data
 }
 

@@ -3,83 +3,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useId, useRef, useState, type FormEvent } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { purchaseOrderAuthorizationSupplierQueryOptions, purchaseOrderSupplierActionQueryOptions, refreshPurchaseOrder } from "@/features/purchasing/purchase-orders/logic"
+import { PurchaseSupplierSearchDialog } from "@/features/purchasing/components/purchase-supplier-search-dialog"
+import { purchaseOrderKeys, purchaseOrderSupplierActionQueryOptions, refreshPurchaseOrder } from "@/features/purchasing/purchase-orders/logic"
 import type { PurchaseOrder, PurchaseOrderSupplierChangeMode, PurchaseOrderSupplierChangeState, PurchaseOrderSupplierSearch } from "@/features/purchasing/purchase-orders/model"
-import { replacePurchaseOrderSupplier } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
+import { replacePurchaseOrderSupplier, searchAuthorizationSuppliers } from "@/features/purchasing/purchase-orders/services/purchase-order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
-import { ErpDataDialog, ErpDataDialogBody, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
+import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Spinner } from "@/shared/ui/spinner"
-import { Table, TableBody, TableCell, TableRow } from "@/shared/ui/table"
 
 type Supplier = PurchaseOrder["supplier"]
 const supplierCodeSchema = z.object({ supplierCode: z.string().trim().min(1, "Ingresa el código del proveedor.").max(20).toUpperCase() })
-
-function SupplierSearch({ initial, description, onSelect, onClose }: {
-  initial: PurchaseOrderSupplierSearch
-  description: string
-  onSelect: (supplier: Supplier) => void
-  onClose: () => void
-}) {
-  const codeId = useId()
-  const nameId = useId()
-  const [filters, setFilters] = useState(initial)
-  const [submitted, setSubmitted] = useState(initial)
-  const [selected, setSelected] = useState<Supplier | null>(null)
-  const query = useQuery(purchaseOrderAuthorizationSupplierQueryOptions(submitted))
-
-  return (
-    <ErpDataDialog defaultWidth={520} title="Buscar proveedor" description={description} tone="sales"
-      onOpenChange={(open) => { if (!open) onClose() }}>
-      <ErpDataDialogBody className="grid gap-1.5">
-        <form className="grid grid-cols-[minmax(4rem,1fr)_minmax(6rem,3fr)_auto] items-end gap-1" onSubmit={(event) => {
-          event.preventDefault()
-          setSelected(null)
-          setSubmitted({ code: filters.code.trim().toUpperCase(), name: filters.name.trim() })
-        }}>
-          <div className="grid gap-0.5">
-            <Label htmlFor={codeId}>Código</Label>
-            <Input autoFocus id={codeId} className="uppercase" maxLength={20} value={filters.code}
-              onChange={(event) => setFilters({ ...filters, code: event.target.value })} />
-          </div>
-          <div className="grid gap-0.5">
-            <Label htmlFor={nameId}>Nombre</Label>
-            <Input id={nameId} maxLength={60} value={filters.name}
-              onChange={(event) => setFilters({ ...filters, name: event.target.value })} />
-          </div>
-          <Button disabled={query.isFetching || (!filters.code.trim() && !filters.name.trim())} size="sm" type="submit">Buscar</Button>
-        </form>
-        {query.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>}
-        <ErpDataTableViewport className="h-44">
-          <Table className="min-w-80">
-            <TableBody>
-              {query.data?.map((supplier) => (
-                <TableRow key={supplier.id} data-state={selected?.id === supplier.id ? "selected" : undefined}>
-                  <TableCell className="p-0">
-                    <Button aria-pressed={selected?.id === supplier.id} className="flex w-full justify-start text-left"
-                      size="xs" variant="ghost" onClick={() => setSelected(supplier)} onDoubleClick={() => onSelect(supplier)}>
-                      <span className="w-20 shrink-0 font-mono">{supplier.code}</span>{supplier.name}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {query.isFetching && <TableRow><TableCell><Spinner aria-label="Buscando proveedores" /></TableCell></TableRow>}
-              {query.data?.length === 0 && <TableRow><TableCell>Sin proveedores para la búsqueda.</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </ErpDataTableViewport>
-        <div className="flex justify-end gap-1">
-          <Button disabled={!selected || query.isFetching} onClick={() => { if (selected) onSelect(selected) }} size="sm">OK</Button>
-          <Button onClick={onClose} size="sm" variant="outline">Cancelar</Button>
-        </div>
-      </ErpDataDialogBody>
-    </ErpDataDialog>
-  )
-}
 
 export function PurchaseOrderSupplierChangeDialog({ state: initialState, mode, onChange, onClose }: {
   state: PurchaseOrderSupplierChangeState
@@ -172,7 +110,9 @@ export function PurchaseOrderSupplierChangeDialog({ state: initialState, mode, o
     </ErpDataDialog>
     {searchWindow.windows.map(({ id, payload }) => (
       <DesktopWindowIdentity key={id} id={id}>
-        <SupplierSearch initial={payload} description={title} onClose={() => searchWindow.closeWindow(id)} onSelect={(supplier) => {
+        <PurchaseSupplierSearchDialog initial={payload} description={title} tone="sales"
+          queryKey={purchaseOrderKeys.authorizationSuppliers} search={searchAuthorizationSuppliers}
+          onClose={() => searchWindow.closeWindow(id)} onSelect={(supplier) => {
           setSelected(supplier)
           setValue("supplierCode", supplier.code, { shouldValidate: true })
           change.reset()
