@@ -4,7 +4,8 @@ import { Link } from "react-router"
 
 import { paths } from "@/app/router/paths"
 import { ClientCollectionDialog } from "@/features/accounts-receivable/clients/components/client-collection-dialog"
-import { clientPanelQueryOptions, collectionRemissionId } from "@/features/accounts-receivable/clients/logic"
+import { ClientCollectionReversalDialog } from "@/features/accounts-receivable/clients/components/client-collection-reversal-dialog"
+import { clientPanelQueryOptions, clientReversibleCollection, collectionRemissionId } from "@/features/accounts-receivable/clients/logic"
 import type {
   Client,
   ClientColumnFormat,
@@ -13,6 +14,7 @@ import type {
 } from "@/features/accounts-receivable/clients/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
+import { Checkbox } from "@/shared/ui/checkbox"
 import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import {
   ErpDataDialog,
@@ -56,11 +58,12 @@ function displayValue(value: unknown, format: ClientColumnFormat = "text") {
   return String(value)
 }
 
-function ClientDataTable({ rows, columns, emptyMessage = "Sin registros para este cliente", collection, linkPolicies = false }: {
+function ClientDataTable({ rows, columns, emptyMessage = "Sin registros para este cliente", collection, reversalSelection, linkPolicies = false }: {
   rows: Array<Record<string, unknown>>
   columns: readonly ClientPanelColumn[]
   emptyMessage?: string
   collection?: { disabled: boolean; open: (remissionId: number, row: Record<string, unknown>) => void }
+  reversalSelection?: { id: number | null; disabled: boolean; select: (id: number | null) => void }
   linkPolicies?: boolean
 }) {
   const collectionIds = collection ? rows.map(collectionRemissionId) : []
@@ -71,11 +74,13 @@ function ClientDataTable({ rows, columns, emptyMessage = "Sin registros para est
       <table className="w-max min-w-full table-fixed border-collapse text-[9px]/none tabular-nums">
         <colgroup>
           {showCollection && <col className="w-14" />}
+          {reversalSelection && <col className="w-10" />}
           {columns.map((column) => <col key={column.key} style={{ width: column.width ?? "6rem" }} />)}
         </colgroup>
         <thead className="sticky top-0 z-10 bg-background">
           <tr className="h-4 border-b border-input">
             {showCollection && <th className="border-r px-1 text-left font-normal" scope="col">Cobro</th>}
+            {reversalSelection && <th className="border-r px-1 text-left font-normal" scope="col">Sel.</th>}
             {columns.map((column) => <th className={cn("whitespace-nowrap border-r px-1 text-left font-normal last:border-r-0", column.align === "right" && "text-right", column.align === "center" && "text-center")} key={column.key}>{column.label}</th>)}
           </tr>
         </thead>
@@ -83,13 +88,19 @@ function ClientDataTable({ rows, columns, emptyMessage = "Sin registros para est
           {rows.map((row, index) => {
             const remissionId = collectionIds[index]
             const policyId = typeof row.policyId === "number" && Number.isSafeInteger(row.policyId) && row.policyId > 0 ? row.policyId : null
+            const reversible = reversalSelection ? clientReversibleCollection(row) : null
+            const selected = reversalSelection ? reversible !== null && reversalSelection.id === reversible.id : index === 0
             return (
-              <tr className={cn("h-4 hover:bg-muted/50", index === 0 && "bg-module-receivable text-module-receivable-foreground")} key={String(row.id ?? index)}>
+              <tr className={cn("h-4 hover:bg-muted/50", selected && "bg-module-receivable text-module-receivable-foreground")} key={String(row.id ?? index)}>
                 {showCollection && <td className="border-r px-1">
                   {collection && remissionId != null && (
                     <Button aria-label={`Cobrar ${displayValue(row.number)}`} disabled={collection.disabled}
                       onClick={() => collection.open(remissionId, row)} size="xs" type="button" variant="outline">Cobrar</Button>
                   )}
+                </td>}
+                {reversalSelection && <td className="border-r px-1.5">
+                  {reversible && <Checkbox aria-label={`Seleccionar cobro ${reversible.number}`} checked={selected}
+                    disabled={reversalSelection.disabled} onCheckedChange={checked => reversalSelection.select(checked ? reversible.id : null)} />}
                 </td>}
                 {columns.map((column) => {
                   const value = displayValue(pathValue(row, column.key), column.format)
@@ -148,20 +159,30 @@ function DetailPanel({ detail }: { detail: Record<string, unknown> }) {
 function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDialogProps) {
   const [page, setPage] = useState(1)
   const [activeCollection, setActiveCollection] = useState<{ id: number; number: string; date?: string } | null>(null)
+  const [selectedCollectionId, setSelectedCollectionId] = useState<number | null>(null)
+  const [activeReversal, setActiveReversal] = useState<number | null>(null)
   const query = useQuery(clientPanelQueryOptions(client.id, panel, page))
   const result = query.data
   const rows = result?.data.items ?? []
   const pagination = result?.pagination
   const pageCount = pagination ? Math.max(1, Math.ceil(pagination.total / pagination.pageSize)) : page
   const paginated = panel.key === "balance" || panel.key === "movements"
+  const showReversal = panel.key === "movements" && rows.some(row => clientReversibleCollection(row) !== null)
+  const selectedCollection = showReversal ? clientReversibleCollection(rows.find(row => row.id === selectedCollectionId)) : null
+  const childOpen = Boolean(activeCollection) || activeReversal !== null
 
   function close(open: boolean) {
-    if (!activeCollection) onOpenChange(open)
+    if (!childOpen) onOpenChange(open)
   }
 
   function openCollection(id: number, row: Record<string, unknown>) {
     const date = displayValue(row.date).slice(0, 10)
     setActiveCollection({ id, number: displayValue(row.number), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined })
+  }
+
+  function changePage(next: number) {
+    setSelectedCollectionId(null)
+    setPage(next)
   }
 
   return (
@@ -180,6 +201,7 @@ function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDi
         {result?.data.detail && !result.data.unavailableReason && panel.columns.length === 0 && <DetailPanel detail={result.data.detail} />}
         {result && panel.columns.length > 0 && <ClientDataTable columns={panel.columns} rows={rows}
           collection={panel.key === "balance" ? { disabled: Boolean(activeCollection) || query.isFetching, open: openCollection } : undefined}
+          reversalSelection={showReversal ? { id: selectedCollectionId, disabled: childOpen || query.isFetching, select: setSelectedCollectionId } : undefined}
           linkPolicies={panel.key === "movements"} />}
 
         {result?.data.secondaryItems && (
@@ -198,17 +220,30 @@ function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDi
         )}
 
         <div className="mt-1 flex flex-wrap items-center justify-between gap-1">
-          <span className="px-1 text-muted-foreground">{pagination ? `${pagination.total} registro(s)` : ""}</span>
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="px-1 text-muted-foreground">{pagination ? `${pagination.total} registro(s)` : ""}</span>
+            {showReversal && <Button disabled={!selectedCollection || childOpen || query.isFetching}
+              onClick={() => { if (selectedCollection) setActiveReversal(selectedCollection.id) }}
+              size="xs" type="button" variant="outline">
+              {selectedCollection?.reversal ? "Ver reversión" : "Revertir PA"}
+            </Button>}
+            {selectedCollection?.reversal && <span className="flex items-center gap-1" role="status">
+              PA revertido
+              <Link className="underline underline-offset-2" to={paths.accountingPolicy(selectedCollection.reversal.id)}>
+                Póliza {selectedCollection.reversal.policyNumber}
+              </Link>
+            </span>}
+          </div>
           {paginated && (pageCount > 1 || page > 1) && <div className="flex items-center gap-1">
-            <Button disabled={page <= 1 || query.isFetching || Boolean(activeCollection)} onClick={() => setPage(page - 1)}
+            <Button disabled={page <= 1 || query.isFetching || childOpen} onClick={() => changePage(page - 1)}
               size="xs" type="button" variant="outline">Anterior</Button>
             <span>Página {page} de {Math.max(page, pageCount)}</span>
-            <Button disabled={page >= pageCount || query.isFetching || Boolean(activeCollection)} onClick={() => setPage(page + 1)}
+            <Button disabled={page >= pageCount || query.isFetching || childOpen} onClick={() => changePage(page + 1)}
               size="xs" type="button" variant="outline">Siguiente</Button>
-            {pageCount > 2 && <Button disabled={page >= pageCount || query.isFetching || Boolean(activeCollection)}
-              onClick={() => setPage(pageCount)} size="xs" type="button" variant="outline">Última</Button>}
+            {pageCount > 2 && <Button disabled={page >= pageCount || query.isFetching || childOpen}
+              onClick={() => changePage(pageCount)} size="xs" type="button" variant="outline">Última</Button>}
           </div>}
-          <Button disabled={Boolean(activeCollection)} onClick={() => close(false)} size="xs" variant="outline">✓ OK</Button>
+          <Button disabled={childOpen} onClick={() => close(false)} size="xs" variant="outline">✓ OK</Button>
         </div>
       </ErpDataDialogBody>
     </ErpDataDialog>
@@ -218,6 +253,9 @@ function GenericClientPanelDialog({ client, panel, onOpenChange }: ClientPanelDi
           setActiveCollection(null)
           if (remaining === 0 && page > 1 && rows.length === 1) setPage(page - 1)
         }} />
+    </DesktopWindowIdentity>}
+    {activeReversal !== null && <DesktopWindowIdentity id={`clients:${client.id}:collection-reversal:${activeReversal}`}>
+      <ClientCollectionReversalDialog clientId={client.id} collectionId={activeReversal} onClose={() => setActiveReversal(null)} />
     </DesktopWindowIdentity>}
     </>
   )

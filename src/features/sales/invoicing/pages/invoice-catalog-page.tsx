@@ -12,6 +12,7 @@ import { InvoicePanelDialog } from "@/features/sales/invoicing/components/invoic
 import { InvoiceSearchDialog } from "@/features/sales/invoicing/components/invoice-search-dialog"
 import { InvoicePanelButtons } from "@/features/sales/invoicing/components/invoice-side-panels"
 import { InvoiceToolbar } from "@/features/sales/invoicing/components/invoice-toolbar"
+import { RemissionCancellationDialog } from "@/features/sales/invoicing/components/remission-cancellation-dialog"
 import { invoiceActionPanels, invoiceSummaryPanels } from "@/features/sales/invoicing/constants"
 import { invoiceKeys, invoiceQueryOptions } from "@/features/sales/invoicing/logic"
 import type { Invoice, InvoicePanelDefinition } from "@/features/sales/invoicing/model"
@@ -31,7 +32,9 @@ export function InvoiceCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [fromOrderOpen, setFromOrderOpen] = useState(false)
   const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<InvoicePanelWindow>()
+  const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const localRemission = /^FAW\d{8}$/.test(invoice.number) && invoice.id >= 7_100_000_000_000 && invoice.id <= 7_100_099_999_998
 
   const openFullInvoice = (next: Invoice) => {
     queryClient.setQueryData(invoiceKeys.detail(next.id), next)
@@ -91,7 +94,9 @@ export function InvoiceCatalogPage() {
           <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceActionPanels} title="Acciones" />
           <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceSummaryPanels} title="Sumarios" />
         </aside>
-        <InvoiceCatalogDetails invoice={invoice} />
+        <InvoiceCatalogDetails invoice={invoice} onCancelRemission={localRemission
+          ? () => openCancellation(`invoices:${invoice.id}:cancel-remission`, invoice.id)
+          : undefined} />
       </div>
 
       {searchOpen && (
@@ -111,6 +116,11 @@ export function InvoiceCatalogPage() {
         </DesktopWindowIdentity>
       )}
       {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><InvoicePanelDialog invoice={window.payload.invoice} onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} panel={window.payload.panel} /></DesktopWindowIdentity>)}
+      {cancellationWindows.map(({ id, payload }) => (
+        <DesktopWindowIdentity id={id} key={id}>
+          <RemissionCancellationDialog invoiceId={payload} onClose={() => closeCancellation(id)} />
+        </DesktopWindowIdentity>
+      ))}
     </section>
   )
 }

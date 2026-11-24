@@ -1,9 +1,8 @@
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon"
-import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon"
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
 import { useEffect, useId, useRef, useState } from "react"
 import { useForm, type SubmitHandler } from "react-hook-form"
@@ -25,12 +24,14 @@ import { ProductOtherDataDialog } from "@/features/inventories/products/componen
 import { ProductPurchasesProductionDialog } from "@/features/inventories/products/components/product-purchases-production-dialog"
 import { ProductQueryDialog } from "@/features/inventories/products/components/product-query-dialog"
 import { ProductQueriesPanel } from "@/features/inventories/products/components/product-queries-panel"
+import { ProductRemovalDialog } from "@/features/inventories/products/components/product-removal-dialog"
 import { ProductSearchDialog } from "@/features/inventories/products/components/product-search-dialog"
 import { ProductPanelButtons } from "@/features/inventories/products/components/product-side-panels"
 import { ProductToolbar } from "@/features/inventories/products/components/product-toolbar"
 import {
   getNewProductCatalog,
   productCodeAvailabilityQueryOptions,
+  productCreateOptionsQueryOptions,
   productEditOptionsQueryOptions,
   productKeys,
   productQueryOptions,
@@ -50,22 +51,10 @@ import {
 } from "@/features/inventories/products/model"
 import {
   createProduct,
-  deleteProduct,
   getAdjacentProduct,
   updateProduct,
 } from "@/features/inventories/products/services/product-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
-} from "@/shared/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Spinner } from "@/shared/ui/spinner"
@@ -90,6 +79,10 @@ type ProductCapture = { mode: "create"; fromProductId: number } | { mode: "edit"
 type SaveProduct =
   | { mode: "create"; input: ProductMutationInput }
   | { mode: "edit"; id: number; input: ProductCatalogEditInput }
+
+function apiErrorCode(error: unknown) {
+  return isAxiosError<{ error?: { code?: string } }>(error) ? error.response?.data.error?.code : undefined
+}
 
 function OpenProductPanel({
   id,
@@ -133,55 +126,62 @@ function OpenProductPanel({
 
 export function ProductCatalogPage() {
   const params = useParams()
-  const productId = Number(params.productId)
+  const productId = Number(params.productId ?? 0)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { data: product } = useSuspenseQuery(productQueryOptions(productId))
+  const productQuery = useQuery({ ...productQueryOptions(productId), enabled: productId > 0 })
+  const product = productQuery.data
   const [searchOpen, setSearchOpen] = useState(false)
   const [movementsOpen, setMovementsOpen] = useState(false)
   const [movementSearchOpen, setMovementSearchOpen] = useState(false)
   const [capture, setCapture] = useState<ProductCapture | null>(null)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [removing, setRemoving] = useState<Product | null>(null)
   const {
     windows: panelWindows,
     openWindow: openPanelWindow,
     closeWindow: closePanelWindow,
   } = useDesktopWindowCollection<ProductPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
-  const creating = capture?.mode === "create" && capture.fromProductId === product.id
-  const editing = capture?.mode === "edit" && capture.product.id === product.id ? capture.product : null
+  const creating = capture?.mode === "create" && capture.fromProductId === productId
+  const editing = capture?.mode === "edit" && capture.product.id === productId ? capture.product : null
   const capturing = creating || Boolean(editing)
   const captureTitle = creating ? "Alta de productos" : "Cambio de producto"
   const formId = useId()
   const codeValidationRequest = useRef(0)
+  const saveLock = useRef(false)
+  const captureGeneration = useRef(0)
   const form = useForm<ProductCatalogDraft, unknown, ProductCatalogValues>({
     defaultValues: { mode: "edit", changes: {} },
     resolver: zodResolver(productCatalogFormSchema),
   })
   const { setFocus: focusField } = form
-  useEffect(() => () => { codeValidationRequest.current += 1 }, [productId])
+  useEffect(() => () => {
+    codeValidationRequest.current += 1
+    captureGeneration.current += 1
+  }, [productId])
 
   function resetCodeValidation() {
     codeValidationRequest.current += 1
     if (form.getFieldState("code").error?.type === "availability") form.clearErrors("code")
   }
 
-  function rejectDuplicateCode(code: string) {
-    form.setValue("code", "", { shouldDirty: true })
+  function rejectDuplicateCode(code: string, clearCode: boolean) {
+    if (clearCode) form.setValue("code", "", { shouldDirty: true })
     form.setError("code", {
       type: "availability",
       message: `El código ${code} ya existe. Captura otro código.`,
     }, { shouldFocus: true })
   }
 
-  async function validateNewCode(value: string) {
+  async function validateCode(value: string, mode: "create" | "edit") {
     const parsed = productCodeSchema.safeParse(value)
     if (!parsed.success) return false
+    if (mode === "edit" && parsed.data === editing?.code.trim().toUpperCase()) return true
     const request = ++codeValidationRequest.current
     try {
       const available = await queryClient.fetchQuery(productCodeAvailabilityQueryOptions(parsed.data))
       if (request !== codeValidationRequest.current) return false
-      if (!available) rejectDuplicateCode(parsed.data)
+      if (!available) rejectDuplicateCode(parsed.data, mode === "create")
       return available
     } catch {
       if (request === codeValidationRequest.current) {
@@ -194,12 +194,20 @@ export function ProductCatalogPage() {
     }
   }
 
-  const editOptions = useQuery({
-    ...productEditOptionsQueryOptions(product.id),
-    enabled: creating || Boolean(editing?.editing?.editableFields.includes("unitId")),
-  })
-  const units = editOptions.data?.units ?? []
+  const createOptions = useQuery({ ...productCreateOptionsQueryOptions(), enabled: creating })
+  const editOptions = useQuery({ ...productEditOptionsQueryOptions(productId), enabled: Boolean(editing) })
+  const options = creating ? createOptions : editOptions
+  const units = options.data?.units ?? []
   const newProduct = creating ? getNewProductCatalog(units) : null
+  const createBlocked = creating && createOptions.data?.canWrite === false
+
+  function invalidateCatalogConsumers() {
+    void queryClient.invalidateQueries({ queryKey: ["inventories", "reports"] })
+    void queryClient.invalidateQueries({ queryKey: ["sales", "orders", "capture", "product"] })
+    void queryClient.invalidateQueries({ queryKey: ["sales", "orders", "capture", "product-matches"] })
+    void queryClient.invalidateQueries({ queryKey: ["purchasing", "purchase-receptions", "general-expenses", "catalog", "productCode"] })
+  }
+
   const saveMutation = useMutation({
     mutationFn: (operation: SaveProduct) => operation.mode === "create"
       ? createProduct(operation.input)
@@ -214,64 +222,98 @@ export function ProductCatalogPage() {
       })
       if (mode === "create") void navigate(paths.inventoryProduct(savedProduct.id))
       void queryClient.invalidateQueries({ queryKey: productKeys.all })
+      invalidateCatalogConsumers()
     },
     onError: (error, operation) => {
-      if (operation.mode === "edit" && isAxiosError(error) && error.response?.status === 409) {
+      if (operation.mode === "edit" && apiErrorCode(error) === "PRODUCT_EDIT_STALE") {
         void queryClient.invalidateQueries({ queryKey: productKeys.detail(operation.id), exact: true })
       }
-      if (operation.mode === "create" &&
-        isAxiosError<{ error?: { code?: string } }>(error) &&
-        error.response?.data.error?.code === "PRODUCT_CODE_EXISTS") {
-        rejectDuplicateCode(operation.input.code)
+      if (operation.input.code && apiErrorCode(error) === "PRODUCT_CODE_EXISTS") {
+        rejectDuplicateCode(operation.input.code, operation.mode === "create")
       }
     },
   })
   useEffect(() => {
-    if (creating) focusField("code")
+    if (creating && !createBlocked) focusField("code")
+    else if (editing?.editing?.editableFields.includes("code")) focusField("code", { shouldSelect: true })
     else if (editing?.editing?.editableFields.includes("description")) {
       focusField("changes.description", { shouldSelect: true })
     }
-  }, [creating, editing, focusField])
+  }, [createBlocked, creating, editing, focusField])
 
   function startCreating() {
     resetCodeValidation()
     saveMutation.reset()
     form.reset({ mode: "create", changes: {} })
     setNotice(null)
-    setCapture({ mode: "create", fromProductId: product.id })
+    setCapture({ mode: "create", fromProductId: productId })
   }
 
-  function startEditing() {
-    if (!product.editing?.writable) return
+  function startEditing(current: Product | undefined) {
+    if (!current?.editing?.writable) return
+    resetCodeValidation()
     saveMutation.reset()
     form.reset({ mode: "edit", changes: {} })
     setNotice(null)
-    setCapture({ mode: "edit", product })
+    setCapture({ mode: "edit", product: current })
   }
 
   function cancelCapture() {
+    if (saveLock.current) return
+    captureGeneration.current += 1
     resetCodeValidation()
     saveMutation.reset()
     form.reset({ mode: "edit", changes: {} })
     setCapture(null)
   }
 
-  const saveDisabled = saveMutation.isPending || (creating && units.length === 0)
+  const staleEdit = Boolean(editing && (editing.editing?.revision !== product?.editing?.revision
+    || apiErrorCode(saveMutation.error) === "PRODUCT_EDIT_STALE"))
+  const saving = form.formState.isSubmitting || saveMutation.isPending
+  const saveDisabled = saving || staleEdit || options.isFetching || options.isError
+    || (creating && (createOptions.data?.canWrite !== true || units.length === 0))
+
+  async function reloadEditing() {
+    if (saveLock.current || productQuery.isFetching) return
+    const generation = captureGeneration.current
+    const current = await productQuery.refetch()
+    if (generation !== captureGeneration.current) return
+    if (current.isSuccess && current.data.editing?.writable) startEditing(current.data)
+    else if (current.isSuccess) {
+      cancelCapture()
+      setNotice({ kind: "error", title: "Cambio no disponible", message: "La ficha actual ya no admite cambios." })
+    } else {
+      setNotice({ kind: "error", title: "No fue posible recargar la ficha", message: getApiErrorMessage(current.error) })
+    }
+  }
+
   const saveCapture: SubmitHandler<ProductCatalogValues> = async ({ changes, code, mode }) => {
-    if (saveDisabled) return
-    if (newProduct && mode === "create" && code) {
-      if (!(await validateNewCode(code))) return
-      const input = toProductCatalogCreateInput(code, {
-        ...changes,
-        unitId: changes.unitId ?? newProduct.classification.unit.id,
-      })
-      saveMutation.mutate({ mode, input })
+    if (saveDisabled || saveLock.current) return
+    const input = editing && mode === "edit" ? toProductCatalogEditInput(editing, changes, code) : null
+    if (mode === "edit" && !input) {
+      cancelCapture()
       return
     }
-    if (!editing || mode !== "edit") return
-    const input = toProductCatalogEditInput(editing, changes)
-    if (input) saveMutation.mutate({ mode, id: editing.id, input })
-    else cancelCapture()
+    const generation = captureGeneration.current
+    saveLock.current = true
+    try {
+      if (newProduct && mode === "create" && code) {
+        const unitId = changes.unitId ?? newProduct.classification.unit.id
+        if (!units.some(unit => unit.id === unitId)) {
+          form.setError("changes.unitId", { type: "required", message: "Selecciona una unidad del catálogo." }, { shouldFocus: true })
+          return
+        }
+        if (!(await validateCode(code, "create")) || generation !== captureGeneration.current) return
+        await saveMutation.mutateAsync({ mode, input: toProductCatalogCreateInput(code, { ...changes, unitId }) })
+      } else if (editing && mode === "edit" && input) {
+        if (input.code && (!(await validateCode(input.code, "edit")) || generation !== captureGeneration.current)) return
+        await saveMutation.mutateAsync({ mode, id: editing.id, input })
+      }
+    } catch {
+      // The mutation error keeps the capture open and is rendered with the form.
+    } finally {
+      saveLock.current = false
+    }
   }
   const restoreWindow = useDesktopWindowStore(selectRestoreDesktopWindow)
   const documentSearchActive = useDesktopWindowStore(({ windows }) => {
@@ -293,6 +335,7 @@ export function ProductCatalogPage() {
   }
 
   function openQueryPanel(panel: ProductPanelDefinition) {
+    if (!product) return
     if (panel.key === "documents") {
       restoreWindow(movementWindowId)
       setMovementsOpen(true)
@@ -302,13 +345,11 @@ export function ProductCatalogPage() {
   }
 
   const openProduct = (nextProduct: Product) => {
-    queryClient.setQueryData(productKeys.detail(nextProduct.id), nextProduct)
     void navigate(paths.inventoryProduct(nextProduct.id))
   }
 
   const navigationMutation = useMutation({
-    mutationFn: (direction: "previous" | "next") =>
-      getAdjacentProduct(product.id, direction),
+    mutationFn: (direction: "previous" | "next") => getAdjacentProduct(productId, direction),
     onSuccess: (nextProduct, direction) => {
       if (!nextProduct) {
         setNotice({
@@ -333,33 +374,37 @@ export function ProductCatalogPage() {
     },
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteProduct(product.id),
-    onSuccess: async () => {
-      setDeleteOpen(false)
-      await queryClient.invalidateQueries({ queryKey: productKeys.all })
-      void navigate(paths.inventoryProducts, { replace: true })
-    },
-    onError: (error) => {
-      setDeleteOpen(false)
-      setNotice({
-        kind: "error",
-        title: "No fue posible eliminar el producto",
-        message: getApiErrorMessage(error),
-      })
-    },
-  })
+  async function onProductRemoved(removed: Product) {
+    for (const window of panelWindows) {
+      if (window.payload.product.id === removed.id) closePanelWindow(window.id)
+    }
+    void queryClient.invalidateQueries({
+      queryKey: productKeys.all,
+      predicate: ({ queryKey }) => queryKey[2] !== "detail" || queryKey[3] !== removed.id,
+    })
+    invalidateCatalogConsumers()
+    setNotice({ kind: "success", title: "Producto dado de baja", message: `${removed.code} · ${removed.description}` })
+    setRemoving(null)
+    await navigate(paths.inventoryProducts, { replace: true })
+    queryClient.removeQueries({ queryKey: productKeys.detail(removed.id), type: "inactive" })
+  }
 
-  const controlsDisabled = capturing || navigationMutation.isPending || deleteMutation.isPending
+  const controlsDisabled = capturing || navigationMutation.isPending || Boolean(removing)
+  const shownProduct = newProduct ?? editing ?? product
+  const codeError = form.formState.errors.code?.type
+  useEffect(() => {
+    if (!saving && codeError === "availability") focusField("code")
+  }, [codeError, focusField, saving])
 
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
       <ProductToolbar
         disabled={controlsDisabled}
-        editDisabled={!product.editing?.writable}
+        editDisabled={!product?.editing?.writable}
         onCreate={startCreating}
-        onDelete={() => setDeleteOpen(true)}
-        onEdit={startEditing}
+        hasProduct={Boolean(product)}
+        onDelete={() => { if (product) setRemoving(product) }}
+        onEdit={() => startEditing(product)}
         onNext={() => navigationMutation.mutate("next")}
         onPrevious={() => navigationMutation.mutate("previous")}
         onSearch={documentSearchActive ? openMovementSearch : () => setSearchOpen(true)}
@@ -380,53 +425,52 @@ export function ProductCatalogPage() {
       {capturing && (
         <div className="grid gap-2">
           <h2 className="border-b pb-1 text-xs font-semibold">{captureTitle}</h2>
-          {saveMutation.isError && (
+          {saveMutation.isError && !staleEdit && (
             <Alert variant="destructive">
               <AlertTitle>No fue posible guardar el producto</AlertTitle>
               <AlertDescription>{getApiErrorMessage(saveMutation.error)}</AlertDescription>
             </Alert>
           )}
-          {editOptions.isError && (
+          {staleEdit && (
             <Alert variant="destructive">
-              <AlertTitle>No fue posible cargar las unidades</AlertTitle>
-              <AlertDescription>{getApiErrorMessage(editOptions.error)}</AlertDescription>
-              <Button className="w-fit" onClick={() => void editOptions.refetch()} size="xs" type="button" variant="outline">Reintentar</Button>
+              <AlertTitle>La ficha cambió desde que abriste la captura</AlertTitle>
+              <AlertDescription>Tu borrador sigue visible. Recarga la ficha para comenzar con la revisión vigente.</AlertDescription>
+              <Button className="w-fit" disabled={saving || productQuery.isFetching} onClick={() => void reloadEditing()}
+                size="xs" type="button" variant="outline">Descartar cambios y recargar</Button>
             </Alert>
           )}
+          {options.isError && (
+            <Alert variant="destructive">
+              <AlertTitle>No fue posible consultar el catálogo para la captura</AlertTitle>
+              <AlertDescription>{getApiErrorMessage(options.error)}</AlertDescription>
+              <Button className="w-fit" onClick={() => void options.refetch()} size="xs" type="button" variant="outline">Reintentar</Button>
+            </Alert>
+          )}
+          {createBlocked && <Alert role="status"><AlertDescription>{createOptions.data?.reason || "El alta no está disponible."}</AlertDescription></Alert>}
+          {creating && createOptions.data?.canWrite && units.length === 0 && (
+            <Alert role="status"><AlertDescription>No hay unidades activas para registrar el producto.</AlertDescription></Alert>
+          )}
+          {options.isPending && <p className="flex items-center gap-1 text-muted-foreground" role="status"><Spinner /> Consultando catálogo…</p>}
         </div>
       )}
 
-      <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
+      {shownProduct ? <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1">
-          <ProductPanelButtons
-            hideActions={capturing}
-            onSelect={(panel) =>
-              openPanelWindow(`inventory:${product.id}:${panel.key}`, {
-                panel,
-                product,
-              })
-            }
-            panels={actionPanels}
-            title="Acciones"
-          />
-          <ProductPanelButtons
-            hideActions={capturing}
-            onSelect={(panel) =>
-              openPanelWindow(`inventory:${product.id}:${panel.key}`, {
-                panel,
-                product,
-              })
-            }
-            panels={purchasesProductionPanels}
-            title="Compras/Prod"
-          />
+          {product && (
+            <>
+              <ProductPanelButtons hideActions={capturing || Boolean(removing)} onSelect={openQueryPanel}
+                panels={actionPanels} title="Acciones" />
+              <ProductPanelButtons hideActions={capturing || Boolean(removing)} onSelect={openQueryPanel}
+                panels={purchasesProductionPanels} title="Compras/Prod" />
+            </>
+          )}
           {capturing && (
             <div className="flex gap-1 sm:col-span-2 xl:col-span-1">
               <Button disabled={saveDisabled} form={formId} size="sm" type="submit">
-                {saveMutation.isPending && <Spinner data-icon="inline-start" />}
+                {saving && <Spinner data-icon="inline-start" />}
                 OK
               </Button>
-              <Button disabled={saveMutation.isPending} onClick={cancelCapture} size="sm" type="button" variant="outline">Cancelar</Button>
+              <Button disabled={saving} onClick={cancelCapture} size="sm" type="button" variant="outline">Cancelar</Button>
             </div>
           )}
         </aside>
@@ -441,22 +485,28 @@ export function ProductCatalogPage() {
           <ProductCatalogDetails
             editor={capturing ? {
               control: form.control,
-              disabled: saveMutation.isPending,
+              disabled: saving || createBlocked,
               fields: creating ? productCreateFields : new Set(editing?.editing?.editableFields),
               units,
-              codeValidation: creating ? {
-                onBlur: (value) => { void validateNewCode(value) },
+              codeValidation: creating || editing?.editing?.editableFields.includes("code") ? {
+                onBlur: (value) => { void validateCode(value, creating ? "create" : "edit") },
                 onChange: resetCodeValidation,
               } : undefined,
             } : undefined}
-            product={newProduct ?? editing ?? product}
+            product={shownProduct}
           />
         </form>
 
         <aside className="min-w-0">
-          <ProductQueriesPanel disabled={capturing} onSelect={openQueryPanel} />
+          <ProductQueriesPanel disabled={capturing || Boolean(removing)} onSelect={openQueryPanel} />
         </aside>
-      </div>
+      </div> : (
+        <Alert>
+          <AlertDescription>{productId > 0
+            ? (productQuery.isError ? getApiErrorMessage(productQuery.error) : "Consultando producto…")
+            : "No hay productos activos en el catálogo."}</AlertDescription>
+        </Alert>
+      )}
 
       {movementsOpen && (
         <DesktopWindowIdentity id={movementWindowId}>
@@ -494,33 +544,11 @@ export function ProductCatalogPage() {
         />
       ))}
 
-      <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogMedia>
-              <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
-            </AlertDialogMedia>
-            <AlertDialogTitle>¿Eliminar este producto?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se dará de baja {product.code}. La API impedirá la operación si el
-              producto tiene relaciones que no permiten eliminarlo.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate()}
-              variant="destructive"
-            >
-              {deleteMutation.isPending && <Spinner data-icon="inline-start" />}
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {removing && (
+        <DesktopWindowIdentity id={`inventory:${removing.id}:removal`}>
+          <ProductRemovalDialog key={removing.id} onClose={() => setRemoving(null)} onDeleted={onProductRemoved} product={removing} />
+        </DesktopWindowIdentity>
+      )}
     </section>
   )
 }

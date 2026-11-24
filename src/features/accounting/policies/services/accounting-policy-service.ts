@@ -2,6 +2,12 @@ import type {
   AccountingPolicy,
   AccountingPolicyClassifications,
   AccountingPolicySearchResponse,
+  ManualPolicyAccount,
+  ManualPolicyActionInput,
+  ManualPolicyCaptureOptions,
+  ManualPolicyInput,
+  ManualPolicyOperation,
+  ManualPolicyPreview,
 } from "@/features/accounting/policies/model"
 import { apiClient } from "@/shared/api/api-client"
 
@@ -38,5 +44,40 @@ export async function getAccountingPolicyClassifications(id: number, signal?: Ab
     `/accounting/policies/${id}/actions/classifications`,
     { signal },
   )
+  return response.data.data
+}
+
+const policyPath = "/accounting/policies"
+
+export async function getManualPolicyCaptureOptions(signal?: AbortSignal) {
+  const { data } = await apiClient.get<ItemResponse<ManualPolicyCaptureOptions>>(`${policyPath}/capture`, { signal })
+  return data.data
+}
+
+export async function searchManualPolicyAccounts(q: string, signal?: AbortSignal) {
+  const { data } = await apiClient.get<ItemResponse<{ accounts: ManualPolicyAccount[] }>>(`${policyPath}/capture/accounts`, { params: { q }, signal })
+  return data.data.accounts
+}
+
+export async function getManualPolicyPreview(id: number, signal?: AbortSignal) {
+  const { data } = await apiClient.get<ItemResponse<ManualPolicyPreview>>(`${policyPath}/${id}/actions/manual`, { signal })
+  return data.data
+}
+
+export async function createManualPolicy(input: ManualPolicyInput) {
+  const { data } = await apiClient.post<ItemResponse<AccountingPolicy>>(policyPath, input)
+  return data.data
+}
+
+export async function updateManualPolicy(id: number, input: ManualPolicyInput & { revision: number }) {
+  const { data } = await apiClient.patch<ItemResponse<AccountingPolicy>>(`${policyPath}/${id}`, input)
+  return data.data
+}
+
+export async function actOnManualPolicy(id: number, operation: ManualPolicyOperation, input: ManualPolicyActionInput) {
+  const path = `${policyPath}/${id}`
+  const response = operation === "delete"
+    ? await apiClient.delete<ItemResponse<AccountingPolicy>>(path, { data: input })
+    : await apiClient.post<ItemResponse<AccountingPolicy>>(`${path}/actions/${operation}`, input)
   return response.data.data
 }

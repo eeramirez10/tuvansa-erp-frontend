@@ -12,11 +12,11 @@ import { PurchaseReceptionSearchDialog } from "@/features/purchasing/purchase-re
 import { PurchaseReceptionToolbar } from "@/features/purchasing/purchase-receptions/components/purchase-reception-toolbar"
 import { purchaseReceptionActions } from "@/features/purchasing/purchase-receptions/constants"
 import { purchaseReceptionKeys, purchaseReceptionQueryOptions } from "@/features/purchasing/purchase-receptions/logic"
-import type { PurchaseReception, PurchaseReceptionAction } from "@/features/purchasing/purchase-receptions/model"
+import type { PurchaseReception, PurchaseReceptionAction, PurchaseReceptionCancellationKind } from "@/features/purchasing/purchase-receptions/model"
 import {
-  cancelPurchaseExpense,
+  cancelPurchaseReception,
   getAdjacentPurchaseReception,
-  getPurchaseExpenseCancellationPreview,
+  getPurchaseReceptionCancellationPreview,
 } from "@/features/purchasing/purchase-receptions/services/purchase-reception-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -24,6 +24,14 @@ import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/d
 
 type Notice = { title: string; message: string; error?: boolean }
 type PurchaseReceptionActionWindow = { reception: PurchaseReception; action: PurchaseReceptionAction }
+type CancellationWindow = { id: number; kind: PurchaseReceptionCancellationKind }
+
+function cancellationKind(reception: PurchaseReception): PurchaseReceptionCancellationKind | null {
+  if (reception.number.startsWith("GAW") && reception.totals.expenseTaxes) return "expense"
+  return /^RW\d{8}$/.test(reception.number) && reception.id >= 6_700_000_000_000 && reception.id < 6_700_100_000_000
+    ? "reception"
+    : null
+}
 
 export function PurchaseReceptionCatalogPage() {
   const id = Number(useParams().purchaseReceptionId)
@@ -34,8 +42,9 @@ export function PurchaseReceptionCatalogPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [generalExpensesOpen, setGeneralExpensesOpen] = useState(false)
   const { windows: actionWindows, openWindow: openActionWindow, closeWindow: closeActionWindow } = useDesktopWindowCollection<PurchaseReceptionActionWindow>()
-  const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<number>()
+  const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<CancellationWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const kind = reception ? cancellationKind(reception) : null
 
   const openReception = (next: PurchaseReception) => {
     queryClient.setQueryData(purchaseReceptionKeys.detail(next.id), next)
@@ -66,8 +75,8 @@ export function PurchaseReceptionCatalogPage() {
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
         {reception && <PurchaseReceptionDetails
-          onCancelExpense={reception.number.startsWith("GAW") && reception.totals.expenseTaxes
-            ? () => openCancellation(`purchase-receptions:${reception.id}:cancel-expense`, reception.id)
+          onCancel={kind
+            ? () => openCancellation(`purchase-receptions:${reception.id}:cancel-${kind}`, { id: reception.id, kind })
             : undefined}
           reception={reception}
         />}
@@ -90,14 +99,14 @@ export function PurchaseReceptionCatalogPage() {
       {generalExpensesOpen && <DesktopWindowIdentity id="purchase-receptions:general-expenses">
         <GeneralExpensesDialog onClose={() => setGeneralExpensesOpen(false)} />
       </DesktopWindowIdentity>}
-      {cancellationWindows.map(({ id: windowId, payload: expenseId }) => (
+      {cancellationWindows.map(({ id: windowId, payload: { id: receptionId, kind } }) => (
         <DesktopWindowIdentity id={windowId} key={windowId}>
           <PostingReversalDialog
-            kind="expense"
-            load={signal => getPurchaseExpenseCancellationPreview(expenseId, signal)}
+            kind={kind}
+            load={signal => getPurchaseReceptionCancellationPreview(receptionId, kind, signal)}
             onClose={() => closeCancellation(windowId)}
-            queryKey={purchaseReceptionKeys.expenseCancellation(expenseId)}
-            record={input => cancelPurchaseExpense(expenseId, input)}
+            queryKey={purchaseReceptionKeys.cancellation(receptionId, kind)}
+            record={input => cancelPurchaseReception(receptionId, kind, input)}
           />
         </DesktopWindowIdentity>
       ))}

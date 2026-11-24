@@ -20,7 +20,23 @@ function Field({ label, fieldValue, className = "", numeric = false }: { label: 
   )
 }
 
-export function PurchaseReceptionDetails({ reception, onCancelExpense }: { reception: PurchaseReception; onCancelExpense?: () => void }) {
+function CancellationControl({ reception, expense, onOpen }: { reception: PurchaseReception; expense?: boolean; onOpen: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      {reception.cancelled && <span className="font-medium" role="status">{expense ? "GA cancelado" : "Recepción cancelada"}</span>}
+      {reception.cancellation?.policyNumber && (
+        <Link className="underline underline-offset-2" to={paths.accountingPolicy(reception.cancellation.id)}>
+          Póliza {reception.cancellation.policyNumber}
+        </Link>
+      )}
+      <Button onClick={onOpen} size="xs" type="button" variant="outline">
+        {reception.cancelled ? "Ver cancelación" : expense ? "Cancelar GA" : "Cancelar recepción"}
+      </Button>
+    </div>
+  )
+}
+
+export function PurchaseReceptionDetails({ reception, onCancel }: { reception: PurchaseReception; onCancel?: () => void }) {
   const expenseTaxes = reception.totals.expenseTaxes
   if (expenseTaxes) {
     return (
@@ -28,19 +44,7 @@ export function PurchaseReceptionDetails({ reception, onCancelExpense }: { recep
         <Card size="sm">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b bg-module-reception/15 py-1">
             <CardTitle>Gastos múltiples</CardTitle>
-            {onCancelExpense && (
-              <div className="flex items-center gap-2">
-                {reception.cancelled && <span className="font-medium" role="status">GA cancelado</span>}
-                {reception.cancellation && (
-                  <Link className="underline underline-offset-2" to={paths.accountingPolicy(reception.cancellation.id)}>
-                    Póliza {reception.cancellation.policyNumber}
-                  </Link>
-                )}
-                <Button onClick={onCancelExpense} size="xs" type="button" variant="outline">
-                  {reception.cancelled ? "Ver cancelación" : "Cancelar GA"}
-                </Button>
-              </div>
-            )}
+            {onCancel && <CancellationControl expense onOpen={onCancel} reception={reception} />}
           </CardHeader>
           <CardContent className="grid grid-cols-12 gap-2 py-1">
             <Field className="col-span-3" label="Documento" fieldValue={reception.number} />
@@ -88,8 +92,9 @@ export function PurchaseReceptionDetails({ reception, onCancelExpense }: { recep
   return (
     <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">
-        <CardHeader className="border-b bg-module-reception/15 py-1">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b bg-module-reception/15 py-1">
           <CardTitle className="text-module-reception-foreground">Recepción</CardTitle>
+          {onCancel && <CancellationControl onOpen={onCancel} reception={reception} />}
         </CardHeader>
         <CardContent className="grid grid-cols-12 gap-x-2 gap-y-1 py-1">
           <Field className="col-span-2" label="Documento" fieldValue={reception.number} />

@@ -1,8 +1,12 @@
 import { apiClient } from "@/shared/api/api-client"
+import { isApiNotFound } from "@/shared/api/api-error"
 import type { PostingReversal, PostingReversalInput, PostingReversalPreview } from "@/features/accounts-payable/posting-reversal-model"
 import type {
   Supplier,
+  SupplierCatalogFields,
   SupplierClassificationsResponse,
+  SupplierCreatePreview,
+  SupplierEditPreview,
   SupplierPanelDefinition,
   SupplierPanelResponse,
   SupplierPayment,
@@ -37,11 +41,42 @@ export async function getSupplier(supplierId: number, signal?: AbortSignal) {
 }
 
 export async function getFirstSupplier(signal?: AbortSignal) {
-  const response = await apiClient.get<ItemResponse<Supplier>>(
-    "/accounts-payable/suppliers/first",
-    { signal },
-  )
+  try {
+    const response = await apiClient.get<ItemResponse<Supplier | null>>(
+      "/accounts-payable/suppliers/first",
+      { signal },
+    )
+    return response.data.data
+  } catch (error) {
+    if (isApiNotFound(error)) return null
+    throw error
+  }
+}
+
+const supplierPath = "/accounts-payable/suppliers"
+
+export async function getSupplierCreatePreview(signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<SupplierCreatePreview>>(`${supplierPath}/create`, { signal })
   return response.data.data
+}
+
+export async function getSupplierEditPreview(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<SupplierEditPreview>>(`${supplierPath}/${id}/edit`, { signal })
+  return response.data.data
+}
+
+export async function createSupplier(requestKey: string, fields: SupplierCatalogFields) {
+  const response = await apiClient.post<ItemResponse<Supplier>>(supplierPath, { requestKey, fields })
+  return response.data.data
+}
+
+export async function updateSupplier(id: number, revision: string, fields: SupplierCatalogFields) {
+  const response = await apiClient.patch<ItemResponse<Supplier>>(`${supplierPath}/${id}`, { revision, fields })
+  return response.data.data
+}
+
+export async function removeSupplier(id: number, revision: string) {
+  await apiClient.delete(`${supplierPath}/${id}`, { data: { revision, confirmed: true } })
 }
 
 export async function getAdjacentSupplier(

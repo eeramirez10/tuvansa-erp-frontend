@@ -22,7 +22,10 @@ export function AccountingPolicyDetails({ policy }: { policy: AccountingPolicy }
   return (
     <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">
-        <CardHeader className="border-b bg-module-accounting/15 py-1"><CardTitle>Póliza</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1 border-b bg-module-accounting/15 py-1">
+          <CardTitle>Póliza</CardTitle>
+          {policy.manual?.canceled && <span className="text-xs font-medium" role="status">Póliza dada de baja</span>}
+        </CardHeader>
         <CardContent className="grid grid-cols-12 gap-x-2 gap-y-1 py-1">
           <Field className="col-span-2" label="Documento" fieldValue={policy.number} />
           <Field className="col-span-2" label="Fecha" fieldValue={policy.date} />

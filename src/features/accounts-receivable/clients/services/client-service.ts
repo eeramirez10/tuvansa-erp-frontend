@@ -1,6 +1,10 @@
 import { apiClient } from "@/shared/api/api-client"
+import { isApiNotFound } from "@/shared/api/api-error"
+import type { PostingReversal, PostingReversalInput, PostingReversalPreview } from "@/features/accounts-payable/posting-reversal-model"
 import type {
   Client,
+  ClientBlockState,
+  ClientUpdateInput,
   ClientAnalyticsCriteria,
   ClientAnalyticsResponse,
   ClientClassificationsResponse,
@@ -43,11 +47,13 @@ export async function getClient(clientId: number, signal?: AbortSignal) {
 }
 
 export async function getFirstActiveClient(signal?: AbortSignal) {
-  const response = await apiClient.get<ItemResponse<Client>>(
-    "/accounts-receivable/clients/first",
-    { signal },
-  )
-  return response.data.data
+  try {
+    const response = await apiClient.get<ItemResponse<Client | null>>("/accounts-receivable/clients/first", { signal })
+    return response.data.data
+  } catch (error) {
+    if (isApiNotFound(error)) return null
+    throw error
+  }
 }
 
 export async function getAdjacentClient(clientId: number, direction: "previous" | "next") {
@@ -62,7 +68,7 @@ export async function createClient(input: ClientMutationInput) {
   return response.data.data
 }
 
-export async function updateClient(clientId: number, input: ClientMutationInput) {
+export async function updateClient(clientId: number, input: ClientUpdateInput) {
   const response = await apiClient.patch<ItemResponse<Client>>(
     `/accounts-receivable/clients/${clientId}`,
     input,
@@ -72,6 +78,18 @@ export async function updateClient(clientId: number, input: ClientMutationInput)
 
 export async function deleteClient(clientId: number) {
   await apiClient.delete(`/accounts-receivable/clients/${clientId}`)
+}
+
+const blockPath = (clientId: number) => `/accounts-receivable/clients/${clientId}/actions/block-status`
+
+export async function getClientBlockState(clientId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<ClientBlockState>>(blockPath(clientId), { signal })
+  return response.data.data
+}
+
+export async function setClientBlocked(clientId: number, blocked: boolean, reason: string) {
+  const response = await apiClient.patch<ItemResponse<ClientBlockState>>(blockPath(clientId), { blocked, reason, confirmed: true })
+  return response.data.data
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -126,6 +144,18 @@ export async function getClientCollectionPreview(clientId: number, remissionId: 
 
 export async function recordClientCollection(clientId: number, remissionId: number, input: ClientCollectionInput) {
   const response = await apiClient.post<ItemResponse<ClientCollection>>(collectionPath(clientId, remissionId), input)
+  return response.data.data
+}
+
+const collectionReversalPath = (clientId: number, collectionId: number) => `${collectionPath(clientId, collectionId)}/reversal`
+
+export async function getClientCollectionReversalPreview(clientId: number, collectionId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PostingReversalPreview>>(collectionReversalPath(clientId, collectionId), { signal })
+  return response.data.data
+}
+
+export async function reverseClientCollection(clientId: number, collectionId: number, input: PostingReversalInput) {
+  const response = await apiClient.post<ItemResponse<PostingReversal>>(collectionReversalPath(clientId, collectionId), input)
   return response.data.data
 }
 

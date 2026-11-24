@@ -3,12 +3,13 @@ import { useState } from "react"
 import { Link } from "react-router"
 
 import { paths } from "@/app/router/paths"
+import { parsePostingReversal, type PostingReversal } from "@/features/accounts-payable/posting-reversal-model"
 import { supplierReversiblePayment } from "@/features/accounts-payable/suppliers/logic"
 import { accountingPolicyQueryOptions } from "@/features/accounting/policies/logic"
 import { BankPanelTable, type BankPanelColumn } from "@/features/treasury/banking/components/bank-panel-table"
 import { printBankPolicy } from "@/features/treasury/banking/components/bank-policy-print"
 import { bankMoney } from "@/features/treasury/banking/logic"
-import type { BankPanel } from "@/features/treasury/banking/model"
+import type { BankPanel, BankReversalTarget } from "@/features/treasury/banking/model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -67,6 +68,25 @@ function selectionKey(row: Row) {
   return String(row.movementId ?? row.policyId ?? "")
 }
 
+function positiveId(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+}
+
+function reversiblePosting(row: Row | undefined, variant: Variant): { target: BankReversalTarget; reversal: PostingReversal | null } | null {
+  if (!row) return null
+  if (variant === "payments") {
+    const payment = supplierReversiblePayment(row)
+    return payment && positiveId(row.supplierId)
+      ? { target: { kind: "payment", supplierId: row.supplierId, paymentId: payment.id }, reversal: payment.reversal }
+      : null
+  }
+  if (variant !== "deposits" || row.isCollectionReversal === true || !positiveId(row.clientId) || !positiveId(row.collectionId)) return null
+  const reversal = parsePostingReversal(row.reversal)
+  return row.canReverseCollection === true || reversal
+    ? { target: { kind: "collection", clientId: row.clientId, collectionId: row.collectionId }, reversal }
+    : null
+}
+
 function BankPolicyComments({ id, row, onClose }: { id: number; row: Row; onClose: () => void }) {
   const query = useQuery(accountingPolicyQueryOptions(id))
   const policy = query.data
@@ -107,10 +127,10 @@ function BankPolicyComments({ id, row, onClose }: { id: number; row: Row; onClos
   )
 }
 
-export function BankAuxiliaryPanel({ data, variant, onPaymentReversal }: {
+export function BankAuxiliaryPanel({ data, variant, onReversal }: {
   data: BankPanel
   variant: Variant
-  onPaymentReversal?: (supplierId: number, paymentId: number) => void
+  onReversal?: (target: BankReversalTarget) => void
 }) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [comment, setComment] = useState<{ id: number; row: Row } | null>(null)
@@ -121,10 +141,9 @@ export function BankAuxiliaryPanel({ data, variant, onPaymentReversal }: {
   })
   const selectedRow = data.items.find((row) => selectionKey(row) === selectedKey)
   const selectedPolicyId = policyId(selectedRow)
-  const selectedPayment = variant === "payments" ? supplierReversiblePayment(selectedRow) : null
-  const supplierId = selectedRow?.supplierId
-  const canReversePayment = selectedPayment !== null && typeof supplierId === "number" && Number.isSafeInteger(supplierId) && supplierId > 0
-  const showPaymentReversal = variant === "payments" && data.items.some(row => supplierReversiblePayment(row) !== null)
+  const selectedPosting = reversiblePosting(selectedRow, variant)
+  const showReversal = (variant === "payments" || variant === "deposits") && data.items.some(row => reversiblePosting(row, variant) !== null)
+  const postingType = variant === "payments" ? "PP" : "PA"
   const unapplied = variant === "unapplied-auxiliary"
   const showStatementDate = data.items.some(({ statementDate }) => typeof statementDate === "string" && statementDate !== "")
   const columns: BankPanelColumn[] = [
@@ -163,18 +182,18 @@ export function BankAuxiliaryPanel({ data, variant, onPaymentReversal }: {
             Imprimir Póliza
           </Button>
           {(variant === "auxiliary" || variant === "payments") && <Button disabled size="xs" variant="outline">Imprimir Cheque</Button>}
-          {showPaymentReversal && (
-            <Button disabled={!canReversePayment || !onPaymentReversal}
-              onClick={() => { if (canReversePayment) onPaymentReversal?.(supplierId, selectedPayment.id) }}
+          {showReversal && (
+            <Button disabled={!selectedPosting || !onReversal}
+              onClick={() => { if (selectedPosting) onReversal?.(selectedPosting.target) }}
               size="xs" type="button" variant="outline">
-              {selectedPayment?.reversal ? "Ver reversión" : "Revertir PP"}
+              {selectedPosting?.reversal ? "Ver reversión" : `Revertir ${postingType}`}
             </Button>
           )}
-          {selectedPayment?.reversal && (
+          {selectedPosting?.reversal && (
             <span className="flex items-center gap-1" role="status">
-              PP revertido
-              <Link className="underline underline-offset-2" to={paths.accountingPolicy(selectedPayment.reversal.id)}>
-                Póliza {selectedPayment.reversal.policyNumber}
+              {postingType} revertido
+              <Link className="underline underline-offset-2" to={paths.accountingPolicy(selectedPosting.reversal.id)}>
+                Póliza {selectedPosting.reversal.policyNumber}
               </Link>
             </span>
           )}

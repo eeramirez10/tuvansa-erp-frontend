@@ -1,4 +1,4 @@
-import type { InventoryMovement, MovementSearchCriteria, MovementSearchResponse } from "@/features/inventories/movements/model"
+import type { InventoryMovement, MovementCaptureInput, MovementCaptureOptions, MovementSearchCriteria, MovementSearchResponse } from "@/features/inventories/movements/model"
 import { apiClient } from "@/shared/api/api-client"
 
 const movementPath = "/inventories/movements"
@@ -18,4 +18,14 @@ export async function getMovement(id: number, signal?: AbortSignal) {
 
 export async function cancelMovement(id: number) {
   await apiClient.delete(`${movementPath}/${id}`)
+}
+
+export async function getMovementCaptureOptions(signal?: AbortSignal) {
+  const response = await apiClient.get<{ data: MovementCaptureOptions }>(`${movementPath}/capture`, { signal })
+  return response.data.data
+}
+
+export async function createInventoryMovement(input: MovementCaptureInput) {
+  const response = await apiClient.post<{ data: InventoryMovement }>(movementPath, input)
+  return response.data.data
 }

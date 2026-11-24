@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
+import { parsePostingReversal } from "@/features/accounts-payable/posting-reversal-model"
 
 import type {
   Client,
@@ -6,10 +7,12 @@ import type {
   ClientFormValues,
   ClientMutationInput,
   ClientPanelDefinition,
+  ClientUpdateInput,
 } from "@/features/accounts-receivable/clients/model"
 import {
   getClient,
   getClientAnalytics,
+  getClientBlockState,
   getFirstActiveClient,
   getClientClassifications,
   getClientCollectionPreview,
@@ -27,6 +30,9 @@ export const clientKeys = {
     [...clientKeys.detail(clientId), "panel", panelKey] as const,
   collection: (clientId: number, remissionId: number) =>
     [...clientKeys.detail(clientId), "collection", remissionId] as const,
+  collectionReversal: (clientId: number, collectionId: number) =>
+    [...clientKeys.detail(clientId), "collection-reversal", collectionId] as const,
+  blockStatus: (clientId: number) => [...clientKeys.detail(clientId), "block-status"] as const,
   classifications: (clientId: number, position: number) =>
     [...clientKeys.detail(clientId), "classifications", position] as const,
   analytics: (criteria: ClientAnalyticsCriteria) =>
@@ -41,6 +47,13 @@ export const clientQueryOptions = (clientId: number) => queryOptions({
 export const firstActiveClientQueryOptions = () => queryOptions({
   queryKey: clientKeys.firstActive(),
   queryFn: ({ signal }) => getFirstActiveClient(signal),
+})
+
+export const clientBlockQueryOptions = (clientId: number) => queryOptions({
+  queryKey: clientKeys.blockStatus(clientId),
+  queryFn: ({ signal }) => getClientBlockState(clientId, signal),
+  refetchOnMount: "always",
+  retry: false,
 })
 
 export const clientSearchQueryOptions = (criteria: ClientSearchCriteria) => queryOptions({
@@ -66,6 +79,14 @@ export function collectionRemissionId(row: Record<string, unknown>): number | nu
   const local = Number.isSafeInteger(id) && id >= 7_100_000_000_000 && id <= 7_100_099_999_998
     && typeof row.number === "string" && /^FAW\d{8}$/.test(row.number)
   return local && Number.isFinite(amount) && amount > 0 ? id : null
+}
+
+export function clientReversibleCollection(row: Record<string, unknown> | undefined) {
+  if (!row || row.isCollectionReversal === true || typeof row.collectionNumber !== "string" || !row.collectionNumber) return null
+  const id = row.id
+  const reversal = parsePostingReversal(row.collectionReversal)
+  if (typeof id !== "number" || !Number.isSafeInteger(id) || id <= 0 || (!reversal && row.canReverseCollection !== true)) return null
+  return { id, number: row.collectionNumber, reversal }
 }
 
 export const clientClassificationsQueryOptions = (clientId: number, position: number) => queryOptions({
@@ -159,5 +180,29 @@ export function toClientMutationInput(values: ClientFormValues): ClientMutationI
       applyToClientCode: values.applyToClientCode,
       reviewStartsFromInvoice: values.reviewStartsFromInvoice,
     },
+  }
+}
+
+function changedFields<T extends object>(initial: T, updated: T): Partial<T> | undefined {
+  const entries = (Object.keys(updated) as Array<keyof T>).filter(key =>
+    JSON.stringify(updated[key]) !== JSON.stringify(initial[key]))
+    .map(key => [key, updated[key]])
+  return entries.length ? Object.fromEntries(entries) as Partial<T> : undefined
+}
+
+export function toClientUpdateInput(initial: ClientFormValues, values: ClientFormValues): ClientUpdateInput {
+  const original = toClientMutationInput(initial)
+  const updated = toClientMutationInput(values)
+  const address = changedFields(original.address, updated.address)
+  const contact = changedFields(original.contact, updated.contact)
+  const fiscal = changedFields(original.fiscal, updated.fiscal)
+  const terms = changedFields(original.terms, updated.terms)
+  return {
+    ...(updated.code !== original.code ? { code: updated.code } : {}),
+    ...(updated.name !== original.name ? { name: updated.name } : {}),
+    ...(address ? { address } : {}),
+    ...(contact ? { contact } : {}),
+    ...(fiscal ? { fiscal } : {}),
+    ...(terms ? { terms } : {}),
   }
 }

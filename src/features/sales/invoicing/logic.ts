@@ -6,6 +6,7 @@ import {
   getInvoiceByNumber,
   getInvoiceFromOrderPreview,
   getInvoicePanel,
+  getRemissionCancellationPreview,
   searchInvoices,
   type InvoiceSearchCriteria,
 } from "@/features/sales/invoicing/services/invoice-service"
@@ -17,6 +18,7 @@ export const invoiceKeys = {
   byNumber: (invoiceNumber: string) => [...invoiceKeys.all, "by-number", invoiceNumber] as const,
   search: (criteria: InvoiceSearchCriteria) => [...invoiceKeys.all, "search", criteria] as const,
   fromOrder: (orderNumber: string) => [...invoiceKeys.all, "from-order", orderNumber] as const,
+  remissionCancellation: (id: number) => [...invoiceKeys.detail(id), "cancel-remission"] as const,
   panel: (invoiceId: number, key: InvoicePanelKey) =>
     [...invoiceKeys.detail(invoiceId), "panel", key] as const,
 }
@@ -57,5 +59,12 @@ export const invoiceFromOrderQueryOptions = (orderNumber: string) => queryOption
   gcTime: 0,
   refetchOnMount: "always",
   refetchOnWindowFocus: false,
+  retry: false,
+})
+
+export const remissionCancellationQueryOptions = (invoiceId: number) => queryOptions({
+  queryKey: invoiceKeys.remissionCancellation(invoiceId),
+  queryFn: ({ signal }) => getRemissionCancellationPreview(invoiceId, signal),
+  refetchOnMount: "always",
   retry: false,
 })

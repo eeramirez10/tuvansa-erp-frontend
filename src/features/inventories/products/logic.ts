@@ -18,10 +18,12 @@ import {
   getProduct,
   getProductCodeAvailability,
   getProductClassification,
+  getProductCreateOptions,
   getProductEditOptions,
   getFirstActiveProduct,
   getProductOtherData,
   getProductPanel,
+  getProductRemoval,
   searchProducts,
   type ProductSearchCriteria,
 } from "@/features/inventories/products/services/product-service"
@@ -30,7 +32,9 @@ export const productKeys = {
   all: ["inventories", "products"] as const,
   firstActive: () => [...productKeys.all, "first-active"] as const,
   detail: (productId: number) => [...productKeys.all, "detail", productId] as const,
+  createOptions: () => [...productKeys.all, "create-options"] as const,
   editOptions: (productId: number) => [...productKeys.detail(productId), "edit-options"] as const,
+  removal: (productId: number) => [...productKeys.detail(productId), "removal"] as const,
   codeAvailability: (code: string) => [...productKeys.all, "code-availability", code] as const,
   search: (criteria: ProductSearchCriteria) =>
     [...productKeys.all, "search", criteria] as const,
@@ -49,6 +53,28 @@ export function productEditOptionsQueryOptions(productId: number) {
   return queryOptions({
     queryKey: productKeys.editOptions(productId),
     queryFn: ({ signal }) => getProductEditOptions(productId, signal),
+    refetchOnMount: "always",
+    staleTime: 0,
+    retry: false,
+  })
+}
+
+export function productCreateOptionsQueryOptions() {
+  return queryOptions({
+    queryKey: productKeys.createOptions(),
+    queryFn: ({ signal }) => getProductCreateOptions(signal),
+    refetchOnMount: "always",
+    staleTime: 0,
+    retry: false,
+  })
+}
+
+export function productRemovalQueryOptions(productId: number) {
+  return queryOptions({
+    queryKey: productKeys.removal(productId),
+    queryFn: ({ signal }) => getProductRemoval(productId, signal),
+    refetchOnMount: "always",
+    retry: false,
   })
 }
 
@@ -291,7 +317,13 @@ export function getNewProductCatalog(units: ProductEditOptions["units"]): Produc
     ?? units.find(({ code }) => code === "UNO")
     ?? units.find(({ id }) => id === newProductCatalog.classification.unit.id)
 
-  return unit ? { ...newProductCatalog, classification: { ...newProductCatalog.classification, unit } } : newProductCatalog
+  return {
+    ...newProductCatalog,
+    classification: {
+      ...newProductCatalog.classification,
+      unit: unit ?? { id: 0, code: "", description: "" },
+    },
+  }
 }
 
 function hasEditValues(values: object) {
@@ -301,6 +333,7 @@ function hasEditValues(values: object) {
 export function toProductCatalogEditInput(
   product: Product,
   changes: ProductCatalogEditChanges,
+  code?: string,
 ): ProductCatalogEditInput | null {
   if (!product.editing?.writable) return null
 
@@ -309,10 +342,11 @@ export function toProductCatalogEditInput(
     type: product.classification.type,
   }
   const editable = new Set(product.editing.editableFields)
+  const nextCode = editable.has("code") && code !== product.code.trim().toUpperCase() ? code : undefined
   const changesOnly = Object.fromEntries(Object.entries(changes).filter(([name, value]) => (
     editable.has(name) && value !== initial[name as keyof ProductCatalogEditChanges]
   ))) as ProductCatalogEditChanges
-  if (!hasEditValues(changesOnly)) return null
+  if (!nextCode && !hasEditValues(changesOnly)) return null
 
   const c = changesOnly
   const classification = { type: c.type, unitId: c.unitId, familyCode: c.familyCode, usesColorAndSize: c.usesColorAndSize }
@@ -332,6 +366,7 @@ export function toProductCatalogEditInput(
 
   return {
     revision: product.editing.revision,
+    code: nextCode,
     description: c.description,
     classification: hasEditValues(classification) ? classification : undefined,
     prices: hasEditValues(prices) ? prices : undefined,

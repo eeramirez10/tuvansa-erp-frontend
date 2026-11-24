@@ -85,6 +85,10 @@ export type BankPanelKey =
   | "transfer"
   | "unapplied-auxiliary"
 export type BankPanelDefinition = { key: BankPanelKey; label: string }
+export type BankReversalTarget =
+  | { kind: "payment"; supplierId: number; paymentId: number }
+  | { kind: "collection"; clientId: number; collectionId: number }
+
 export type BankPanel = {
   button: string
   section: "actions"

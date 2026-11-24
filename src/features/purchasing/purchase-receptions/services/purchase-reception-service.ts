@@ -1,6 +1,7 @@
 import type { PostingReversal, PostingReversalInput, PostingReversalPreview } from "@/features/accounts-payable/posting-reversal-model"
 import type {
   PurchaseReception,
+  PurchaseReceptionCancellationKind,
   PurchaseReceptionPanel,
   PurchaseReceptionPanelKey,
   PurchaseReceptionSearchResponse,
@@ -51,14 +52,15 @@ export async function getPurchaseReceptionPanel(id: number, key: PurchaseRecepti
   return response.data.data
 }
 
-const expenseCancellationPath = (id: number) => `/purchasing/purchase-receptions/${id}/actions/cancel-expense`
+const cancellationPath = (id: number, kind: PurchaseReceptionCancellationKind) =>
+  `/purchasing/purchase-receptions/${id}/actions/cancel-${kind}`
 
-export async function getPurchaseExpenseCancellationPreview(id: number, signal?: AbortSignal) {
-  const response = await apiClient.get<ItemResponse<PostingReversalPreview>>(expenseCancellationPath(id), { signal })
+export async function getPurchaseReceptionCancellationPreview(id: number, kind: PurchaseReceptionCancellationKind, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<PostingReversalPreview>>(cancellationPath(id, kind), { signal })
   return response.data.data
 }
 
-export async function cancelPurchaseExpense(id: number, input: PostingReversalInput) {
-  const response = await apiClient.post<ItemResponse<PostingReversal>>(expenseCancellationPath(id), input)
+export async function cancelPurchaseReception(id: number, kind: PurchaseReceptionCancellationKind, input: PostingReversalInput) {
+  const response = await apiClient.post<ItemResponse<PostingReversal>>(cancellationPath(id, kind), input)
   return response.data.data
 }

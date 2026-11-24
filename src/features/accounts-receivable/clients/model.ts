@@ -117,6 +117,25 @@ export type ClientMutationInput = {
   terms: Client["terms"]
 }
 
+export type ClientUpdateInput = {
+  code?: string
+  name?: string
+  address?: Partial<Client["address"]>
+  contact?: Partial<Client["contact"]>
+  fiscal?: Partial<Client["fiscal"]>
+  terms?: Partial<Client["terms"]>
+}
+
+export type ClientBlockState = {
+  client: Pick<Client, "id" | "code" | "name">
+  blockStatus: {
+    blocked: boolean
+    blockedAt: string | null
+    hasEvents: boolean
+    event: { id: number; date: string | null; title: string; description: string; key: string } | null
+  }
+}
+
 export type ClientPanelSection = "actions" | "queries"
 
 export type ClientPanelKey =

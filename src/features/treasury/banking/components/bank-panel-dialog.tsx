@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { SupplierPaymentReversalDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-reversal-dialog"
+import { ClientCollectionReversalDialog } from "@/features/accounts-receivable/clients/components/client-collection-reversal-dialog"
 import { BankAutomaticReconciliationDialog } from "@/features/treasury/banking/components/bank-automatic-reconciliation-dialog"
 import { BankAuxiliaryPanel } from "@/features/treasury/banking/components/bank-auxiliary-panel"
 import { BankClassifiersPanel } from "@/features/treasury/banking/components/bank-classifiers-panel"
@@ -13,7 +14,7 @@ import { BankReviewPanel } from "@/features/treasury/banking/components/bank-rev
 import { BankSupplierExpensesDialog } from "@/features/treasury/banking/components/bank-supplier-expenses-dialog"
 import { BankTransferDialog } from "@/features/treasury/banking/components/bank-transfer-dialog"
 import { bankMoney, bankPanelQueryOptions } from "@/features/treasury/banking/logic"
-import type { BankAccount, BankPanel, BankPanelDefinition, BankPanelKey } from "@/features/treasury/banking/model"
+import type { BankAccount, BankPanel, BankPanelDefinition, BankPanelKey, BankReversalTarget } from "@/features/treasury/banking/model"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
@@ -43,13 +44,13 @@ function SupplierExpensesReport({ data }: { data: BankPanel }) {
   </>
 }
 
-function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange, onPaymentReversal }: {
+function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange, onReversal }: {
   account: BankAccount
   data: BankPanel
   panelKey: PanelKey
   costCenter: string
   onCostCenterChange: (center: string) => void
-  onPaymentReversal?: (supplierId: number, paymentId: number) => void
+  onReversal?: (target: BankReversalTarget) => void
 }) {
   if (!data.available || panelKey === "movements") {
     return <Alert>
@@ -60,7 +61,7 @@ function PanelContent({ account, data, panelKey, costCenter, onCostCenterChange,
   }
   switch (panelKey) {
     case "auxiliary": case "payments": case "deposits": case "unapplied-auxiliary":
-      return <BankAuxiliaryPanel data={data} onPaymentReversal={onPaymentReversal} variant={panelKey} />
+      return <BankAuxiliaryPanel data={data} onReversal={onReversal} variant={panelKey} />
     case "general-ledger": return <BankLedgerPanel accountId={account.id} data={data} />
     case "cost-center-ledger": return <BankLedgerPanel accountId={account.id} center={costCenter} data={data}
       key={costCenter} onCenterChange={onCostCenterChange} />
@@ -75,7 +76,7 @@ type Props = { account: BankAccount; panel: BankPanelDefinition; onOpenChange: (
 function BankReadPanelDialog({ account, panelKey, onOpenChange }: Omit<Props, "panel"> & { panelKey: PanelKey }) {
   const [costCenter, setCostCenter] = useState("1")
   const [payingReceipt, setPayingReceipt] = useState(false)
-  const [paymentReversal, setPaymentReversal] = useState<{ supplierId: number; paymentId: number } | null>(null)
+  const [reversal, setReversal] = useState<BankReversalTarget | null>(null)
   const query = useQuery(bankPanelQueryOptions(account.id, panelKey, panelKey === "cost-center-ledger" ? costCenter : undefined))
   const title = titles[panelKey]
   const supplierReport = panelKey === "supplier-expenses"
@@ -87,7 +88,7 @@ function BankReadPanelDialog({ account, panelKey, onOpenChange }: Omit<Props, "p
 
   return <>
     <ErpDataDialog className={supplierReport ? "sm:max-w-[38rem]" : "sm:max-w-[72rem]"} description={`${title} de la cuenta ${account.code}`}
-      onOpenChange={open => { if (open || !paymentReversal) onOpenChange(open) }} title={title} tone="banking">
+      onOpenChange={open => { if (open || !reversal) onOpenChange(open) }} title={title} tone="banking">
       <ErpDataDialogBody className="grid gap-1.5">
         {query.isPending && <div className="grid min-h-64 place-items-center"><Spinner /></div>}
         {query.isError && <Alert variant="destructive">
@@ -97,17 +98,23 @@ function BankReadPanelDialog({ account, panelKey, onOpenChange }: Omit<Props, "p
         </Alert>}
         {query.data && <PanelContent account={account} costCenter={costCenter} data={query.data} panelKey={panelKey}
           onCostCenterChange={setCostCenter}
-          onPaymentReversal={paymentReversal ? undefined : (supplierId, paymentId) => setPaymentReversal({ supplierId, paymentId })} />}
+          onReversal={reversal ? undefined : setReversal} />}
         <footer className="flex justify-end gap-1">
           {canOpenPayment && <Button onClick={() => setPayingReceipt(true)} size="sm" variant="outline">Pagar recepción</Button>}
-          <Button disabled={Boolean(paymentReversal)} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cerrar</Button>
+          <Button disabled={Boolean(reversal)} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cerrar</Button>
         </footer>
       </ErpDataDialogBody>
     </ErpDataDialog>
-    {paymentReversal && (
-      <DesktopWindowIdentity id={`banking:${account.id}:payment-reversal:${paymentReversal.paymentId}`}>
-        <SupplierPaymentReversalDialog onClose={() => setPaymentReversal(null)} paymentId={paymentReversal.paymentId}
-          supplierId={paymentReversal.supplierId} tone="banking" />
+    {reversal?.kind === "payment" && (
+      <DesktopWindowIdentity id={`banking:${account.id}:payment-reversal:${reversal.paymentId}`}>
+        <SupplierPaymentReversalDialog onClose={() => setReversal(null)} paymentId={reversal.paymentId}
+          supplierId={reversal.supplierId} tone="banking" />
+      </DesktopWindowIdentity>
+    )}
+    {reversal?.kind === "collection" && (
+      <DesktopWindowIdentity id={`banking:${account.id}:collection-reversal:${reversal.collectionId}`}>
+        <ClientCollectionReversalDialog clientId={reversal.clientId} collectionId={reversal.collectionId}
+          onClose={() => setReversal(null)} tone="banking" />
       </DesktopWindowIdentity>
     )}
   </>

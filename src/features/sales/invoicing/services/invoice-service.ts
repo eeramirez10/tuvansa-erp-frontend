@@ -6,6 +6,9 @@ import type {
   InvoicePanel,
   InvoicePanelKey,
   InvoiceSearchResponse,
+  RemissionCancellation,
+  RemissionCancellationInput,
+  RemissionCancellationPreview,
   StampingSimulation,
 } from "@/features/sales/invoicing/model"
 import { apiClient } from "@/shared/api/api-client"
@@ -111,5 +114,17 @@ export async function getInvoiceFromOrderPreview(orderNumber: string, signal?: A
 
 export async function createInvoiceFromOrder(input: CreateInvoiceFromOrderInput) {
   const response = await apiClient.post<ItemResponse<CreateInvoiceFromOrderResult>>(fromOrderPath, input)
+  return response.data.data
+}
+
+const cancelRemissionPath = (id: number) => `/sales/invoices/${id}/actions/cancel-remission`
+
+export async function getRemissionCancellationPreview(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<RemissionCancellationPreview>>(cancelRemissionPath(id), { signal })
+  return response.data.data
+}
+
+export async function cancelRemission(id: number, input: RemissionCancellationInput) {
+  const response = await apiClient.post<ItemResponse<RemissionCancellation>>(cancelRemissionPath(id), input)
   return response.data.data
 }

@@ -19,6 +19,7 @@ import { cn } from "@/shared/utils/cn"
 type ProductSearchDialogProps = {
   onOpenChange: (open: boolean) => void
   onSelect: (product: Product) => void
+  status?: "active" | "all"
 }
 
 const compactButtonClass = "h-5 min-w-16 px-2 text-[9px]"
@@ -26,22 +27,24 @@ const compactButtonClass = "h-5 min-w-16 px-2 text-[9px]"
 export function ProductSearchDialog({
   onOpenChange,
   onSelect,
+  status = "all",
 }: ProductSearchDialogProps) {
   const [code, setCode] = useState("")
   const [ean, setEan] = useState("")
   const [description, setDescription] = useState("")
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
   const searchText = useDeferredValue((code || ean || description).trim())
   const resultsQuery = useQuery({
     ...productSearchQueryOptions({
       q: searchText,
-      status: "all",
+      status,
       page: 1,
       pageSize: 100,
     }),
     enabled: searchText.length > 0,
   })
   const products = resultsQuery.data?.data ?? []
+  const selectedProduct = products.find(product => product.id === selectedProductId)
 
   const chooseProduct = (product: Product) => {
     onSelect(product)
@@ -67,7 +70,7 @@ export function ProductSearchDialog({
               className="h-5 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
               onChange={(event) => {
                 setCode(event.target.value)
-                setSelectedProduct(null)
+                setSelectedProductId(null)
                 if (event.target.value) {
                   setEan("")
                   setDescription("")
@@ -86,7 +89,7 @@ export function ProductSearchDialog({
               onChange={(event) => {
                 const normalizedEan = event.target.value.toUpperCase()
                 setEan(normalizedEan)
-                setSelectedProduct(null)
+                setSelectedProductId(null)
                 if (normalizedEan) {
                   setCode("")
                   setDescription("")
@@ -102,7 +105,7 @@ export function ProductSearchDialog({
               autoComplete="off"
               onChange={(event) => {
                 setDescription(event.target.value)
-                setSelectedProduct(null)
+                setSelectedProductId(null)
                 if (event.target.value) {
                   setCode("")
                   setEan("")
@@ -133,11 +136,11 @@ export function ProductSearchDialog({
                 <tr
                   className={cn(
                     "h-4 cursor-default hover:bg-module-inventory/20",
-                    selectedProduct?.id === product.id &&
+                    selectedProductId === product.id &&
                       "bg-module-inventory text-module-inventory-foreground",
                   )}
                   key={product.id}
-                  onClick={() => setSelectedProduct(product)}
+                  onClick={() => setSelectedProductId(product.id)}
                   onDoubleClick={() => chooseProduct(product)}
                 >
                   <td className="truncate border-r border-input px-1" title={product.code}>

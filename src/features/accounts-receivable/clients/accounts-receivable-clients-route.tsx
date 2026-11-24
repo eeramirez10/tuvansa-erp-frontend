@@ -3,13 +3,13 @@ import { redirect } from "react-router"
 
 import { queryClient } from "@/app/providers/query-client"
 import { paths } from "@/app/router/paths"
-import { clientKeys, clientQueryOptions, firstActiveClientQueryOptions } from "@/features/accounts-receivable/clients/logic"
+import { clientQueryOptions, firstActiveClientQueryOptions } from "@/features/accounts-receivable/clients/logic"
 import { ClientCatalogPage } from "@/features/accounts-receivable/clients/pages/client-catalog-page"
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (params.clientId === undefined) {
-    const firstClient = await queryClient.ensureQueryData(firstActiveClientQueryOptions())
-    queryClient.setQueryData(clientKeys.detail(firstClient.id), firstClient)
+    const firstClient = await queryClient.fetchQuery(firstActiveClientQueryOptions())
+    if (!firstClient) return null
     return redirect(paths.accountsReceivableClient(firstClient.id))
   }
 

@@ -1,5 +1,6 @@
 import { useId } from "react"
 import type { Invoice } from "@/features/sales/invoicing/model"
+import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { Input } from "@/shared/ui/input"
@@ -40,12 +41,20 @@ function Metric({ label, value: fieldValue }: { label: string; value: string | n
   )
 }
 
-export function InvoiceCatalogDetails({ invoice }: { invoice: Invoice }) {
+export function InvoiceCatalogDetails({ invoice, onCancelRemission }: { invoice: Invoice; onCancelRemission?: () => void }) {
   return (
     <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">
-        <CardHeader className="border-b bg-module-sales/10 py-1">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b bg-module-sales/10 py-1">
           <CardTitle className="text-module-sales">Factura</CardTitle>
+          {onCancelRemission && (
+            <div className="flex items-center gap-2">
+              {invoice.canceled && <span className="font-medium" role="status">Remisión cancelada</span>}
+              <Button onClick={onCancelRemission} size="xs" type="button" variant="outline">
+                {invoice.canceled ? "Ver cancelación" : "Cancelar remisión"}
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="grid gap-x-2 gap-y-1 py-1 md:grid-cols-12">
           <ReadonlyField className="md:col-span-2" label="Docto" fieldValue={invoice.number} />

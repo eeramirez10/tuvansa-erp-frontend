@@ -1,9 +1,11 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { PostingReversal } from "@/features/accounts-payable/posting-reversal-model"
+import { parsePostingReversal } from "@/features/accounts-payable/posting-reversal-model"
 import {
   getFirstSupplier,
   getSupplier,
   getSupplierClassifications,
+  getSupplierCreatePreview,
+  getSupplierEditPreview,
   getSupplierPanel,
   getSupplierPaymentPreview,
   searchSuppliers,
@@ -20,6 +22,8 @@ export const supplierKeys = {
   classifications: (supplierId: number, position: number) => [...supplierKeys.detail(supplierId), "classifications", position] as const,
   payment: (supplierId: number, receiptId: number) => [...supplierKeys.detail(supplierId), "payment", receiptId] as const,
   paymentReversal: (supplierId: number, paymentId: number) => [...supplierKeys.detail(supplierId), "payment-reversal", paymentId] as const,
+  createPreview: () => [...supplierKeys.all, "create"] as const,
+  editPreview: (id: number) => [...supplierKeys.detail(id), "edit"] as const,
 }
 
 export const supplierQueryOptions = (supplierId: number) => queryOptions({
@@ -55,6 +59,22 @@ export const supplierPaymentQueryOptions = (supplierId: number, receiptId: numbe
   refetchOnWindowFocus: false,
 })
 
+export const supplierCreateQueryOptions = () => queryOptions({
+  queryKey: supplierKeys.createPreview(),
+  queryFn: ({ signal }) => getSupplierCreatePreview(signal),
+  refetchOnMount: "always",
+  gcTime: 0,
+  retry: false,
+})
+
+export const supplierEditQueryOptions = (id: number) => queryOptions({
+  queryKey: supplierKeys.editPreview(id),
+  queryFn: ({ signal }) => getSupplierEditPreview(id, signal),
+  refetchOnMount: "always",
+  gcTime: 0,
+  retry: false,
+})
+
 export function supplierBalanceReceiptId(row: Record<string, unknown> | undefined): number | null {
   if (!row || row.canPay === false) return null
 
@@ -65,17 +85,9 @@ export function supplierBalanceReceiptId(row: Record<string, unknown> | undefine
   return row.canPay === true || (id >= 6_700_000_000_000 && id <= 6_700_099_999_998) ? id : null
 }
 
-function supplierPaymentReversal(raw: unknown): PostingReversal | null {
-  if (!raw || typeof raw !== "object") return null
-  const reversal = raw as Partial<PostingReversal>
-  if (typeof reversal.id !== "number" || !Number.isSafeInteger(reversal.id) || reversal.id <= 0 ||
-    typeof reversal.policyNumber !== "string" || typeof reversal.date !== "string" || typeof reversal.reason !== "string") return null
-  return { id: reversal.id, policyNumber: reversal.policyNumber, date: reversal.date, reason: reversal.reason }
-}
-
 export function supplierReversiblePayment(row: Record<string, unknown> | undefined) {
   if (row?.movementType !== "PP") return null
-  const reversal = supplierPaymentReversal(row.reversal)
+  const reversal = parsePostingReversal(row.reversal)
   const id = Number(row.paymentId ?? row.id)
   if (!(row.canReverse === true || reversal) || !Number.isSafeInteger(id) || id <= 0) return null
   return { id, reversal }

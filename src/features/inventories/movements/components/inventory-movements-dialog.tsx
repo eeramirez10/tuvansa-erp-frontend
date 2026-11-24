@@ -4,8 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 
 import { InventoryMovementSearchDialog } from "@/features/inventories/movements/components/inventory-movement-search-dialog"
+import { MovementCaptureDialog } from "@/features/inventories/movements/components/movement-capture-dialog"
 import { movementDetailsQueryOptions, movementKeys } from "@/features/inventories/movements/logic"
-import { movementSearchWindowId } from "@/features/inventories/movements/model"
+import { isLocalInventoryAdjustment, movementCaptureWindowId, movementSearchWindowId, movementWindowId } from "@/features/inventories/movements/model"
 import { cancelMovement } from "@/features/inventories/movements/services/movement-service"
 import { ProductQueryTable } from "@/features/inventories/products/components/product-query-table"
 import { productKeys } from "@/features/inventories/products/logic"
@@ -24,7 +25,7 @@ import {
 } from "@/shared/ui/alert-dialog"
 import { Button } from "@/shared/ui/button"
 import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
-import { useDesktopWindowStore } from "@/shared/ui/desktop-window-store"
+import { selectRestoreDesktopWindow, useDesktopWindowStore } from "@/shared/ui/desktop-window-store"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Spinner } from "@/shared/ui/spinner"
 
@@ -35,7 +36,7 @@ type InventoryMovementsDialogProps = {
   onCloseSearch: () => void
 }
 
-const lineColumns: QueryColumn[] = [
+const lineColumns = (precision: number): QueryColumn[] => [
   { key: "productCode", label: "Producto", width: "6rem" },
   { key: "description", label: "Descripción", width: "12rem" },
   {
@@ -43,14 +44,14 @@ const lineColumns: QueryColumn[] = [
     label: "Entradas",
     width: "4rem",
     align: "right",
-    render: (row) => numberValue(row.quantity) > 0 ? numberValue(row.quantity).toFixed(2) : "",
+    render: (row) => numberValue(row.quantity) > 0 ? numberValue(row.quantity).toFixed(precision) : "",
   },
   {
     key: "outgoing",
     label: "Salidas",
     width: "4rem",
     align: "right",
-    render: (row) => numberValue(row.quantity) < 0 ? Math.abs(numberValue(row.quantity)).toFixed(2) : "",
+    render: (row) => numberValue(row.quantity) < 0 ? Math.abs(numberValue(row.quantity)).toFixed(precision) : "",
   },
   { key: "unit", label: "U.M.", width: "3rem" },
   { key: "cost", label: "Costo", width: "5rem", align: "right", render: (row) => numberValue(row.cost).toFixed(4) },
@@ -94,22 +95,33 @@ export function InventoryMovementsDialog({
   const queryClient = useQueryClient()
   const [movementId, setMovementId] = useState<number | null>(null)
   const [confirmationOpen, setConfirmationOpen] = useState(false)
+  const [captureOpen, setCaptureOpen] = useState(false)
   const [cancellationNotice, setCancellationNotice] = useState("")
   const detail = useQuery(movementDetailsQueryOptions(movementId))
   const movement = detail.data
   const header = movement?.header
+  const local = header && isLocalInventoryAdjustment(header.id)
+  const transfer = local && (header.type === "TR" || (header.type === "K" && /^TR/.test(header.document))) && Boolean(header.reference2)
+  const precision = local ? 3 : 2
   const entries = movement?.totals.entries ?? 0
   const exits = Math.abs(movement?.totals.exits ?? 0)
   const modalLayer = useDesktopWindowStore((state) => state.nextZIndex + 20)
+  const restoreWindow = useDesktopWindowStore(selectRestoreDesktopWindow)
   const cancellation = useMutation({
     mutationFn: cancelMovement,
     onSuccess: (_, id) => {
       setConfirmationOpen(false)
-      setMovementId((current) => current === id ? null : current)
-      setCancellationNotice("El documento ha sido eliminado.")
-      queryClient.removeQueries({ queryKey: movementKeys.detail(id), exact: true })
+      if (isLocalInventoryAdjustment(id)) {
+        setCancellationNotice("El documento se marcó como cancelado.")
+        void queryClient.invalidateQueries({ queryKey: movementKeys.detail(id), exact: true })
+      } else {
+        setMovementId((current) => current === id ? null : current)
+        setCancellationNotice("El documento ha sido eliminado.")
+        queryClient.removeQueries({ queryKey: movementKeys.detail(id), exact: true })
+      }
       void queryClient.invalidateQueries({ queryKey: movementKeys.all, refetchType: "none" })
       void queryClient.invalidateQueries({ queryKey: productKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ["inventories", "reports"] })
     },
     onError: () => setConfirmationOpen(false),
   })
@@ -121,7 +133,7 @@ export function InventoryMovementsDialog({
         defaultWidth={740}
         description="Consulta y cancelación de documentos de movimientos de inventario."
         fillHeight
-        onOpenChange={(open) => { if (!open && !cancellation.isPending) onClose() }}
+        onOpenChange={(open) => { if (!open && !cancellation.isPending && !captureOpen) onClose() }}
         title="Consulta de movimientos de inventario"
       >
         <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-1">
@@ -131,6 +143,10 @@ export function InventoryMovementsDialog({
                 <MovementField label="Documento" value={header?.document} />
                 <MovementField label="Referencia" value={header?.reference} />
               </div>
+              {transfer && <div className="grid grid-cols-2 gap-1">
+                <MovementField label="Alm. origen" value={header.reference2} />
+                <MovementField label="Alm. destino" value={header.warehouse} />
+              </div>}
               <div className="grid grid-cols-[minmax(7rem,1fr)_minmax(0,3fr)] gap-1">
                 <MovementField label="Cliente" value={header?.customerCode} />
                 <MovementField label="Nombre del cliente" labelVisible={false} value={header?.customerName} />
@@ -148,7 +164,7 @@ export function InventoryMovementsDialog({
               <MovementField label="Almacen" labelVisible={false} value={header?.warehouse} />
               <MovementField label="Usuario" labelVisible={false} value={header?.userId} />
             </div>
-            <Button aria-label="Buscar documento" disabled={cancellation.isPending} onClick={onSearch} size="icon-sm" title="Buscar documento" type="button" variant="outline">
+            <Button aria-label="Buscar documento" disabled={cancellation.isPending || captureOpen} onClick={onSearch} size="icon-sm" title="Buscar documento" type="button" variant="outline">
               <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
             </Button>
           </div>
@@ -168,7 +184,7 @@ export function InventoryMovementsDialog({
           ) : (
             <ProductQueryTable
               className="h-auto min-h-36 flex-1"
-              columns={lineColumns}
+              columns={lineColumns(precision)}
               emptyMessage={movement ? "Sin partidas en este documento" : ""}
               rows={movement?.lines ?? []}
               tableClassName="w-[43rem]"
@@ -185,6 +201,8 @@ export function InventoryMovementsDialog({
 
           <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2 px-1">
             <div className="flex flex-wrap gap-1">
+              <Button disabled={cancellation.isPending || confirmationOpen || captureOpen || searchOpen} onClick={() => setCaptureOpen(true)}
+                size="sm" type="button" variant="outline">Capturar movimiento</Button>
               {movement && (
                 <>
                   <Button disabled size="sm" type="button" variant="outline">Imprimir</Button>
@@ -194,8 +212,8 @@ export function InventoryMovementsDialog({
             </div>
             <div className="grid min-w-24 gap-1 text-center tabular-nums">
               <div className="grid grid-cols-2 gap-2">
-                <output aria-label="Entradas totales">{entries ? entries.toFixed(2) : ""}</output>
-                <output aria-label="Salidas totales">{exits ? exits.toFixed(2) : ""}</output>
+                <output aria-label="Entradas totales">{entries ? entries.toFixed(precision) : ""}</output>
+                <output aria-label="Salidas totales">{exits ? exits.toFixed(precision) : ""}</output>
               </div>
               <output aria-label="Costo total">{formatMoney(movement?.totals.cost ?? 0)}</output>
             </div>
@@ -203,7 +221,7 @@ export function InventoryMovementsDialog({
               {movement && (
                 <>
                   <Button
-                    disabled={!movement.cancellationAvailable || cancellation.isPending}
+                    disabled={!movement.cancellationAvailable || cancellation.isPending || captureOpen}
                     onClick={() => setConfirmationOpen(true)}
                     size="sm"
                     title={movement.cancellationReason}
@@ -234,6 +252,20 @@ export function InventoryMovementsDialog({
               onCloseSearch()
             }}
           />
+        </DesktopWindowIdentity>
+      )}
+      {captureOpen && (
+        <DesktopWindowIdentity id={movementCaptureWindowId}>
+          <MovementCaptureDialog onClose={() => {
+            setCaptureOpen(false)
+            restoreWindow(movementWindowId)
+          }} onSaved={saved => {
+            setMovementId(saved.header.id)
+            cancellation.reset()
+            setCancellationNotice(`${saved.header.document} registrado.`)
+            setCaptureOpen(false)
+            restoreWindow(movementWindowId)
+          }} />
         </DesktopWindowIdentity>
       )}
 

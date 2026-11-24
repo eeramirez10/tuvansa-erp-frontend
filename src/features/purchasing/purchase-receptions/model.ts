@@ -1,5 +1,7 @@
 import type { PostingReversal } from "@/features/accounts-payable/posting-reversal-model"
 
+export type PurchaseReceptionCancellationKind = "expense" | "reception"
+
 export type PurchaseReceptionLine = {
   id: number
   productId: number

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import { getGeneralExpensesPreview, lookupGeneralExpensesCatalog } from "@/features/purchasing/purchase-receptions/services/general-expenses-service"
-import type { PurchaseReceptionPanelKey } from "@/features/purchasing/purchase-receptions/model"
+import type { PurchaseReceptionCancellationKind, PurchaseReceptionPanelKey } from "@/features/purchasing/purchase-receptions/model"
 import {
   getPurchaseReception,
   getPurchaseReceptionPanel,
@@ -13,7 +13,7 @@ export const purchaseReceptionKeys = {
   detail: (id: number) => [...purchaseReceptionKeys.all, "detail", id] as const,
   search: (criteria: PurchaseReceptionSearchCriteria) => [...purchaseReceptionKeys.all, "search", criteria] as const,
   panel: (id: number, key: PurchaseReceptionPanelKey) => [...purchaseReceptionKeys.detail(id), "panel", key] as const,
-  expenseCancellation: (id: number) => [...purchaseReceptionKeys.detail(id), "cancel-expense"] as const,
+  cancellation: (id: number, kind: PurchaseReceptionCancellationKind) => [...purchaseReceptionKeys.detail(id), `cancel-${kind}`] as const,
 }
 
 export const purchaseReceptionQueryOptions = (id: number) => queryOptions({

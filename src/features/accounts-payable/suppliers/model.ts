@@ -50,6 +50,21 @@ export type SupplierSearchResponse = {
   pagination: { page: number; pageSize: number; total: number }
 }
 
+export type SupplierCatalogFields = Pick<Supplier, "code" | "name" | "address" | "contact" | "fiscal" | "terms" | "notes">
+
+export type SupplierCreatePreview = {
+  writable: boolean
+  reason: string | null
+  fields: SupplierCatalogFields
+  accountingAccountRequired: boolean
+}
+
+export type SupplierEditPreview = SupplierCreatePreview & {
+  revision: string
+  codeEditable: boolean
+  deletionReason: string | null
+}
+
 export type SupplierPanelDefinition = {
   key: string
   label: string

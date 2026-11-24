@@ -30,6 +30,7 @@ export type Invoice = {
   movementType: string
   status: string
   canceled: boolean
+  cancellation?: RemissionCancellation | null
   dates: {
     issuedAt: string | null
     dueAt: string | null
@@ -104,6 +105,34 @@ export type CreateInvoiceFromOrderInput = {
 }
 
 export type CreateInvoiceFromOrderResult = { invoice: Invoice; orderComplete: boolean }
+
+export type RemissionCancellation = {
+  id: number
+  date: string
+  reason: string
+  regeneratedOrder: boolean
+}
+
+export type RemissionCancellationPreview = {
+  canWrite: boolean
+  reason: string | null
+  number: string
+  originalDate: string
+  date: string
+  fiscalStart: string | null
+  fiscalEnd: string | null
+  amount: number
+  order: { id: number; number: string; canRegenerate: boolean; reason: string | null }
+  alreadyRecorded: RemissionCancellation | null
+}
+
+export type RemissionCancellationInput = {
+  requestKey: string
+  date: string
+  reason: string
+  confirmed: true
+  regenerateOrder: boolean
+}
 
 export type InvoicePanelSection = "actions" | "summaries"
 export type InvoicePanelKey =

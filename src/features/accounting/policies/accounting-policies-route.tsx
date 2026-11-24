@@ -7,9 +7,9 @@ import { AccountingPolicyCatalogPage } from "@/features/accounting/policies/page
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (params.policyId === undefined) {
-    const result = await queryClient.ensureQueryData(accountingPolicySearchQueryOptions({ page: 1, pageSize: 1 }))
+    const result = await queryClient.fetchQuery(accountingPolicySearchQueryOptions({ page: 1, pageSize: 1 }))
     const policy = result.data[0]
-    if (!policy) throw new Response("No hay pólizas disponibles", { status: 404 })
+    if (!policy) return null
     await queryClient.ensureQueryData(accountingPolicyQueryOptions(policy.id))
     return redirect(paths.accountingPolicy(policy.id))
   }

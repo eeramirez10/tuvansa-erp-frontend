@@ -68,6 +68,16 @@ El resultado actualiza Bancos y las consultas de Contabilidad.
 **Auxiliar**, **Pagos** y **Depósitos** muestran **Fecha conc.** cuando la
 consulta devuelve una fecha de conciliación.
 
+## Cuentas por cobrar · Alta, Cambio, Baja y Bloquear clientes
+
+| Control | Evento | Método y endpoint relativo a `/api` | Resultado |
+| --- | --- | --- | --- |
+| Alta de clientes | Capturar en la ficha y pulsar OK | POST `/accounts-receivable/clients` | Usa los valores iniciales de lista y cuenta contable y abre la ficha guardada |
+| Cambio al cliente actual | Editar en la ficha y pulsar OK | PATCH `/accounts-receivable/clients/:id` | Envía solo los campos modificados, con objetos parciales para dirección, contacto, fiscal y condiciones |
+| Baja de cliente | Confirmar la baja | DELETE `/accounts-receivable/clients/:id` | La API comprueba relaciones. La confirmación conserva el mensaje si la baja se bloquea |
+| Bloquear | Consultar estado del cliente y evento | GET `/accounts-receivable/clients/:id/actions/block-status` | Presenta el motivo registrado cuando el cliente ya está bloqueado |
+| Bloquear o Desbloquear | Capturar motivo y confirmar el cambio | PATCH `/accounts-receivable/clients/:id/actions/block-status` con `{blocked,reason,confirmed:true}` | Actualiza la ficha y el historial de eventos |
+
 ## Cuentas por cobrar · Saldo y Cobrar
 
 En **Clientes → Saldo**, **Cobrar** aparece en las remisiones web FAW con
@@ -82,11 +92,38 @@ bancaria, fecha, importe, referencia bancaria y concepto.
 | Cancelar / Escape | Cerrar la captura | Sin petición de escritura | `client-collection-dialog.tsx` |
 | Bancos → Depósitos | Consultar los depósitos de la cuenta | GET `/treasury/bank-accounts/:bankAccountId/actions/deposits` | `bank-panel-dialog.tsx` |
 | Facturación → Auxiliar | Consultar el cargo y los abonos de la remisión | GET `/sales/invoices/:invoiceId/actions/auxiliary` | `invoice-panel-dialog.tsx` |
+| Clientes → Movimientos / Bancos → Depósitos → Revertir PA | Seleccionar un cobro web PA, consultar su estado y confirmar la reversión | GET y POST `/accounts-receivable/clients/:clientId/collections/:collectionId/reversal` | `client-collection-reversal-dialog.tsx` |
 | Cobro registrado → Ver póliza / Póliza en Movimientos, Depósitos o Auxiliar | Abrir la póliza de ingresos | GET `/accounting/policies/:policyId` | `/contabilidad/polizas/:policyId` |
 
 Al registrar el depósito se actualizan Clientes, Facturación, Bancos y
 Contabilidad. El aviso muestra el folio del cobro, el recibo y la póliza de
 ingresos.
+
+La reversión del cobro muestra el motivo si está bloqueada, pide fecha, motivo
+y confirmación y abre el enlace a la póliza generada. **Ver reversión** vuelve a
+mostrar el resultado en el cobro original. Clientes, Facturación, Bancos y
+Contabilidad se actualizan al registrar el movimiento.
+
+Para un PA conciliado, la consulta muestra la fecha de la conciliación original,
+la fecha mínima de reversión y el efecto bancario. La confirmación envía
+`expectedReconciliationId`. La contrapartida aparece como movimiento pendiente
+de conciliación.
+
+## Cuentas por pagar · Alta, Cambio y Baja de proveedores
+
+| Control | Evento | Método y endpoint relativo a `/api` | Resultado |
+| --- | --- | --- | --- |
+| Alta de proveedores | Abrir captura en la ficha | GET `/accounts-payable/suppliers/create` | Carga valores iniciales y disponibilidad |
+| Alta / OK | Dar de alta el proveedor | POST `/accounts-payable/suppliers` | Envía `requestKey` y `fields`. Abre la ficha nueva |
+| Cambio al proveedor actual | Abrir la ficha vigente | GET `/accounts-payable/suppliers/:id/edit` | Carga campos, revisión y disponibilidad de cambiar el código |
+| Cambio / OK | Guardar el cambio | PATCH `/accounts-payable/suppliers/:id` | Envía `revision` y `fields`. Un conflicto de revisión conserva el borrador hasta recargar |
+| Baja de proveedores | Verificar si puede darse de baja | GET `/accounts-payable/suppliers/:id/edit` | Muestra `deletionReason` o consulta la confirmación |
+| Baja / Sí | Confirmar la baja | DELETE `/accounts-payable/suppliers/:id` | Envía `{revision,confirmed:true}` y vuelve al catálogo |
+
+En Alta y Cambio, **Cancelar** descarta el borrador. Al salir de **Proveedor**,
+la ficha comprueba coincidencias de código en el catálogo. Al confirmar, la
+API valida el código y la cuenta contable según la configuración de la compañía.
+La ficha actualiza los catálogos dependientes de Compras y Bancos.
 
 ## Cuentas por pagar · Saldo y Paga
 
@@ -252,6 +289,8 @@ La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difie
 | Facturación / Facturar | Cargar pedido autorizado y asignado | GET `/sales/invoices/from-order?orderNumber=:number` | Obtiene la revisión del pedido y el máximo que se puede remitir por partida |
 | Facturación / Facturar / OK | Confirmar fecha y cantidades | POST `/sales/invoices/from-order` | Abre el folio FAW y actualiza las consultas de Facturación, Pedidos, Inventarios y Clientes |
 | Facturación / Facturar / Cancelar | Cerrar | Ninguno | Descarta la selección |
+| Facturación / Cancelar remisión | Consultar una remisión web FAW | GET `/sales/invoices/:id/actions/cancel-remission` | Muestra la fecha, el cargo, el pedido de origen y cualquier bloqueo |
+| Facturación / Cancelar remisión / Confirmar | Registrar la cancelación | POST `/sales/invoices/:id/actions/cancel-remission` | Envía motivo, fecha, confirmación, UUID y la opción de regenerar el pedido. Actualiza Facturación, Pedidos, Inventarios y Clientes |
 | Pedidos / Auxiliar | Abrir folio de la remisión | GET `/sales/orders/:id/actions/auxiliar` | Permite abrir el documento asociado en Facturación |
 | Clientes / Saldo o Movimientos | Consultar el cliente | GET `/accounts-receivable/clients/:id/balance` o `/movements` | Incluye el cargo FA en el saldo del cliente |
 | Facturación / Sellar | Abrir la ventana de una remisión web en pruebas | GET `/sales/invoices/:id/actions/seal` | Muestra el importe y la referencia de simulación si existe |
@@ -278,12 +317,14 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | --- | --- | --- | --- | --- | --- | --- |
 | General | Selector de módulos | Inicio | Abrir aplicación | Sin petición | Sin caché | Implementado |
 | Cuentas por cobrar | Catálogo de clientes | Carga del catálogo | Abrir vista | `GET /accounts-receivable/clients` | `['accounts-receivable', 'clients', ...]` | Implementado |
-| Inventarios PT | Catálogo de productos | Carga del catálogo | Abrir vista | `GET /inventories/products` | `['inventories', 'products', ...]` | Implementado |
-| Inventarios PT | Alta de productos | Nuevo producto | Habilitar la ficha, enfocar Código y cargar las unidades | `GET /inventories/products/:productId/edit-options` | `['inventories', 'products', 'detail', productId, 'edit-options']` | Inicia con un borrador limpio y tipo M.P. |
-| Inventarios PT | Alta de productos | Código | Validar el código al pulsar Tab o salir del campo | `GET /inventories/products/code-availability?code=:code` | `['inventories', 'products', 'code-availability', code]` | Si existe, avisa, limpia Código y devuelve el foco |
-| Inventarios PT | Alta de productos | OK / Cancelar | Crear el producto o volver al registro anterior | `POST /inventories/products` al confirmar | Invalida catálogo y abre el producto creado | Cancelar descarta el borrador local |
-| Inventarios PT | Cambio de producto | Editar producto | Activar la ficha y cargar las unidades | `GET /inventories/products/:productId/edit-options` | `['inventories', 'products', 'detail', productId, 'edit-options']` | El detalle indica si se puede editar y qué campos habilitar |
-| Inventarios PT | Cambio de producto | OK / Cancelar | Confirmar o descartar la edición en la ficha | `PATCH /inventories/products/:productId` al confirmar cambios | Actualiza la ficha e invalida las consultas de Inventarios | Envía revisión y campos modificados. Cancelar descarta el borrador local |
+| Inventarios PT / MP | Catálogo de productos | Carga del catálogo | Abrir vista o elegir en el buscador | `GET /inventories/products/first`, `GET /inventories/products`, `GET /inventories/products/:productId` | `['inventories', 'products', ...]` | Ambos accesos usan la misma ficha. Alta está disponible desde el catálogo vacío |
+| Inventarios PT / MP | Alta de productos | Nuevo producto | Habilitar la ficha, enfocar Código y cargar las unidades | `GET /inventories/products/create-options` | `productKeys.createOptions()` | Inicia con tipo M.P. y unidad UNO si está disponible. La API indica el motivo cuando el alta está bloqueada |
+| Inventarios PT / MP | Alta y Cambio | Código | Validar el código al salir del campo y al confirmar | `GET /inventories/products/code-availability?code=:code` | `productKeys.codeAvailability(code)` | Un duplicado devuelve el foco al código. En Alta se limpia el código duplicado |
+| Inventarios PT / MP | Alta de productos | OK / Cancelar | Crear el producto o descartar la captura | `POST /inventories/products` al confirmar | Invalida catálogo, reportes y buscadores dependientes y abre el producto creado | Cancelar descarta el borrador local |
+| Inventarios PT / MP | Cambio de producto | Editar producto | Activar la ficha y cargar las unidades | `GET /inventories/products/:productId/edit-options` | `productKeys.editOptions(productId)` | El detalle indica la revisión y los campos habilitados, incluido Código cuando se puede cambiar |
+| Inventarios PT / MP | Cambio de producto | OK / Cancelar | Confirmar o descartar la edición en la ficha | `PATCH /inventories/products/:productId` al confirmar cambios | Actualiza la ficha e invalida los datos dependientes | Envía la revisión y los campos modificados. Si la revisión cambió, conserva el borrador hasta que el usuario lo descarte o recargue |
+| Inventarios PT / MP | Baja de producto | Papel marcado | Consultar restricciones y revisión | `GET /inventories/products/:productId/removal` | `productKeys.removal(productId)` | Muestra el motivo del bloqueo o la confirmación «¿Lo doy de baja?» |
+| Inventarios PT / MP | Baja de producto | Sí, dar de baja | Confirmar la baja del producto | `DELETE /inventories/products/:productId` con `{code,revision}` | Abre el primer producto activo y actualiza el catálogo | Si el registro cambia, se vuelve a verificar y confirmar |
 | Inventarios PT | Precios de Venta | `*` | Indicar una oferta vigente | `GET /inventories/products/:productId` | `['inventories', 'products', 'detail', productId]` | `prices.hasActiveOffer` |
 | Inventarios PT | Acciones | Clasificar | Abrir Selección de parámetros | `GET /inventories/products/:productId/actions/classifications` | `['inventories', 'products', 'detail', productId, 'panel', 'classifications']` | Carga las familias, asignaciones y catálogos. La lista de opciones abre vacía hasta elegir una familia |
 | Inventarios PT | Clasificar | Guardar | Clic después de pasar opciones | `PATCH /inventories/products/:productId/actions/classifications` | Actualiza la selección e invalida el detalle del producto | Envía cambios y revisión. La API habilita Guardar en productos preparados para escritura |
@@ -309,6 +350,9 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 | Inventarios PT | Consultas | Ordenado a proveedor | Abrir ventana, filtrar surtidos o cargar más pedidos | `GET /inventories/products/:productId/queries/supplier-orders` con `excludeFulfilled`, `page` y `pageSize` | `['inventories', 'products', 'detail', productId, 'panel', 'supplier-orders', 'pages', excludeFulfilled]` | Divide las cantidades de cada partida por su factor y usa `supplierOrdersTotals.remaining` para Por llegar |
 | Inventarios PT | Documentos | Búsqueda | Salir de un campo editado, Enter u OK | `GET /inventories/movements` con `document`, `date`, `reference`, `reference2`, `warehouse`, `supplier`, `customer`, `page` y `pageSize` | `['inventories', 'movements', 'search', filters, page]` | La ficha y el buscador abren vacíos |
 | Inventarios PT | Documentos | Resultado de Búsqueda | Código exacto único, OK o doble clic en renglón | `GET /inventories/movements/:id` | `['inventories', 'movements', 'detail', id]` | Encabezado, partidas y totales del movimiento |
+| Inventarios PT / MP | Documentos | Capturar movimiento | Abrir captura y cargar tipos EI/SI/TR según configuración, fecha y almacenes | `GET /inventories/movements/capture` | `movementKeys.capture()` | La consulta indica por qué se bloquea la captura |
+| Inventarios PT / MP | Captura de movimientos | OK / Cancelar | Registrar entrada, salida o traspaso con productos activos y abrir su ficha | `POST /inventories/movements` | Actualiza búsquedas, existencias y reportes | Envía `requestKey`, tipo, fecha, almacén y partidas. TR agrega `destinationWarehouse`. Reintentar la misma captura conserva el UUID |
+| Inventarios PT / MP | Documentos | Detalle de TR | Revisar origen, destino y partidas | `GET /inventories/movements/:id` | `movementKeys.detail(id)` | Un folio contiene una salida del origen y una entrada al destino por producto |
 | Inventarios PT | Documentos | Cancelar | Clic y confirmación Sí | `DELETE /inventories/movements/:id` | Invalida movimientos y productos después del éxito | Disponible según `cancellationAvailable` de la ficha |
 
 Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
@@ -335,6 +379,23 @@ Si el nombre interno heredado no coincide con el texto visible —por ejemplo, u
 
 El SQL del buscador es derivado. No se efectuó una nueva captura OMNIS. El almacén procede del pedido (1 equivale a 01) y las lecturas no aplican la restricción de alta. La escritura final continúa por POST /sales/orders/capture o PATCH /sales/orders/:id; conserva el bloqueo de precio bajo costo.
 
+
+### Contabilidad · Pólizas de Diario
+
+| Control | Evento | Método y endpoint relativo a `/api` |
+| --- | --- | --- |
+| Alta de póliza de diario | Cargar fecha, periodo, tipo 3 y centros de costo | GET `/accounting/policies/capture` |
+| Código o Buscar cuenta | Buscar cuentas de captura por código o nombre | GET `/accounting/policies/capture/accounts?q=…` |
+| Alta / OK | Registrar una póliza con cargos y abonos iguales | POST `/accounting/policies` |
+| Cambio, Aplicar, Des - Aplicar o Baja | Consultar permisos, revisión y motivo de restricción | GET `/accounting/policies/:id/actions/manual` |
+| Cambio / OK | Guardar los datos de una póliza pendiente de aplicar | PATCH `/accounting/policies/:id` |
+| Aplicar o Des - Aplicar | Confirmar la operación con revisión y UUID | POST `/accounting/policies/:id/actions/apply` o `/unapply` |
+| Baja / Dar de baja | Confirmar la baja con revisión y UUID | DELETE `/accounting/policies/:id` |
+
+La captura admite cuentas y centros de costo del catálogo en pesos. La póliza
+dada de baja conserva sus renglones de auditoría. Las acciones de escritura
+aparecen para las pólizas manuales de Diario y siguen las restricciones del
+periodo contable y de conciliación devueltas por la API.
 
 ### Contabilidad: Estado de resultados (2026-10-22)
 
@@ -464,6 +525,7 @@ La ruta web es `/recepciones/:purchaseReceptionId`. **Nueva recepción** abre el
 | Código proveedor / gasto | `GET /general-expenses/catalog?supplierCode=…&productCode=…` |
 | Gastos múltiples / OK | `POST /general-expenses` |
 | Cancelar GA | `GET y POST /:id/actions/cancel-expense` |
+| Cancelar recepción RW | `GET y POST /:id/actions/cancel-reception` |
 | Ficha y partidas | `GET /:purchaseReceptionId` |
 | Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
 

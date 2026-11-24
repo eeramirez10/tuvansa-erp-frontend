@@ -379,6 +379,18 @@ export type ProductEditOptions = {
   units: Array<Pick<Product["classification"]["unit"], "id" | "code" | "description">>
 }
 
+export type ProductCreateOptions = ProductEditOptions & { canWrite: boolean; reason: string | null }
+
+export type ProductRemovalPreview = {
+  id: number
+  code: string
+  revision: string | null
+  canDelete: boolean
+  reason: string | null
+}
+
+export type ProductRemovalInput = { code: string; revision: string }
+
 export type ProductMutationInput = {
   code: string
   description: string
@@ -425,6 +437,7 @@ type ProductEditSalePrice = Partial<ProductMutationInput["prices"]["sale"][numbe
 
 export type ProductCatalogEditInput = {
   revision: string
+  code?: string
   description?: string
   classification?: Partial<Omit<ProductMutationInput["classification"], "hasPhoto">> & { usesColorAndSize?: boolean }
   prices?: {

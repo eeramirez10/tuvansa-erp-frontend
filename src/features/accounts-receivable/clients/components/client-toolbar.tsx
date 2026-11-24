@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip"
 
 type ClientToolbarProps = {
   disabled?: boolean
+  hasClient: boolean
   onCreate: () => void
   onDelete: () => void
   onEdit: () => void
@@ -44,13 +45,13 @@ export function ClientToolbar(props: ClientToolbarProps) {
   return (
     <ErpModuleToolbarPortal>
       <div aria-label="Navegación y acciones del cliente" className="flex items-center gap-1" role="toolbar">
-        <ToolbarButton disabled={props.disabled} icon={ArrowLeft01Icon} label="Cliente anterior" onClick={props.onPrevious} />
+        <ToolbarButton disabled={props.disabled || !props.hasClient} icon={ArrowLeft01Icon} label="Cliente anterior" onClick={props.onPrevious} />
         <ToolbarButton disabled={props.disabled} icon={Search01Icon} label="Buscar cliente" onClick={props.onSearch} />
-        <ToolbarButton disabled={props.disabled} icon={ArrowRight01Icon} label="Cliente siguiente" onClick={props.onNext} />
+        <ToolbarButton disabled={props.disabled || !props.hasClient} icon={ArrowRight01Icon} label="Cliente siguiente" onClick={props.onNext} />
         <Separator className="mx-0.5 h-5" orientation="vertical" />
-        <ToolbarButton disabled={props.disabled} icon={FileAddIcon} label="Nuevo cliente" onClick={props.onCreate} />
-        <ToolbarButton destructive disabled={props.disabled} icon={Delete01Icon} label="Eliminar cliente" onClick={props.onDelete} />
-        <ToolbarButton disabled={props.disabled} icon={Edit02Icon} label="Editar cliente" onClick={props.onEdit} />
+        <ToolbarButton disabled={props.disabled} icon={FileAddIcon} label="Alta de clientes" onClick={props.onCreate} />
+        <ToolbarButton destructive disabled={props.disabled || !props.hasClient} icon={Delete01Icon} label="Baja de cliente" onClick={props.onDelete} />
+        <ToolbarButton disabled={props.disabled || !props.hasClient} icon={Edit02Icon} label="Cambio al cliente actual" onClick={props.onEdit} />
       </div>
     </ErpModuleToolbarPortal>
   )

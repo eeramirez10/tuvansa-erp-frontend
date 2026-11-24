@@ -1,5 +1,7 @@
 export const movementWindowId = "inventory:movements"
 export const movementSearchWindowId = "inventory:movements:search"
+export const movementCaptureWindowId = "inventory:movements:capture"
+export const isLocalInventoryAdjustment = (id: number) => id >= 7_950_000_000_000 && id <= 7_950_099_999_999
 
 export type InventoryMovementHeader = {
   id: number
@@ -37,6 +39,28 @@ export type InventoryMovement = {
   totals: { quantity: number; cost: number; entries?: number; exits?: number }
   cancellationAvailable: boolean
   cancellationReason?: string
+}
+
+export type MovementCaptureType = "EI" | "SI" | "TR"
+
+export type MovementCaptureOptions = {
+  writable: boolean
+  reason: string | null
+  defaultDate: string
+  defaultWarehouse: string
+  types: Array<{ code: MovementCaptureType; name: string; sign: 1 | 0 | -1 }>
+  warehouses: Array<{ code: string; name: string }>
+}
+
+export type MovementCaptureInput = {
+  requestKey: string
+  type: MovementCaptureType
+  date: string
+  warehouse: string
+  destinationWarehouse?: string
+  reference?: string
+  document?: string
+  lines: Array<{ productId: number; quantity: number; cost?: number }>
 }
 
 export const movementSearchFields = [

@@ -95,7 +95,7 @@ export function CatalogUnitField({ unit, value, editor, className }: {
                 value={chosen?.id ?? null}
               >
                 <SelectTrigger aria-invalid={fieldState.invalid} className="h-5 w-full min-w-0 px-1 text-[9px]/tight" id={id} onBlur={field.onBlur} ref={field.ref} size="sm">
-                  <SelectValue>{chosen ? `${chosen.code} · ${chosen.description}` : value}</SelectValue>
+                  <SelectValue>{chosen ? `${chosen.code} · ${chosen.description}` : value || "Selecciona una unidad"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {editor.units.map(({ id: unitId, code, description }) => (

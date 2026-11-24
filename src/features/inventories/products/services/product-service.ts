@@ -1,7 +1,9 @@
 import { apiClient } from "@/shared/api/api-client"
+import { isApiNotFound } from "@/shared/api/api-error"
 import type {
   Product,
   ProductCatalogEditInput,
+  ProductCreateOptions,
   ProductEditOptions,
   ProductClassificationResponse,
   ProductClassificationUpdate,
@@ -14,6 +16,8 @@ import type {
   ProductOtherDataUpdate,
   ProductPanelKey,
   ProductPanelResponse,
+  ProductRemovalInput,
+  ProductRemovalPreview,
   ProductSearchResponse,
 } from "@/features/inventories/products/model"
 
@@ -104,11 +108,16 @@ export async function getProduct(productId: number, signal?: AbortSignal) {
 }
 
 export async function getFirstActiveProduct(signal?: AbortSignal) {
-  const response = await apiClient.get<ItemResponse<Product>>(
-    "/inventories/products/first",
-    { signal },
-  )
-  return response.data.data
+  try {
+    const response = await apiClient.get<ItemResponse<Product | null>>(
+      "/inventories/products/first",
+      { signal },
+    )
+    return response.data.data
+  } catch (error) {
+    if (isApiNotFound(error)) return null
+    throw error
+  }
 }
 
 export async function getAdjacentProduct(
@@ -156,8 +165,24 @@ export async function getProductEditOptions(productId: number, signal?: AbortSig
   return response.data.data
 }
 
-export async function deleteProduct(productId: number) {
-  await apiClient.delete(`/inventories/products/${productId}`)
+export async function getProductCreateOptions(signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<ProductCreateOptions>>(
+    "/inventories/products/create-options",
+    { signal },
+  )
+  return response.data.data
+}
+
+export async function getProductRemoval(productId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<ProductRemovalPreview>>(
+    `/inventories/products/${productId}/removal`,
+    { signal },
+  )
+  return response.data.data
+}
+
+export async function deleteProduct(productId: number, input: ProductRemovalInput) {
+  await apiClient.delete(`/inventories/products/${productId}`, { data: input })
 }
 
 export async function setProductBlocked(productId: number, blocked: boolean) {
