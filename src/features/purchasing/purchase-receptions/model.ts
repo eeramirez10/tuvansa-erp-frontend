@@ -9,6 +9,31 @@ export type PurchaseReceptionPedimento = {
   incrementables: number
 }
 
+export type PurchaseReceptionPedimentoReport = {
+  number: string
+  pedimento: PurchaseReceptionPedimento | null
+  exchangeRate: number
+  expenses: Array<{
+    slot: "FLETE1" | "FLETE2" | "AGENTE1" | "AGENTE2" | "DTA" | "OTROS" | "PASIVOS"
+    supplierCode: string
+    amount: number
+    vat: number | null
+  }>
+  totals: { expenses: number; vat: number; expensePercentage: number }
+  lines: Array<{
+    code: string
+    tariffPercent: number
+    convertedPrice: number
+    grossPrice: number
+    quantity: number
+    piecesPerBox: number
+    unitVolume: number
+    receivedVolume: number
+    proration: number
+    amount: number
+  }>
+}
+
 export type PurchaseReceptionLine = {
   id: number
   productId: number

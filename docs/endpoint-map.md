@@ -577,6 +577,7 @@ confirmada en la captura.
 | Comentarios / Abrir y OK | `GET/PATCH /:purchaseReceptionId/actions/comments` |
 | Documenta / Abrir y OK | `GET/POST /:purchaseReceptionId/actions/document` |
 | Pedimento | `GET /:purchaseReceptionId/actions/pedimento` |
+| Reporte pedimento | `GET /:purchaseReceptionId/actions/pedimento-report` |
 | Piezas | `GET /:purchaseReceptionId/actions/pieces` |
 | Alta Piezas / Edita pzas | `GET, POST y PATCH /:purchaseReceptionId/actions/pieces/lines/:lineId` |
 | Cambiar serie | `PATCH /:purchaseReceptionId/actions/pieces/:pieceId/serial` |
@@ -588,6 +589,10 @@ el auxiliar muestra el abono DO y los folios se muestran en **Proveedores → Sa
 **Etiquetas** abre la vista previa con los formatos configurados y toma las
 copias de la cantidad facturada. **Mayús** limita las etiquetas a la partida
 seleccionada. **Imprimir** usa la impresión del navegador.
+
+**Reporte pedimento** abre la vista previa del pedimento, sus gastos,
+IVA y partidas con prorrateo. El botón **Imprimir** de la vista previa
+abre la impresión del navegador.
 
 **Cambia Prv** pide confirmación y precarga el proveedor actual. El selector
 busca por código o nombre y **OK** actualiza la ficha, Cuentas por Pagar y

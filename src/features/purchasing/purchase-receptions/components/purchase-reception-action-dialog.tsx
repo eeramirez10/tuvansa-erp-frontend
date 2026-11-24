@@ -19,6 +19,7 @@ import { PurchaseReceptionCommentsDialog } from "@/features/purchasing/purchase-
 import { PurchaseReceptionClassificationsDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-classifications-dialog"
 import { PurchaseReceptionDocumentDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-document-dialog"
 import { PurchaseReceptionLabelsDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-labels-dialog"
+import { PurchaseReceptionPedimentoReportDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-pedimento-report-dialog"
 import { PurchaseReceptionSupplierChangeDialog } from "@/features/purchasing/purchase-receptions/components/purchase-reception-supplier-change-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 
@@ -212,6 +213,7 @@ export function PurchaseReceptionActionDialog({ reception, action, labelLineIds,
   if (action.key === "document") return <PurchaseReceptionDocumentDialog reception={reception} onClose={onClose} />
   if (action.key === "labels") return <PurchaseReceptionLabelsDialog id={reception.id} number={reception.number}
     selectedLineIds={labelLineIds} onClose={onClose} />
+  if (action.key === "customs-report") return <PurchaseReceptionPedimentoReportDialog id={reception.id} number={reception.number} onClose={onClose} />
   if (action.key === "change-supplier") return <PurchaseReceptionSupplierChangeDialog reception={reception} onClose={onClose} />
   if (action.panelKey) return <ReadPanel action={action} onClose={onClose} reception={reception} />
   return (

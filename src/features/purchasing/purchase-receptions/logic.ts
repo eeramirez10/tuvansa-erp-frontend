@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import { getGeneralExpensesPreview, lookupGeneralExpensesCatalog } from "@/features/purchasing/purchase-receptions/services/general-expenses-service"
+import { getPurchaseReceptionPedimentoReport } from "@/features/purchasing/purchase-receptions/services/purchase-reception-pedimento-report-service"
 import type { PurchaseReceptionCancellationKind, PurchaseReceptionPanelKey, PurchaseReceptionSupplierSearch } from "@/features/purchasing/purchase-receptions/model"
 import {
   getPurchaseReception,
@@ -21,6 +22,7 @@ export const purchaseReceptionKeys = {
   documenting: (id: number) => [...purchaseReceptionKeys.detail(id), "documenting"] as const,
   search: (criteria: PurchaseReceptionSearchCriteria) => [...purchaseReceptionKeys.all, "search", criteria] as const,
   panel: (id: number, key: PurchaseReceptionPanelKey) => [...purchaseReceptionKeys.detail(id), "panel", key] as const,
+  pedimentoReport: (id: number) => [...purchaseReceptionKeys.detail(id), "pedimento-report"] as const,
   pieceLine: (id: number, lineId: number) => [...purchaseReceptionKeys.detail(id), "piece-line", lineId] as const,
   cancellation: (id: number, kind: PurchaseReceptionCancellationKind) => [...purchaseReceptionKeys.detail(id), `cancel-${kind}`] as const,
 }
@@ -62,6 +64,14 @@ export const purchaseReceptionSearchQueryOptions = (criteria: PurchaseReceptionS
 export const purchaseReceptionPanelQueryOptions = (id: number, key: PurchaseReceptionPanelKey) => queryOptions({
   queryKey: purchaseReceptionKeys.panel(id, key),
   queryFn: ({ signal }) => getPurchaseReceptionPanel(id, key, signal),
+})
+
+export const purchaseReceptionPedimentoReportQueryOptions = (id: number) => queryOptions({
+  queryKey: purchaseReceptionKeys.pedimentoReport(id),
+  queryFn: ({ signal }) => getPurchaseReceptionPedimentoReport(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  retry: false,
 })
 
 export const purchaseReceptionPieceLineQueryOptions = (id: number, lineId: number) => queryOptions({
