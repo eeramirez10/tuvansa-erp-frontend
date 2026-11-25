@@ -284,7 +284,14 @@ La consulta usa el ID del documento. Muestra su encabezado, todas sus
 partidas y los totales de entradas, salidas y costo con signo. **Cancelar** pide confirmación
 y solicita la cancelación cuando la API indica que está disponible. Una
 cancelación confirmada limpia la ficha y actualiza la caché de búsquedas y
-productos. **Imprimir**, **Comentarios** y **CT** se muestran deshabilitados.
+productos. **Comentarios** muestra la nota del documento. **Imprimir** abre
+la vista previa de un EI, SI o TR vigente de México. El encabezado presenta
+**Referencia** o **Salida de** antes del almacén. El pedimento se imprime
+bajo la descripción de su partida. El pie presenta cantidad total, fecha
+del movimiento, comentarios, importe total y firmas. **SI** imprime en
+positivo la cantidad y el importe de una salida. En **TR** se muestran el
+origen, el destino y las partidas firmadas por almacén. **CT** queda fuera
+del alcance de México.
 
 ### Modales restantes de Consultas
 

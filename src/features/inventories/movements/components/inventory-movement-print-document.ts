@@ -1,12 +1,16 @@
 import type { InventoryMovementPrint } from "@/features/inventories/movements/model"
 import { formatDate } from "@/features/inventories/products/query-formatters"
 
-const quantity = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 3 })
-const unitCost = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 4, maximumFractionDigits: 4 })
-const amount = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const twoDecimals = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const fourDecimals = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 4, maximumFractionDigits: 4 })
 
 const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }
 const text = (value: string) => value.replace(/[&<>"']/g, (character) => entities[character])
+
+function amountInCents(value: number) {
+  const magnitude = Math.abs(value) * 100
+  return Math.sign(value) * Math.round(magnitude + magnitude * Number.EPSILON)
+}
 
 const styles = `
   @page { size: letter; margin: 16mm 12mm; }
@@ -24,30 +28,38 @@ const styles = `
   td { border-bottom: 1px solid #ddd; }
   tr { break-inside: avoid; }
   .number { text-align: right; white-space: nowrap; }
-  .customs { border-top: none; padding-top: 0; font-size: 9pt; }
-  tfoot td { border-top: 1px solid #444; font-weight: bold; }
-  .comments { margin-top: 12pt; white-space: pre-wrap; }
+  .customs { margin: 2pt 0 0; font-size: 9pt; }
+  .report-footer { margin-top: 12pt; break-inside: avoid; }
+  .movement-summary { display: flex; flex-wrap: wrap; gap: 8pt 24pt; }
+  .comments { white-space: pre-wrap; }
+  .total { display: flex; justify-content: flex-end; gap: 16pt; border-top: 1px solid #444; padding: 4pt 5pt; }
   .signatures { display: flex; gap: 32pt; justify-content: space-evenly; margin-top: 38pt; break-inside: avoid; }
   .signatures p { min-width: 130pt; text-align: center; border-top: 1px solid #444; padding-top: 4pt; }
 `
 
 export function buildInventoryMovementPrintDocument(report: InventoryMovementPrint) {
-  const entry = report.type === "EI"
   const transfer = report.type === "TR"
-  const title = transfer ? "Traspaso de material" : entry ? "Entrada de material" : "Salida de material"
+  const outgoing = report.format === "QTUVANSA002"
+  const title = transfer ? "Traspaso de material" : outgoing ? "Salida de inventario" : "Entrada de inventario"
   const warehouse = [report.warehouse, report.warehouseName].filter(Boolean).join(" · ")
-  const warehouseLabel = transfer ? "Almacén destino" : entry ? "Entrada almacén" : "Salida almacén"
-  const columnCount = transfer ? 7 : 6
+  const warehouseLabel = transfer ? "Almacén destino" : outgoing ? "Salida almacén" : "Entrada almacén"
+  const dateLabel = outgoing ? "Fecha de salida" : "Fecha de entrada"
   const date = formatDate(report.date)
-  const lines = report.lines.map((line, index) => {
+  const direction = outgoing ? -1 : 1
+  const formatMovementValue = (value: number) => twoDecimals.format(value === 0 ? 0 : value * direction)
+  const cost = outgoing ? twoDecimals : fourDecimals
+  const totalQuantity = report.lines.reduce((sum, line) => sum + line.quantity, 0)
+  const printLines = report.lines.map(line => ({ ...line, cents: amountInCents(line.amount) }))
+  const totalCents = printLines.reduce((sum, line) => sum + line.cents, 0)
+  const lines = printLines.map((line, index) => {
     const lot = line.customs
     const customs = lot && (lot.entry || lot.date || lot.office)
-      ? `<tr><td colspan="${columnCount}" class="customs">Pedimento ${text(lot.entry)} · Fecha ${text(formatDate(lot.date))} · Aduana ${text(lot.office)}</td></tr>`
+      ? `<p class="customs">Pedimento ${text(lot.entry)} · Fecha ${text(formatDate(lot.date))} · Aduana ${text(lot.office)}</p>`
       : ""
-    return `<tr><td class="number">${index + 1}</td><td class="number">${quantity.format(line.quantity)}</td>
-      <td>${text(line.productCode)}</td><td>${text(line.description)}</td>
+    return `<tr><td class="number">${index + 1}</td><td class="number">${formatMovementValue(line.quantity)}</td>
+      <td>${text(line.productCode)}</td><td>${text(line.description)}${customs}</td>
       ${transfer ? `<td>${text(line.warehouse ?? "")}</td>` : ""}
-      <td class="number">${unitCost.format(line.cost)}</td><td class="number">${amount.format(line.amount)}</td></tr>${customs}`
+      <td class="number">${cost.format(line.cost)}</td><td class="number">${formatMovementValue(line.cents / 100)}</td></tr>`
   }).join("")
 
   return `<!doctype html>
@@ -57,17 +69,23 @@ export function buildInventoryMovementPrintDocument(report: InventoryMovementPri
       <dl>
         <dt>Documento</dt><dd>${text(report.document)}</dd>
         <dt>Lugar y fecha</dt><dd>${text([report.place, date].filter(Boolean).join(" · "))}</dd>
+        <dt>${outgoing ? "Salida de" : "Referencia"}</dt><dd>${text(report.reference)}</dd>
         ${transfer ? `<dt>Almacén origen</dt><dd>${text(report.sourceWarehouse ?? "")}</dd>` : ""}
         <dt>${warehouseLabel}</dt><dd>${text(warehouse)}</dd>
-        <dt>${report.type === "SI" ? "Salida de" : "Referencia"}</dt><dd>${text(report.reference)}</dd>
       </dl>
       <table>
         <thead><tr><th class="number">#</th><th class="number">Cant.</th><th>Código</th><th>Descripción</th>${transfer ? "<th>Alm.</th>" : ""}<th class="number">Costo U.</th><th class="number">Importe</th></tr></thead>
         <tbody>${lines}</tbody>
-        <tfoot><tr><td colspan="${columnCount - 1}" class="number">Total</td><td class="number">${amount.format(report.total)}</td></tr></tfoot>
       </table>
-      <p class="comments"><strong>Comentarios</strong> ${text(report.comment)}</p>
-      <div class="signatures"><p>Firma</p><p>Firma de aceptación</p></div>
+      <section class="report-footer">
+        <p class="movement-summary">
+          <span><strong>Cantidad total</strong> ${formatMovementValue(totalQuantity)}</span>
+          <span><strong>${dateLabel}</strong> ${text(date)}</span>
+        </p>
+        <p class="comments"><strong>Comentarios</strong> ${text(report.comment)}</p>
+        <p class="total"><strong>Total</strong><strong class="number">${formatMovementValue(totalCents / 100)}</strong></p>
+        <div class="signatures"><p>Firma</p><p>Firma de aceptación</p></div>
+      </section>
     </body>
   </html>`
 }
