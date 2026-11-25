@@ -20,6 +20,13 @@ Las notificaciones usan un adaptador global en `shared/notifications`; los módu
 
 Las ventanas ERP de Ventas comparten el teclado: Enter activa el botón visible **OK** y Escape activa **Cancelar**. Los formularios conservan su submit nativo, los Enter manejados por búsquedas/códigos no se duplican y Enter dentro de un comentario multilínea conserva el salto de línea.
 
+En la ficha, **Autorizar** y **Ctrl+A** abren la misma ventana de firma.
+Ingresa la clave personal y confirma **Autorizar** o **Desautorizar**.
+La API comprueba el permiso `MPED5`, la revisión y el costo vigente de las
+partidas pendientes al autorizar. Un pedido asignado o con surtido conserva
+la autorización. Tras firmar, **Comentarios → Autorizó** muestra el usuario
+que dio la última autorización.
+
 La ficha central de Pedido conserva la distribución observada en PROSCAI: ocho bandas de ancho desigual en el primer renglón (Pedido, Pedido cliente, Carrito, Status., Surtido, Anticipo, Canal y Sucursal), Cliente y Nombre ocupan el bloque izquierdo del segundo, y Fecha/Desde/Vence/Agt./Plazo/Almacén forman el tercero. La tabla mantiene las proporciones visibles de Producto y Descripción, seguida por cantidades e importes; abajo, Totales ocupa cerca de un tercio del ancho e Importes el espacio restante. Carrito, Anticipo, Canal y la primera Sucursal permanecen visibles pero vacíos porque el contrato HTTP aún no expone esos valores.
 
 El primer OK conserva un borrador local y comienza el recorrido de descuentos; no inserta un encabezado como OMNIS hasta el OK final. Cancelar Comentarios regresa a Captura. Cerrar un borrador pide confirmar descarte. Durante el guardado se deshabilitan controles; los errores conservan el contenido y no se reintenta automáticamente.

@@ -10,7 +10,8 @@ import { OrderCatalogDetails } from "@/features/sales/orders/components/order-ca
 import { OrderAssignmentDialog } from "@/features/sales/orders/components/order-assignment-dialog"
 import { OrderFormDialog } from "@/features/sales/orders/components/order-form-dialog"
 import { OrderCaptureDialog } from "@/features/sales/orders/components/order-capture-dialog"
-import { setOrderAuthorization, toggleOrderQuote } from "@/features/sales/orders/services/order-capture-service"
+import { toggleOrderQuote } from "@/features/sales/orders/services/order-capture-service"
+import { OrderAuthorizationDialog } from "@/features/sales/orders/components/order-authorization-dialog"
 import { OrderPanelDialog } from "@/features/sales/orders/components/order-panel-dialog"
 import { OrderSearchDialog } from "@/features/sales/orders/components/order-search-dialog"
 import { OrderPanelButtons } from "@/features/sales/orders/components/order-side-panels"
@@ -39,6 +40,7 @@ export function OrderCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [authorizationOrder, setAuthorizationOrder] = useState<Order | null>(null)
   const [assignmentOpen, setAssignmentOpen] = useState(false)
   const [customerSearch, setCustomerSearch] = useState<CustomerSearchWindow | null>(null)
   const [productSearch, setProductSearch] = useState<ProductSearchWindow | null>(null)
@@ -50,10 +52,6 @@ export function OrderCatalogPage() {
     await queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
     openOrder(next); setNotice({ kind: "success", title: "Cotiz", message: `${next.number} convertido a ${next.documentKind === "order" ? "Pedido" : "Cotización"}.` })
   }, onError: error => setNotice({ kind: "error", title: "No fue posible convertir", message: getApiErrorMessage(error) }) })
-  const authorization = useMutation({ mutationFn: (authorized: boolean) => setOrderAuthorization(order.id, authorized), onSuccess: async next => {
-    await queryClient.invalidateQueries({ queryKey: orderKeys.all }); openOrder(next)
-    setNotice({ kind: "success", title: "Autorizar", message: next.authorization === "O.K." ? "Pedido autorizado: O.K." : "Pedido des-autorizado." })
-  }, onError: error => setWarning(getApiErrorMessage(error)) })
   const openAssignment = () => {
     if (order.authorization !== "O.K.") { setWarning("Para asignar un pedido es necesario autorizarlo antes."); return }
     setAssignmentOpen(true)
@@ -65,7 +63,7 @@ export function OrderCatalogPage() {
   }
   const selectPanel = (panel: OrderPanelDefinition) => {
     if (panel.key === "quote-conversion") { if (!conversion.isPending) conversion.mutate(); return }
-    if (panel.key === "authorize") { if (!authorization.isPending) authorization.mutate(order.authorization !== "O.K."); return }
+    if (panel.key === "authorize") { setAuthorizationOrder(order); return }
     if (panel.key === "assign-all") { openAssignment(); return }
     openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })
   }
@@ -79,9 +77,9 @@ export function OrderCatalogPage() {
   const deletion = useMutation({ mutationFn: () => deleteOrder(order.id), onSuccess: async () => { setDeleteOpen(false); await queryClient.invalidateQueries({ queryKey: orderKeys.all }); void navigate(paths.salesOrders, { replace: true }) }, onError: (error) => { setDeleteOpen(false); setNotice({ kind: "error", title: "No fue posible eliminar el pedido", message: getApiErrorMessage(error) }) } })
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
-      if (!event.ctrlKey || event.altKey || event.metaKey || event.repeat || formMode || searchOpen || assignmentOpen || deleteOpen || warning || panelWindows.length) return
+      if (!event.ctrlKey || event.altKey || event.metaKey || event.repeat || formMode || searchOpen || assignmentOpen || authorizationOrder || deleteOpen || warning || panelWindows.length) return
       const key=event.key.toLowerCase()
-      if (key === "a") { event.preventDefault(); if (!authorization.isPending) authorization.mutate(order.authorization !== "O.K.") }
+      if (key === "a") { event.preventDefault(); setAuthorizationOrder(order) }
       if (key === "p") {
         event.preventDefault()
         if (order.authorization !== "O.K.") setWarning("Para asignar un pedido es necesario autorizarlo antes.")
@@ -90,16 +88,24 @@ export function OrderCatalogPage() {
     }
     window.addEventListener("keydown", shortcut)
     return () => window.removeEventListener("keydown", shortcut)
-  }, [assignmentOpen, authorization, deleteOpen, formMode, order.authorization, panelWindows.length, searchOpen, warning])
+  }, [assignmentOpen, authorizationOrder, deleteOpen, formMode, order, panelWindows.length, searchOpen, warning])
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
-      <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorization.isPending || conversion.isPending} onCreate={() => { setCustomerSearch(null); setProductSearch(null); setFormMode("create") }} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
+      <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorizationOrder !== null || conversion.isPending} onCreate={() => { setCustomerSearch(null); setProductSearch(null); setFormMode("create") }} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
       {notice && <Alert variant={notice.kind === "error" ? "destructive" : "default"}><HugeiconsIcon icon={notice.kind === "error" ? AlertCircleIcon : InformationCircleIcon} /><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
         <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={selectPanel} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={selectPanel} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
         <OrderCatalogDetails order={order} />
       </div>
       {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={openSearchResult} /></DesktopWindowIdentity>}
+      {authorizationOrder && <DesktopWindowIdentity id={`orders:authorization:${authorizationOrder.id}`}>
+        <OrderAuthorizationDialog order={authorizationOrder} onClose={() => setAuthorizationOrder(null)} onSaved={(saved) => {
+          setAuthorizationOrder(null)
+          void queryClient.invalidateQueries({ queryKey: orderKeys.all })
+          openOrder(saved)
+          setNotice({ kind: "success", title: "Autorizar", message: saved.authorization === "O.K." ? "Pedido autorizado: O.K." : "Pedido desautorizado." })
+        }} />
+      </DesktopWindowIdentity>}
       {formMode === "create" && <DesktopWindowIdentity id="orders:create:new"><OrderCaptureDialog onCustomerSearch={(initialCode, onSelect) => setCustomerSearch({ initialCode, onSelect })} onProductSearch={(initialCode, warehouse, onSelect) => setProductSearch({initialCode,warehouse,onSelect})} onOpenChange={open => { if (!open) { setCustomerSearch(null); setProductSearch(null); setFormMode(null) } }} onSaved={saved => { setCustomerSearch(null); setProductSearch(null); setFormMode(null); setNotice({ kind: "success", title: "Alta guardada", message: saved.number }); openOrder(saved) }} /></DesktopWindowIdentity>}
       {formMode === "create" && customerSearch && <DesktopWindowIdentity id="orders:capture:customer-search"><OrderCustomerMatchesDialog initialCode={customerSearch.initialCode} onOpenChange={open => { if (!open) setCustomerSearch(null) }} onSelect={match => { const select = customerSearch.onSelect; setCustomerSearch(null); select(match) }} /></DesktopWindowIdentity>}
       {formMode !== null && productSearch && <DesktopWindowIdentity id="orders:capture:product-search"><OrderProductMatchesDialog initialCode={productSearch.initialCode} warehouse={productSearch.warehouse} onOpenChange={open => { if (!open) setProductSearch(null) }} onSelect={match => { const select = productSearch.onSelect; setProductSearch(null); select(match) }} /></DesktopWindowIdentity>}

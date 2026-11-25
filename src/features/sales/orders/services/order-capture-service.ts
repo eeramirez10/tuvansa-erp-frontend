@@ -40,8 +40,9 @@ export async function saveCapturedOrder(input: CaptureInput) {
 export async function toggleOrderQuote(id: number) {
   return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/quote-conversion`, {})).data.data
 }
-export async function setOrderAuthorization(id: number, authorized: boolean) {
-  return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/authorization`, { authorized })).data.data
+export async function setOrderAuthorization(id: number, authorized: boolean, revision: number, credential: string) {
+  return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/authorization`, { authorized, revision },
+    { headers: { Authorization: `Bearer ${credential}` } })).data.data
 }
 export async function setOrderAssignment(id: number, lines: Array<{lineId: number; assigned: number}>) {
   return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/assignment`, { lines })).data.data
