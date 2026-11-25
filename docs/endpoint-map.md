@@ -162,7 +162,8 @@ La ficha actualiza los catálogos dependientes de Compras y Bancos.
 | Eventos, Contactos | Carga la lista y la revisión de cada registro | GET `/events` y `/contacts` |
 | Eventos / Nuevo y Cambiar | Guarda los campos y recarga la ficha | POST `/events` y PATCH `/events/:activityId` |
 | Eventos / Eliminar | Retira el evento seleccionado tras confirmación | DELETE `/events/:activityId` |
-| Contactos / Alta y Baja | Registra o retira el contacto, con confirmación de baja | POST `/contacts` y DELETE `/contacts/:activityId` |
+| Contactos / Alta y Cambio | Guarda los campos y actualiza el contacto seleccionado | POST `/contacts` y PATCH `/contacts/:activityId` |
+| Contactos / Baja | Retira el contacto seleccionado tras confirmación | DELETE `/contacts/:activityId` |
 
 El editor se encuentra en `supplier-activity-dialog.tsx`. La API usa UUID
 para reintentos y la revisión de la fila en Cambio y Baja.

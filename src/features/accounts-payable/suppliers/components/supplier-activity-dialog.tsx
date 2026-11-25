@@ -156,7 +156,7 @@ export function SupplierActivityDialog({ supplier, panel, kind, onOpenChange }: 
           <div className="mt-2 flex gap-1">
             <Button disabled={disableActions} onClick={() => begin("create")} size="xs" variant="outline">{events ? "Nuevo" : "Alta"}</Button>
             {!events && <Button disabled={disableActions || !item} onClick={() => begin("remove")} size="xs" variant="outline">Baja</Button>}
-            <Button disabled={!events || disableActions || !item} onClick={() => begin("change")} size="xs" variant="outline">{events ? "Cambiar" : "Cambio"}</Button>
+            <Button disabled={disableActions || !item} onClick={() => begin("change")} size="xs" variant="outline">{events ? "Cambiar" : "Cambio"}</Button>
             {events && <Button disabled={disableActions || !item} onClick={() => begin("remove")} size="xs" variant="outline">Eliminar</Button>}
           </div>
         </div>
