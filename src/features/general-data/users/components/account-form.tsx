@@ -20,7 +20,7 @@ import { activateWebAccount, startWebSession } from "../services/users-service"
 const loginSchema = z.object({ identification: identificationSchema, password: z.string().min(1, "Ingresa tu contraseña").max(128) })
 const activationSchema = z.object({
   identification: z.string(),
-  password: z.string().min(12, "Usa al menos 12 caracteres").max(128),
+  password: z.string().min(6, "Usa al menos 6 caracteres").max(128),
   confirmation: z.string(),
 }).refine(values => values.password === values.confirmation, { path: ["confirmation"], message: "Las contraseñas deben coincidir" })
 
