@@ -26,7 +26,9 @@ const numbers = [
   ["vatWithholdingPercent", "% Retención I.V.A.", "0.0001"], ["incomeTaxWithholdingPercent", "% Retención I.S.R.", "0.0001"],
 ] as const
 const taxOptions = ["Normal", "Frontera", "Exportación"] as const
+const bankOptions = ["Cheques", "Plasticos", "Interbancos"] as const
 const schema = z.object({
+  banamexId: z.int().min(0).max(2).optional(),
   branch: z.string().max(4), bankAccount: z.string().max(20), bankCode: z.string().max(5),
   city: z.string().max(4), state: z.string().max(2), cieReference: z.string().max(20), internetPassword: z.string().max(8),
   multiCompany: z.int().min(0).max(255), interCompany: z.int().min(0).max(1),
@@ -37,7 +39,9 @@ const schema = z.object({
 })
 
 function valuesFrom(data: Record<string, unknown>): z.infer<typeof schema> {
+  const banamexId = Number(data.banamexId)
   return {
+    banamexId: bankOptions[banamexId] ? banamexId : undefined,
     branch: String(data.branch ?? ""), bankAccount: String(data.bankAccount ?? ""), bankCode: String(data.bankCode ?? ""),
     city: String(data.city ?? ""), state: String(data.state ?? ""), cieReference: String(data.cieReference ?? ""),
     internetPassword: String(data.internetPassword ?? ""), multiCompany: Number(data.multiCompany ?? 0),
@@ -66,6 +70,14 @@ function VariousForm({ data, readonly, busy, onEdit, onCancel, onSave }: {
   const inputClass = "h-6 text-[10px]"
   return (
     <form className="grid gap-2 text-[10px]" onSubmit={form.handleSubmit(values => { if (!locked) onSave(values) })}>
+      <Controller control={form.control} name="banamexId" render={({ field }) => (
+        <RadioGroup aria-label="ID Banamex" className="flex w-auto gap-3" disabled={locked}
+          value={field.value === undefined ? "" : String(field.value)} onValueChange={value => field.onChange(Number(value))}>
+          {bankOptions.map((option, index) => <label className="flex items-center gap-1" key={option}>
+            <RadioGroupItem value={String(index)} />{option}
+          </label>)}
+        </RadioGroup>
+      )} />
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         {bankText.map(([name, label, length]) => (
           <label className="grid gap-0.5" key={name}><span>{label}</span>
@@ -150,7 +162,9 @@ export function SupplierVariousDialog({ supplier, panel, onOpenChange }: {
     if (!editor || pending.current || editor.canWrite !== true) return
     const signature = JSON.stringify(fields)
     if (request.current?.signature !== signature) {
-      request.current = { signature, values: { fields, revision: Number(editor.revision), requestKey: crypto.randomUUID() } }
+      const { banamexId, ...settings } = fields
+      const changes = banamexId === undefined ? settings : { ...settings, banamexId }
+      request.current = { signature, values: { fields: changes, revision: Number(editor.revision), requestKey: crypto.randomUUID() } }
     }
     pending.current = true
     save.mutate(request.current.values)
