@@ -72,7 +72,8 @@ export function SupplierCatalogDetails({ supplier, editor }: Props) {
               <SupplierCatalogField decimal editor={editor} field="terms.discounts.0" label="Descuento 1" value={money(supplier.terms.discounts[0])} />
               <SupplierCatalogField decimal editor={editor} field="terms.discounts.1" label="Descuento 2" value={money(supplier.terms.discounts[1])} />
               <SupplierCatalogField editor={editor} field="terms.applyToSupplierCode" label="Aplicar a" value={supplier.terms.applyToSupplierCode} />
-              <SupplierCatalogField editor={editor} field="terms.creditLimit" inputMode="numeric" label="Crédito" numeric value={money(supplier.terms.creditLimit)} />
+              {supplier.terms.creditLimit !== null && <SupplierCatalogField editor={editor} field="terms.creditLimit"
+                inputMode="numeric" label="Crédito" numeric value={money(supplier.terms.creditLimit)} />}
               <SupplierCatalogField editor={editor} field="fiscal.accountingAccount" label="Cta. cont." value={supplier.fiscal.accountingAccount} />
               <SupplierCatalogField editor={editor} field="terms.currencyId" label="Moneda" numeric value={supplier.terms.currencyId} />
               <ReadonlySupplierField label="Alta" value={date(supplier.createdAt)} />
@@ -108,9 +109,9 @@ export function SupplierCatalogDetails({ supplier, editor }: Props) {
               <ReadonlySupplierField label="Plazo real" value={supplier.totals.actualPaymentTermDays} />
               <ReadonlySupplierField label="Última compra" value={date(supplier.totals.lastPurchaseAt)} />
               <ReadonlySupplierField label="Pago" value={date(supplier.totals.lastPaymentAt)} />
-              <ReadonlySupplierField inputMode="decimal" label="Saldo anterior" value={money(supplier.totals.previousBalance)} />
+              {supplier.totals.previousBalance !== null && <ReadonlySupplierField inputMode="decimal" label="Saldo anterior" value={money(supplier.totals.previousBalance)} />}
               <ReadonlySupplierField label="Baja" value={date(supplier.deactivatedAt)} />
-              <ReadonlySupplierField inputMode="decimal" label="Actual" value={money(supplier.totals.currentBalance)} />
+              {supplier.totals.currentBalance !== null && <ReadonlySupplierField inputMode="decimal" label="Actual" value={money(supplier.totals.currentBalance)} />}
               <ReadonlySupplierField className="sm:col-span-2" inputMode="decimal" label="Acumulado" value={money(supplier.totals.accumulatedPurchases)} />
             </FieldGroup>
           </CardContent>

@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRef, useState } from "react"
 import { Button } from "@/shared/ui/button"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/shared/ui/alert-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
 import { Spinner } from "@/shared/ui/spinner"
 import { initialDirectoryFilters, userDetailOptions, userDirectoryKey, webSessionKey } from "../logic"
-import { groupIds, type DirectoryDirection, type DirectoryPosition, type DirectoryUser, type DirectoryUserDetail } from "../model"
-import { adjacentUser, listUsers } from "../services/users-service"
+import { groupIds, type DirectoryDirection, type DirectoryPosition, type DirectoryUserDetail, type SavedDirectoryUser } from "../model"
+import { adjacentUser, listUsers, saveUser } from "../services/users-service"
 import { AccessError } from "./directory-controls"
 import { GroupPermissions } from "./group-permissions"
 import { UserActivation } from "./user-activation"
@@ -24,6 +25,7 @@ export function UserDirectory() {
   const [position, setPosition] = useState(firstPosition)
   const [editor, setEditor] = useState<Editor | null>(null)
   const [overlay, setOverlay] = useState<Overlay | null>(null)
+  const [confirmRemoval, setConfirmRemoval] = useState(false)
   const [notice, setNotice] = useState("")
   const detail = useQuery({ ...userDetailOptions(selectedId ?? ""), enabled: selectedId !== null })
   const user = detail.data ?? null
@@ -51,6 +53,12 @@ export function UserDirectory() {
       }
     },
   })
+  const removal = useMutation({
+    mutationFn: (record: DirectoryUserDetail) => saveUser({
+      identification: record.identification, name: record.name, group: record.group, active: false, administrator: record.administrator,
+    }, record),
+    onSuccess: record => { saved(record); setNotice("Usuario dado de baja.") },
+  })
 
   function closeSearch() {
     setOverlay(null)
@@ -70,7 +78,7 @@ export function UserDirectory() {
     void queryClient.invalidateQueries({ queryKey: webSessionKey })
   }
 
-  function saved(record: DirectoryUser) {
+  function saved(record: SavedDirectoryUser) {
     const previous = editor?.mode === "edit" ? editor.user : null
     queryClient.setQueryData(userDetailOptions(record.id).queryKey, {
       ...record,
@@ -84,7 +92,7 @@ export function UserDirectory() {
     refreshAccess()
   }
 
-  const busy = Boolean(overlay) || navigation.isPending || detailBusy
+  const busy = Boolean(overlay) || navigation.isPending || detailBusy || removal.isPending || confirmRemoval
   const editing = editor !== null
   const editable = !busy && !editing
   const record = editor?.mode === "edit" ? editor.user : editor?.mode === "create" ? null : user
@@ -106,12 +114,14 @@ export function UserDirectory() {
             <Button ref={searchButton} variant="outline" disabled={!editable} onClick={() => setOverlay("search")}>Encuentra</Button>
             <Button disabled={!editable} onClick={() => { setNotice(""); setEditor({ mode: "create" }) }}>Alta</Button>
             {user && <Button variant="outline" disabled={!editable} onClick={() => { setNotice(""); setEditor({ mode: "edit", user }) }}>Cambio</Button>}
+            {user?.effectiveActive && <Button variant="outline" disabled={!editable} onClick={() => { removal.reset(); setConfirmRemoval(true) }}>Eliminar</Button>}
           </div>
         </aside>
         <div className="grid min-w-0 gap-3">
           {(detailBusy || navigation.isPending) && <p role="status" className="flex items-center gap-2"><Spinner />Consultando usuario</p>}
           {detail.isError && <AccessError error={detail.error} retry={() => void detail.refetch()} />}
           {navigation.error && <AccessError error={navigation.error} />}
+          {removal.error && <AccessError error={removal.error} />}
           {notice && <p role="status" className="text-xs font-medium text-primary">{notice}</p>}
           {(!detailBusy || editing) && (
             <UserEditor key={editor ? `${editor.mode}:${record?.id ?? ""}` : `view:${record?.id ?? ""}:${record?.revision ?? 0}`}
@@ -122,6 +132,21 @@ export function UserDirectory() {
           )}
         </div>
       </CardContent>
+      <AlertDialog open={confirmRemoval} onOpenChange={setConfirmRemoval}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar usuario web</AlertDialogTitle>
+            <AlertDialogDescription>La baja de {user?.identification} deshabilitará su acceso y cerrará sus sesiones web.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => {
+              setConfirmRemoval(false)
+              if (user) removal.mutate(user)
+            }}>Dar de baja</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {overlay === "search" && <UserSearchDialog initialFilters={position.filters} close={closeSearch} select={selectUser} />}
       {overlay === "activation" && user && <UserActivation user={user}
         onClose={changed => {

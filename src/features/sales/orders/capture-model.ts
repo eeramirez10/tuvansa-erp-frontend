@@ -21,7 +21,7 @@ export interface CaptureCustomerSearchCriteria {
 }
 export interface CaptureProduct {
   id: number; code: string; description: string; unit: string; price: number
-  cost: number; costCurrencyId: CaptureCurrencyId
+  cost: number | null; costCurrencyId: CaptureCurrencyId | null
   taxPercentage: number; excisePercentage: number; currencyId: CaptureCurrencyId
   stock: number; assigned: number; available: number; weight: number; volume: number
 }
@@ -77,8 +77,10 @@ export const captureCurrencyId = (currency: CaptureCurrencyName): CaptureCurrenc
 export const captureCurrencyName = (currencyId: CaptureCurrencyId): CaptureCurrencyName => currencyId === 1 ? "PESOS" : "DOLARES"
 export const convertCaptureAmount = (amount: number, from: CaptureCurrencyId, to: CaptureCurrencyId, exchangeRate: number) =>
   from === to ? amount : from === 2 ? amount * exchangeRate : amount / exchangeRate
-export const captureMinimumPrice = (product: CaptureProduct, priceCurrencyId: CaptureCurrencyId, exchangeRate: number) =>
-  convertCaptureAmount(product.cost, product.costCurrencyId, priceCurrencyId, exchangeRate)
+export function isBelowCaptureCost(price: number, product: CaptureProduct, currency: CaptureCurrencyId, exchangeRate: number) {
+  return product.cost !== null && product.costCurrencyId !== null &&
+    price < convertCaptureAmount(product.cost, product.costCurrencyId, currency, exchangeRate)
+}
 
 export const captureTotals = (
   lines: CaptureDraftLine[],

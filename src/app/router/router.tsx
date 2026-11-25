@@ -5,6 +5,7 @@ import { RootErrorBoundary } from "@/app/router/root-error-boundary"
 import { RouteLoadingFallback } from "@/app/router/route-loading-fallback"
 import { paths } from "@/app/router/paths"
 import { requireCompanyContext } from "@/features/startup/multicia/company-context-middleware"
+import { requireWebSession } from "@/features/general-data/users/require-web-session"
 
 export const router = createBrowserRouter([
   {
@@ -27,7 +28,7 @@ export const router = createBrowserRouter([
     Component: ErpLayout,
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RouteLoadingFallback,
-    middleware: [requireCompanyContext],
+    middleware: [requireCompanyContext, requireWebSession],
     loader: () => null,
     children: [
       {

@@ -1,15 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useId, useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, type Control } from "react-hook-form"
 import { Button } from "@/shared/ui/button"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Spinner } from "@/shared/ui/spinner"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Textarea } from "@/shared/ui/textarea"
 import { cn } from "@/shared/utils/cn"
 import { directoryState } from "../logic"
-import { profileSchema, type DirectoryUser, type DirectoryUserDetail, type UserProfile } from "../model"
+import { defaultUserSettings, profileSchema, type DirectoryUserDetail, type SavedDirectoryUser, type UserProfile, type UserSettings } from "../model"
 import { saveUser } from "../services/users-service"
 import { AccessError, GroupSelect } from "./directory-controls"
 
@@ -17,7 +18,7 @@ type Props = {
   user: DirectoryUserDetail | null
   mode: "view" | "create" | "edit"
   busy: boolean
-  onSaved: (user: DirectoryUser) => void
+  onSaved: (user: SavedDirectoryUser) => void
   onCancel: () => void
   onPermissions: () => void
   onActivation: () => void
@@ -41,35 +42,70 @@ function ReferenceField({ label, value, className, multiline }: {
   )
 }
 
-function GermanAccessFlag({ label, value }: { label: string; value?: boolean | null }) {
+type Flag = "hideCosts" | "hideBalances" | "ownCustomersOnly"
+type Setting = Exclude<keyof UserSettings, Flag | "classifier">
+const classifiers = ["Agente", "Giro o sector", "Sucursal", "Clasificador 4", "Clasificador 5", "Clasificador 6", "Flete", "Origen", "Proyecto"]
+  .map((label, index) => ({ label, value: String(index + 1) }))
+const classifierChoices = [{ label: "Sin clasificador", value: "none" }, ...classifiers]
+
+function AccessFlag({ label, control, name, enabled }: { label: string; control: Control<UserProfile>; name: Flag; enabled: boolean }) {
   return (
     <Label className="flex items-center gap-2">
-      <Checkbox checked={value === true} indeterminate={value == null} disabled className="disabled:opacity-100" />
+      <Controller control={control} name={`settings.${name}`} render={({ field }) => (
+        <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={!enabled} className="disabled:opacity-100" />
+      )} />
       {label}
     </Label>
   )
 }
 
+function SettingsField({ label, control, name, enabled, kind = "text", className }: {
+  label: string; control: Control<UserProfile>; name: Setting; enabled: boolean
+  kind?: "text" | "number" | "date" | "multiline"; className?: string
+}) {
+  const id = useId()
+  return (
+    <div className={cn("grid min-w-0 content-start gap-1", className)}>
+      <Label htmlFor={id}>{label}</Label>
+      <Controller control={control} name={`settings.${name}`} render={({ field, fieldState }) => {
+        const changeValue = (value: string) => field.onChange(value === "" ? null : kind === "number" ? Number(value) : value)
+        return <>
+          {kind === "multiline" ? (
+            <Textarea id={id} value={field.value ?? ""} readOnly={!enabled} rows={2} onChange={event => changeValue(event.target.value)} />
+          ) : (
+            <Input id={id} type={kind} value={field.value ?? ""} readOnly={!enabled} min={kind === "number" ? 0 : undefined}
+              aria-invalid={Boolean(fieldState.error)} onChange={event => changeValue(event.target.value)} />
+          )}
+          {fieldState.error && <p role="alert" className="text-xs text-destructive">{fieldState.error.message}</p>}
+        </>
+      }} />
+    </div>
+  )
+}
+
 export function UserEditor({ user, mode, busy, onSaved, onCancel, onPermissions, onActivation, onReload }: Props) {
-  const details = user?.legacyDetails
   const editing = mode !== "view"
   const [failure, setFailure] = useState<unknown>(null)
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<UserProfile>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting, dirtyFields } } = useForm<UserProfile>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       identification: user?.identification ?? "", name: user?.name ?? "", group: user?.group ?? 1,
       active: user?.active ?? mode === "create", administrator: user?.administrator ?? false,
+      settings: user?.settings ?? defaultUserSettings,
     },
   })
   const submit = handleSubmit(async profile => {
     if (!editing) return
     setFailure(null)
     try {
-      onSaved(await saveUser(profile, mode === "edit" ? user ?? undefined : undefined))
+      const changes = Object.fromEntries(Object.entries(profile.settings).filter(([key]) =>
+        dirtyFields.settings?.[key as keyof UserSettings]))
+      onSaved(await saveUser({ ...profile, settings: changes }, mode === "edit" ? user ?? undefined : undefined))
     } catch (error) {
       setFailure(error)
     }
   })
+  const canEditSettings = editing && !isSubmitting
 
   return (
     <form className="grid min-w-0 gap-3" onSubmit={submit} onKeyDown={event => {
@@ -124,20 +160,30 @@ export function UserEditor({ user, mode, busy, onSaved, onCancel, onPermissions,
             </div>}
           {errors.group && <p role="alert" className="text-xs text-destructive">Selecciona un grupo válido.</p>}
         </div>
-        <ReferenceField label="Cía." value={details?.company} />
-        <ReferenceField label="Depto." value={details?.department} />
-        <ReferenceField label="Multi Cía." value={details?.multiCompany} />
-        <ReferenceField label="Parámetro" value={details?.parameter} />
-        <ReferenceField label="Observaciones" value={details?.notes} className="col-span-full" />
+        <SettingsField label="Cía." control={control} name="company" enabled={canEditSettings} kind="number" />
+        <SettingsField label="Depto." control={control} name="department" enabled={canEditSettings} kind="number" />
+        <SettingsField label="Multi Cía." control={control} name="multiCompany" enabled={canEditSettings} kind="number" />
+        <SettingsField label="Parámetro" control={control} name="parameter" enabled={canEditSettings} />
+        <SettingsField label="Observaciones" control={control} name="notes" enabled={canEditSettings} className="col-span-full" />
       </div>
 
       <fieldset className="grid gap-2 rounded-md border px-3 pt-1 pb-3 sm:grid-cols-2">
         <legend className="px-1 text-xs font-medium">Acceso</legend>
         <div className="grid content-start gap-2">
-          <span className="text-xs text-muted-foreground">{details ? "Restricciones registradas en German" : "Restricciones sin ficha de German"}</span>
-          <GermanAccessFlag label="No ver costos" value={details?.hideCosts} />
-          <GermanAccessFlag label="No ver saldos" value={details?.hideBalances} />
-          <GermanAccessFlag label="Solo ver a sus clientes" value={details?.ownCustomersOnly} />
+          <AccessFlag label="No ver costos" control={control} name="hideCosts" enabled={canEditSettings} />
+          <AccessFlag label="No ver saldos" control={control} name="hideBalances" enabled={canEditSettings} />
+          <AccessFlag label="Solo ver a sus clientes" control={control} name="ownCustomersOnly" enabled={canEditSettings} />
+          <div className="grid gap-1">
+            <Label htmlFor="user-classifier">Clasificador</Label>
+            <Controller control={control} name="settings.classifier" render={({ field }) => (
+              <Select items={classifierChoices} value={field.value === null ? "none" : String(field.value)}
+                disabled={!canEditSettings} onValueChange={value => { if (value !== null) field.onChange(value === "none" ? null : Number(value)) }}>
+                <SelectTrigger id="user-classifier"><SelectValue /></SelectTrigger>
+                <SelectContent>{classifierChoices.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
+              </Select>
+            )} />
+            {errors.settings?.classifier && <p role="alert" className="text-xs text-destructive">{errors.settings.classifier.message}</p>}
+          </div>
         </div>
         <div className="grid content-start gap-2">
           <Label className="flex items-center gap-2">
@@ -157,22 +203,22 @@ export function UserEditor({ user, mode, busy, onSaved, onCancel, onPermissions,
       </fieldset>
 
       <div className="grid gap-2.5 sm:grid-cols-3">
-        <ReferenceField label="Imprimir en" value={details?.printer} className="sm:col-span-2" />
-        <ReferenceField label="SIP ID para etiquetas" value={details?.labelPrinter} />
-        <ReferenceField label="Clasificadores de proveedores con acceso" value={details?.supplierClassifiers}
-          className="sm:col-span-3" multiline />
+        <SettingsField label="Imprimir en" control={control} name="printer" enabled={canEditSettings} className="sm:col-span-2" />
+        <SettingsField label="SIP ID para etiquetas" control={control} name="labelPrinter" enabled={canEditSettings} kind="number" />
+        <SettingsField label="Clasificadores de proveedores con acceso" control={control} name="supplierClassifiers" enabled={canEditSettings}
+          className="sm:col-span-3" kind="multiline" />
       </div>
       <div className="grid gap-3 sm:grid-cols-[minmax(10rem,1fr)_minmax(12rem,2fr)]">
         <fieldset className="grid grid-cols-2 gap-2 rounded-md border px-3 pt-1 pb-3">
           <legend className="px-1 text-xs font-medium">Capturas</legend>
-          <ReferenceField label="Del" value={details?.captureFrom} />
-          <ReferenceField label="Al" value={details?.captureUntil} />
+          <SettingsField label="Del" control={control} name="captureFrom" enabled={canEditSettings} kind="date" />
+          <SettingsField label="Al" control={control} name="captureUntil" enabled={canEditSettings} kind="date" />
         </fieldset>
         <fieldset className="grid grid-cols-2 gap-2 rounded-md border px-3 pt-1 pb-3">
           <legend className="px-1 text-xs font-medium">Nómina</legend>
-          <ReferenceField label="Tienda" value={details?.store} />
-          <ReferenceField label="Número de nómina" value={details?.payrollNumber} />
-          <ReferenceField label="Puesto" className="col-span-2" value={details?.position} />
+          <SettingsField label="Tienda" control={control} name="store" enabled={canEditSettings} />
+          <SettingsField label="Número de nómina" control={control} name="payrollNumber" enabled={canEditSettings} />
+          <SettingsField label="Puesto" control={control} name="position" enabled={canEditSettings} className="col-span-2" />
         </fieldset>
       </div>
       {failure != null && <AccessError error={failure} />}

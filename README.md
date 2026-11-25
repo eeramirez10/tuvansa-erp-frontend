@@ -26,7 +26,9 @@ copy .env.example .env
 pnpm dev
 ```
 
-La API se espera por defecto en `http://localhost:3000/api`. Se puede cambiar con `VITE_API_BASE_URL`.
+La web usa `/api` en su mismo origen para enviar la sesión. Vite dirige
+las peticiones locales a `http://127.0.0.1:3000`. Se puede cambiar el destino
+del proxy con `ERP_API_PROXY_TARGET`.
 
 ## Comandos
 

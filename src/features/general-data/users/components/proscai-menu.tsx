@@ -6,7 +6,7 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { isTypingOrInDialog } from "@/shared/ui/erp-shortcuts"
 import { Button } from "@/shared/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
-import { signInPath, userDirectoryKey, webSessionKey, webSessionOptions } from "../logic"
+import { signInPath, webSessionKey, webSessionOptions } from "../logic"
 import { endWebSession } from "../services/users-service"
 
 export function ProscaiMenu() {
@@ -17,11 +17,10 @@ export function ProscaiMenu() {
   const logout = useMutation({
     mutationFn: endWebSession,
     onSuccess: async () => {
-      await queryClient.cancelQueries({ queryKey: webSessionKey })
+      await queryClient.cancelQueries()
+      queryClient.clear()
       queryClient.setQueryData(webSessionKey, null)
-      await queryClient.cancelQueries({ queryKey: userDirectoryKey })
-      queryClient.removeQueries({ queryKey: userDirectoryKey })
-      if (location.pathname.startsWith(paths.generalData)) void navigate(paths.home)
+      void navigate(signInPath(location.pathname + location.search + location.hash), { replace: true })
     },
   })
   useEffect(() => {

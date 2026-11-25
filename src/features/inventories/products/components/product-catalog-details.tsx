@@ -198,7 +198,7 @@ export function ProductCatalogDetails({ product, editor }: ProductCatalogDetails
             </CardContent>
           </Card>
 
-          <Card size="sm">
+          {product.prices.costs.average !== null && <Card size="sm">
             <CardHeader className="border-b">
               <CardTitle>Costos</CardTitle>
             </CardHeader>
@@ -241,7 +241,7 @@ export function ProductCatalogDetails({ product, editor }: ProductCatalogDetails
                 />
               </FieldGroup>
             </CardContent>
-          </Card>
+          </Card>}
 
           <Card size="sm">
             <CardHeader className="border-b">

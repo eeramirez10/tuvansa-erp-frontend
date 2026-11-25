@@ -1,6 +1,5 @@
 import { useState } from "react"
 
-import { env } from "@/app/config/env"
 import type { CaptureProductMatch } from "@/features/sales/orders/capture-model"
 import { Button } from "@/shared/ui/button"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
@@ -19,8 +18,7 @@ function Photo({ product, variant }: { product: CaptureProductMatch; variant: st
       {status === "missing" && <p role="status" className="text-slate-600">Sin foto disponible.</p>}
       {status !== "missing" && <img
         alt={`Foto de ${product.code}`} className="max-h-[52vh] max-w-full object-contain" hidden={status === "loading"}
-        crossOrigin="anonymous"
-        src={`${env.apiUrl}/inventories/products/${product.id}/actions/photo/image?variant=${variant}`}
+        src={`/api/inventories/products/${product.id}/actions/photo/image?variant=${variant}`}
         onLoad={() => setStatus("loaded")} onError={() => setStatus("missing")}
       />}
     </div>

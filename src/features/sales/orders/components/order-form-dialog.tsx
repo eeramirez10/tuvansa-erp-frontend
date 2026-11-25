@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { z } from "zod"
 
 import { captureProductMatchesQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
-import { captureMinimumPrice, convertCaptureAmount, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
+import { isBelowCaptureCost, convertCaptureAmount, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
 import type { Order } from "@/features/sales/orders/model"
 import { updateOrder } from "@/features/sales/orders/services/order-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
@@ -138,7 +138,7 @@ export function OrderFormDialog({ order, onProductSearch, onOpenChange, onSaved 
     }
     const parsed = lineSchema.safeParse(nextDraft)
     if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Revisa la partida."); return }
-    if (verifiedProduct && nextDraft.price < captureMinimumPrice(verifiedProduct, documentCurrencyId, exchangeRate)) {
+    if (verifiedProduct && isBelowCaptureCost(nextDraft.price, verifiedProduct, documentCurrencyId, exchangeRate)) {
       notifications.warning("Precio debajo del costo", { description: "No se puede vender abajo del costo", id: "order-edit-price-below-cost" })
       priceRef.current?.focus(); return
     }

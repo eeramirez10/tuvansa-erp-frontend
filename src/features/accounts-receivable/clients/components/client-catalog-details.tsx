@@ -114,7 +114,8 @@ export function ClientCatalogDetails({ client, editor }: ClientCatalogDetailsPro
               <CatalogField editor={editor} label="Descuento 1" name="discount1" value={money(client.terms.discounts[0])} type="number" step="0.01" />
               <CatalogField editor={editor} label="Descuento 2" name="discount2" value={money(client.terms.discounts[1])} type="number" step="0.01" />
               <CatalogField editor={editor} label="Descuento 3" name="discount3" value={money(client.terms.discounts[2])} type="number" step="0.01" />
-              <CatalogField editor={editor} label="Crédito" name="creditLimit" value={money(client.terms.creditLimit)} type="number" step="0.01" />
+              {client.terms.creditLimit !== null && <CatalogField editor={editor} label="Crédito" name="creditLimit"
+                value={money(client.terms.creditLimit)} type="number" step="0.01" />}
               <CatalogField editor={editor} label="Cad." name="creditExpiresAt" value={date(client.terms.creditExpiresAt)} type="date" />
               <CatalogField editor={editor} label="Aplicar a" name="applyToClientCode" value={client.terms.applyToClientCode} />
               <CatalogField editor={editor} label="Revisión, día" name="reviewDay" value={client.terms.reviewDay} />
@@ -143,9 +144,11 @@ export function ClientCatalogDetails({ client, editor }: ClientCatalogDetailsPro
               <ReadonlyClientField label="Último pago" value={date(client.totals.lastPaymentAt)} />
               <ReadonlyClientField label="Último pedido" value={date(client.totals.lastOrderAt)} />
               <ReadonlyClientField label="Baja" value={date(client.deactivatedAt)} />
-              <ReadonlyClientField inputMode="decimal" label="Saldo anterior" value={money(client.totals.previousBalance)} />
-              <ReadonlyClientField inputMode="decimal" label="Saldo actual" value={money(client.totals.currentBalance)} />
-              <ReadonlyClientField inputMode="decimal" label="C. Disponible" value={money(client.totals.availableCredit)} />
+              {client.totals.currentBalance !== null && <>
+                <ReadonlyClientField inputMode="decimal" label="Saldo anterior" value={money(client.totals.previousBalance)} />
+                <ReadonlyClientField inputMode="decimal" label="Saldo actual" value={money(client.totals.currentBalance)} />
+                <ReadonlyClientField inputMode="decimal" label="C. Disponible" value={money(client.totals.availableCredit)} />
+              </>}
               <ReadonlyClientField inputMode="decimal" label="Acumulado" value={money(client.totals.accumulatedSales)} />
             </FieldGroup>
           </CardContent>

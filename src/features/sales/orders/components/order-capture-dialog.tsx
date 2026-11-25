@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import type { Order } from "@/features/sales/orders/model"
-import { captureCurrencyName, captureHeaderSchema, captureLineSchema, captureMinimumPrice, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
+import { captureCurrencyName, captureHeaderSchema, captureLineSchema, isBelowCaptureCost, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
 import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductMatchesQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
@@ -59,7 +59,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   const exchangeRate = Number.isFinite(watchedExchangeRate) && watchedExchangeRate > 0 ? watchedExchangeRate : 1
   const totals = captureTotals(lines, collectionCurrency, exchangeRate, orderDiscounts)
   const draft = useWatch({ control: lineForm.control })
-  const belowCostLine = lines.find(line => line.price < captureMinimumPrice(line.product, line.currencyId ?? line.product.currencyId, exchangeRate))
+  const belowCostLine = lines.find(line => isBelowCaptureCost(line.price, line.product, line.currencyId ?? line.product.currencyId, exchangeRate))
   const headerDirty = form.formState.isDirty
   const lineDirty = lineForm.formState.isDirty
   useEffect(() => {
@@ -162,7 +162,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   }
   const commitLine = (value: CaptureLine, selectedProduct: CaptureProduct | null) => {
     if (!selectedProduct || selectedProduct.code !== value.productCode.trim()) { setError("Carga el producto antes de agregar la partida."); return }
-    if (selectedProduct.currencyId === selectedProduct.costCurrencyId && value.price < selectedProduct.cost) { warnPriceBelowCost(); return }
+    if (selectedProduct.currencyId === selectedProduct.costCurrencyId && isBelowCaptureCost(value.price, selectedProduct, selectedProduct.currencyId, exchangeRate)) { warnPriceBelowCost(); return }
     if (lines.length === 0 && editingLineIndex === null) form.setValue("collectionCurrency", captureCurrencyName(selectedProduct.currencyId))
     const parsed = captureLineSchema.safeParse(value)
     if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Revisa la partida."); return }
@@ -200,7 +200,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   }
   const save = () => form.handleSubmit(async values => {
     if (saving.current) return
-    const invalid = lines.find(line => line.price < captureMinimumPrice(line.product,line.currencyId ?? line.product.currencyId,values.exchangeRate))
+    const invalid = lines.find(line => isBelowCaptureCost(line.price, line.product, line.currencyId ?? line.product.currencyId, values.exchangeRate))
     if (invalid) {
       notifications.warning("Precio debajo del costo", { description: `${invalid.productCode}: no se puede vender abajo del costo`, id: "order-price-below-cost" })
       setError(`El precio de ${invalid.productCode} está abajo del costo en su moneda.`)
@@ -250,7 +250,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
                   <td><Input aria-label="Descripción del producto" className={inputClass} value={product?.description ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Cantidad" className={inputClass} type="number" step="0.001" {...lineForm.register("quantity", { valueAsNumber: true })} /></td>
                   <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly tabIndex={-1} /></td>
-                  <td><Input aria-label="Precio" className={inputClass} title={product ? `Precio en ${captureCurrencyName(product.currencyId)}` : ""} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && product.currencyId === product.costCurrencyId && lineForm.getValues("price") < product.cost) warnPriceBelowCost() } })} /></td>
+                  <td><Input aria-label="Precio" className={inputClass} title={product ? `Precio en ${captureCurrencyName(product.currencyId)}` : ""} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && product.currencyId === product.costCurrencyId && isBelowCaptureCost(lineForm.getValues("price"), product, product.currencyId, exchangeRate)) warnPriceBelowCost() } })} /></td>
                   <td><Input aria-label="Dto" className={inputClass} type="number" step="0.01" {...lineForm.register("discount", { valueAsNumber: true })} onKeyDown={finishLineOnTab} /></td>
                   <td><Input aria-label="Importe" className={inputClass} readOnly tabIndex={-1} value={money((draft.quantity || 0) * (draft.price || 0) * (1 - (draft.discount || 0)/100))} /></td>
                   <td><Input aria-label="Sucursal de la partida" className={inputClass} value="0" readOnly tabIndex={-1} title="Asignación de sucursal pendiente de captura" /></td>

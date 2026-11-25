@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
 import { Spinner } from "@/shared/ui/spinner"
-import { userDirectoryKey, webSessionKey } from "../logic"
+import { webSessionKey } from "../logic"
 import { identificationSchema } from "../model"
 import { activateWebAccount, startWebSession } from "../services/users-service"
 
@@ -47,8 +47,8 @@ export function AccountForm({ activating = false }: { activating?: boolean }) {
         return
       }
       const session = await startWebSession(values.identification, values.password)
-      await queryClient.cancelQueries({ queryKey: webSessionKey })
-      queryClient.removeQueries({ queryKey: userDirectoryKey })
+      await queryClient.cancelQueries()
+      queryClient.clear()
       queryClient.setQueryData(webSessionKey, session)
       void navigate(getStartupDestination(params.get("volver"), window.location.origin), { replace: true })
     } catch (error) {

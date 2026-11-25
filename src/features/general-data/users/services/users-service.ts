@@ -1,5 +1,5 @@
 import { sessionApiClient } from "@/shared/api/api-client"
-import type { DirectoryDirection, DirectoryFilters, DirectoryResult, DirectoryUser, DirectoryUserDetail, PermissionChange, PermissionGroup, UserProfile, WebSession } from "../model"
+import type { DirectoryDirection, DirectoryFilters, DirectoryResult, DirectoryUser, DirectoryUserDetail, PermissionChange, PermissionGroup, SavedDirectoryUser, UserProfileUpdate, WebSession } from "../model"
 
 const users = "/general-data/users"
 const groups = "/general-data/permission-groups"
@@ -35,10 +35,10 @@ export async function adjacentUser(filters: DirectoryFilters, userId: string, di
   return response.data.data
 }
 
-export async function saveUser(profile: UserProfile, user?: DirectoryUser) {
+export async function saveUser(profile: UserProfileUpdate, user?: DirectoryUser) {
   const response = user
-    ? await sessionApiClient.patch<Response<DirectoryUser>>(`${users}/${user.id}`, { ...profile, revision: user.revision })
-    : await sessionApiClient.post<Response<DirectoryUser>>(users, profile)
+    ? await sessionApiClient.patch<Response<SavedDirectoryUser>>(`${users}/${user.id}`, { ...profile, revision: user.revision })
+    : await sessionApiClient.post<Response<SavedDirectoryUser>>(users, profile)
   return response.data.data
 }
 

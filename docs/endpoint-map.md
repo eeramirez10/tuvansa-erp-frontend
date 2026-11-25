@@ -32,11 +32,13 @@ en Datos Generales, Usuarios y la autorización de Pedidos.
 | Activar o restablecer | `POST /general-data/users/:userId/activation` |
 | Editar permisos por grupo | `GET /general-data/permission-groups/:group`, `PATCH /general-data/permission-groups/:group` |
 
-Estas rutas y la autorización de Pedidos usan `/api` desde el mismo origen
-que el frontend. La API valida el acceso y las revisiones en cada escritura.
+Estas rutas y los módulos de negocio usan `/api` desde el mismo origen
+que el frontend. La API valida la sesión, el acceso y las revisiones
+en las operaciones correspondientes.
 **Encuentra** abre una ventana de resultados delante de la ficha. **Alta**
 y **Cambio** editan dentro de **Usuarios** y dejan seleccionada la cuenta
-al guardar. Las restricciones individuales de German se muestran en consulta.
+al guardar. **Eliminar** da de baja la cuenta web. Los checks **No ver costos**,
+**No ver saldos** y **Solo ver a sus clientes** se configuran con Alta y Cambio.
 **Permisos** abre el grupo de la cuenta seleccionada.
 
 ## Bancos · Alta, Cambio, Baja y traspasos
@@ -468,7 +470,7 @@ La conexión al proveedor se pospuso por decisión del usuario. El servicio y la
 Para cancelar un TR debe quedar existencia libre suficiente en el almacén
 destino. La reversión registra las dos cantidades inversas por almacén.
 
-Los endpoints son relativos a `VITE_API_BASE_URL`, cuyo valor local predeterminado es `http://localhost:3000/api`.
+Los endpoints son relativos a `/api` en el origen del frontend.
 
 El desglose de la vista, la barra de navegación y cada botón de **Acciones**, **Compras/Prod** y **Consultas** está en [Inventarios PT: catálogo de productos](inventarios-catalogo-productos.md).
 
