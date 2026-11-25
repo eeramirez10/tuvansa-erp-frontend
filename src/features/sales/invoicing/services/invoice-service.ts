@@ -10,6 +10,8 @@ import type {
   RemissionCancellationInput,
   RemissionCancellationPreview,
   StampingSimulation,
+  TicketConversionInput,
+  TicketConversionResult,
 } from "@/features/sales/invoicing/model"
 import { apiClient } from "@/shared/api/api-client"
 
@@ -98,6 +100,14 @@ export async function simulateInvoiceStamping(invoiceId: number) {
   const response = await apiClient.post<ItemResponse<StampingSimulation>>(
     `/sales/invoices/${invoiceId}/actions/seal/simulation`,
     {},
+  )
+  return response.data.data
+}
+
+export async function convertTicketToInvoice(invoiceId: number, input: TicketConversionInput) {
+  const response = await apiClient.post<ItemResponse<TicketConversionResult>>(
+    `/sales/invoices/${invoiceId}/${panelPaths["ticket-to-invoice"]}`,
+    input,
   )
   return response.data.data
 }

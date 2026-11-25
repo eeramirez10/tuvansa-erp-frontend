@@ -8,9 +8,13 @@ import { Link } from "react-router"
 import { z } from "zod"
 
 import { paths } from "@/app/router/paths"
+import { clientKeys } from "@/features/accounts-receivable/clients/logic"
+import { movementKeys } from "@/features/inventories/movements/logic"
+import { productKeys } from "@/features/inventories/products/logic"
 import { invoiceKeys, invoicePanelQueryOptions, isLocalRemission } from "@/features/sales/invoicing/logic"
-import type { Invoice, InvoicePanel, InvoicePanelDefinition, StampingSimulation } from "@/features/sales/invoicing/model"
-import { editInvoiceLinePieces, simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
+import type { Invoice, InvoicePanel, InvoicePanelDefinition, StampingSimulation, TicketConversion, TicketConversionInput, TicketConversionResult } from "@/features/sales/invoicing/model"
+import { convertTicketToInvoice, editInvoiceLinePieces, simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
+import { orderKeys } from "@/features/sales/orders/logic"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -365,6 +369,43 @@ function SealSimulation({ invoice, result }: { invoice: Invoice; result: Stampin
   )
 }
 
+function TicketInvoicePreview({ preview, result, unavailable, reason }: {
+  preview: TicketConversion
+  result: TicketConversionResult | null
+  unavailable: boolean
+  reason?: string
+}) {
+  return (
+    <div className="grid gap-2">
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+        <Field label="Remisión de origen" value={result?.sourceNumber ?? preview.sourceNumber} />
+        <Field label="Tipo de factura" value={preview.targetType} />
+        <Field label={`Total (${preview.currency})`} value={number(preview.total)} />
+        <Field label={`Saldo (${preview.currency})`} value={number(preview.balance)} />
+      </div>
+      {result ? (
+        <Alert role="status">
+          <AlertTitle>Factura registrada</AlertTitle>
+          <AlertDescription className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            <Field label="Folio de factura" value={result.number} />
+            <Field label="Fecha de emisión" value={date(result.issuedAt)} />
+            <Field label="Estado fiscal" value="Pendiente de timbrar" />
+          </AlertDescription>
+        </Alert>
+      ) : unavailable && (
+        <Alert>
+          <HugeiconsIcon icon={InformationCircleIcon} />
+          <AlertTitle>Conversión no disponible</AlertTitle>
+          <AlertDescription>{reason || "Esta remisión no está habilitada para convertir a factura."}</AlertDescription>
+        </Alert>
+      )}
+      {!result && !unavailable && <p className="text-xs text-muted-foreground">
+        Al confirmar se asigna un folio web y la factura queda pendiente de timbrar.
+      </p>}
+    </div>
+  )
+}
+
 function EditPieces({ invoiceId, item, readOnly, reason, onClose }: {
   invoiceId: number
   item: Record<string, unknown>
@@ -436,9 +477,11 @@ function PanelContent({ data, invoice }: { data: InvoicePanel; invoice: Invoice 
 export function InvoicePanelDialog({ invoice, panel, lineId, onOpenChange }: Props) {
   const queryClient = useQueryClient()
   const editPieces = panel.key === "edit-pieces"
+  const ticketToInvoice = panel.key === "ticket-to-invoice"
+  const freshPreview = editPieces || ticketToInvoice
   const query = useQuery({
     ...invoicePanelQueryOptions(invoice.id, panel.key),
-    ...(editPieces ? { refetchOnMount: "always" as const, refetchOnWindowFocus: false } : {}),
+    ...(freshPreview ? { refetchOnMount: "always" as const, refetchOnWindowFocus: false } : {}),
   })
   const stamp = useMutation({
     mutationFn: () => simulateInvoiceStamping(invoice.id),
@@ -448,33 +491,79 @@ export function InvoicePanelDialog({ invoice, panel, lineId, onOpenChange }: Pro
       )
     },
   })
+  const conversionRequest = useRef<{ version: string; key: string } | null>(null)
+  const converting = useRef(false)
+  const conversion = useMutation({
+    mutationFn: (input: TicketConversionInput) => convertTicketToInvoice(invoice.id, input),
+    onSuccess: (result) => {
+      queryClient.setQueryData<InvoicePanel>(invoiceKeys.panel(invoice.id, "ticket-to-invoice"), (current) =>
+        current?.ticketConversion ? { ...current, readOnly: true, ticketConversion: { ...current.ticketConversion, result } } : current,
+      )
+      void queryClient.invalidateQueries({ queryKey: invoiceKeys.all })
+      void queryClient.invalidateQueries({ queryKey: clientKeys.all })
+      void queryClient.invalidateQueries({ queryKey: orderKeys.all })
+      void queryClient.invalidateQueries({ queryKey: movementKeys.all })
+      for (const productId of new Set(invoice.lines.map((line) => line.productId))) {
+        void queryClient.invalidateQueries({ queryKey: productKeys.panel(productId, "ledger") })
+      }
+      void queryClient.invalidateQueries({ queryKey: ["sales", "reports"] })
+      void queryClient.invalidateQueries({ queryKey: ["sales", "collection-commissions"] })
+    },
+    onError: () => { void query.refetch() },
+    onSettled: () => { converting.current = false },
+  })
   const simulation = panel.key === "seal" && isLocalRemission(invoice) ? query.data?.stampingSimulation : undefined
-  const loading = query.isPending || (editPieces && !query.isFetchedAfterMount && !query.isError)
+  const loading = query.isPending || (freshPreview && !query.isFetchedAfterMount && !query.isError)
   const pieceLine = editPieces && !loading && !query.isError ? query.data?.items.find((item) => item.id === lineId) : undefined
+  const ticket = ticketToInvoice ? query.data?.ticketConversion : undefined
+  const conversionResult = conversion.data ?? ticket?.result ?? null
+  const conversionAvailable = query.data?.available && query.data.readOnly === false && !query.data.reason && Boolean(ticket?.version)
+
+  function confirmConversion() {
+    const version = ticket?.version
+    if (!version || !conversionAvailable || conversionResult || query.isFetching || query.isError || converting.current) return
+    if (conversionRequest.current?.version !== version) conversionRequest.current = { version, key: crypto.randomUUID() }
+    converting.current = true
+    conversion.mutate({ expectedVersion: version, requestKey: conversionRequest.current.key })
+  }
+
+  function close() {
+    if (!converting.current) onOpenChange(false)
+  }
 
   return (
     <ErpDataDialog
       className="sm:max-w-[62rem]"
       defaultWidth={editPieces ? 370 : 736}
       description={`${panel.label} de la factura ${invoice.number}`}
-      onOpenChange={onOpenChange}
+      onOpenChange={(open) => { if (open || !converting.current) onOpenChange(open) }}
       title={editPieces ? "Cambio pzas" : panel.label}
       tone="sales"
     >
       <ErpDataDialogBody className="grid gap-1.5">
         {loading && <div className={`grid place-items-center ${editPieces ? "min-h-24" : "min-h-64"}`}><Spinner /></div>}
-        {query.isError && (
+        {query.isError && !conversionResult && (
           <Alert variant="destructive">
             <HugeiconsIcon icon={InformationCircleIcon} />
             <AlertTitle>No fue posible cargar la ventana</AlertTitle>
             <AlertDescription>Revise la conexión con la API.</AlertDescription>
+            {ticketToInvoice && <Button className="w-fit" onClick={() => void query.refetch()} size="xs" variant="outline">Reintentar</Button>}
           </Alert>
         )}
         {pieceLine && query.data
           ? <EditPieces invoiceId={invoice.id} item={pieceLine} onClose={() => onOpenChange(false)} readOnly={query.data.readOnly !== false} reason={query.data.reason} />
           : simulation
           ? <SealSimulation invoice={invoice} result={simulation.result} />
+          : ticket && (!loading || conversionResult)
+          ? <TicketInvoicePreview preview={ticket} result={conversionResult} unavailable={!conversionAvailable} reason={query.data?.reason} />
           : !loading && query.data && <PanelContent data={query.data} invoice={invoice} />}
+        {conversion.isError && !conversionResult && (
+          <Alert variant="destructive">
+            <HugeiconsIcon icon={InformationCircleIcon} />
+            <AlertTitle>No fue posible convertir la remisión</AlertTitle>
+            <AlertDescription>{getApiErrorMessage(conversion.error)}</AlertDescription>
+          </Alert>
+        )}
         {stamp.isError && (
           <Alert variant="destructive">
             <HugeiconsIcon icon={InformationCircleIcon} />
@@ -483,10 +572,13 @@ export function InvoicePanelDialog({ invoice, panel, lineId, onOpenChange }: Pro
           </Alert>
         )}
         {!pieceLine && <footer className="flex justify-end gap-1">
-          {simulation && !simulation.result
+          {ticket && !conversionResult
+            ? <Button disabled={loading || !conversionAvailable || query.isFetching || query.isError || conversion.isPending}
+              onClick={confirmConversion} size="sm">{conversion.isPending ? "Convirtiendo…" : "Confirmar"}</Button>
+            : simulation && !simulation.result
             ? <Button disabled={query.isFetching || query.isError || stamp.isPending} onClick={() => stamp.mutate()} size="sm">{stamp.isPending ? "Simulando…" : "Simular timbrado"}</Button>
-            : <Button onClick={() => onOpenChange(false)} size="sm">{simulation ? "Cerrar" : "OK"}</Button>}
-          {!simulation?.result && <Button disabled={stamp.isPending} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button>}
+            : <Button onClick={close} size="sm">{simulation || conversionResult ? "Cerrar" : "OK"}</Button>}
+          {!simulation?.result && !conversionResult && <Button disabled={stamp.isPending || conversion.isPending} onClick={close} size="sm" variant="outline">Cancelar</Button>}
         </footer>}
       </ErpDataDialogBody>
     </ErpDataDialog>

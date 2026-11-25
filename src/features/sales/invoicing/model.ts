@@ -153,6 +153,25 @@ export type StampingSimulation = {
   simulatedAt: string
 }
 
+export type TicketConversionResult = {
+  invoiceId: number
+  sourceNumber: string
+  number: string
+  issuedAt: string
+}
+
+export type TicketConversion = {
+  sourceNumber: string
+  targetType: "FE"
+  total: number
+  balance: number
+  currency: string
+  version: string | null
+  result: TicketConversionResult | null
+}
+
+export type TicketConversionInput = { expectedVersion: string; requestKey: string }
+
 export type InvoicePanel = {
   invoice: { id: number; number: string }
   key: InvoicePanelKey
@@ -165,4 +184,5 @@ export type InvoicePanel = {
   readOnly?: boolean
   reason?: string
   stampingSimulation?: { result: StampingSimulation | null }
+  ticketConversion?: TicketConversion
 }
