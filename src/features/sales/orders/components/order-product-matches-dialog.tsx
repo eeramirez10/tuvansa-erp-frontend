@@ -5,7 +5,6 @@ import { captureProductMatchesQuery } from "@/features/sales/orders/capture-logi
 import type { CaptureProductMatch, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
 import { OrderProductAlternatesDialog } from "@/features/sales/orders/components/order-product-alternates-dialog"
 import { OrderProductFamiliesDialog } from "@/features/sales/orders/components/order-product-families-dialog"
-import { OrderProductPhotoDialog } from "@/features/sales/orders/components/order-product-photo-dialog"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -36,12 +35,11 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [alternate, setAlternate] = useState<CaptureProductMatch | null>(null)
   const [alternatesFor, setAlternatesFor] = useState<CaptureProductMatch | null>(null)
-  const [photoFor, setPhotoFor] = useState<CaptureProductMatch | null>(null)
   const [familiesOpen, setFamiliesOpen] = useState(false)
   const result = useQuery({ ...captureProductMatchesQuery(criteria, warehouse), enabled: alternate === null && Boolean(criteria.code || criteria.description || criteria.supplierCode || criteria.familyPattern || criteria.exactCode), retry:false })
   const matches = alternate ? [alternate] : result.data ?? []
   const selected = matches.find(match => match.id === selectedId) ?? matches[0] ?? null
-  const childOpen = alternatesFor !== null || photoFor !== null || familiesOpen
+  const childOpen = alternatesFor !== null || familiesOpen
   const hasFilter = Boolean(fields.code.trim() || fields.description.trim() || fields.supplierCode.trim())
   const search = () => { if (hasFilter && !childOpen) { setAlternate(null); setSelectedId(null); setCriteria(toCriteria(fields)) } }
   const accept = (match = selected) => { if (match && !result.isFetching && !childOpen) onSelect(match) }
@@ -65,11 +63,13 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
         </table>
       </ErpDataTableViewport>
       <footer className="flex items-center justify-between gap-2">
-        <div className="flex gap-1"><Button disabled={!selected || result.isFetching || childOpen} onClick={() => setAlternatesFor(selected)} size="sm" variant="outline">Alternos</Button>
-          <Button disabled={!selected || result.isFetching || childOpen} onClick={() => setPhotoFor(selected)} size="sm" variant="outline">Foto</Button></div>
+        <Button disabled={!selected || result.isFetching || childOpen} onClick={() => setAlternatesFor(selected)} size="sm" variant="outline">Alternos</Button>
         <span className="text-muted-foreground">Almacén {warehouse} · {matches.length} coincidencia{matches.length === 1 ? "" : "s"}</span>
-        <div className="flex gap-1"><Button disabled={!selected || result.isFetching || childOpen} onClick={() => accept()} size="sm">✓ OK</Button><Button disabled={childOpen} onClick={() => onOpenChange(false)} size="sm" variant="outline">× Cancelar</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Matriz de fotos</Button>
-          <Button disabled={childOpen} onClick={() => setFamiliesOpen(true)} size="sm" variant="outline">Familias</Button></div>
+        <div className="flex gap-1">
+          <Button disabled={!selected || result.isFetching || childOpen} onClick={() => accept()} size="sm">✓ OK</Button>
+          <Button disabled={childOpen} onClick={() => onOpenChange(false)} size="sm" variant="outline">× Cancelar</Button>
+          <Button disabled={childOpen} onClick={() => setFamiliesOpen(true)} size="sm" variant="outline">Familias</Button>
+        </div>
       </footer>
     </ErpDataDialogBody>
   </ErpDataDialog>
@@ -80,9 +80,6 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
         setSelectedId(match.id)
         setAlternatesFor(null)
       }} /></DesktopWindowIdentity>}
-    {photoFor && <DesktopWindowIdentity id="orders:capture:product-photo">
-      <OrderProductPhotoDialog product={photoFor} onClose={() => setPhotoFor(null)} />
-    </DesktopWindowIdentity>}
     {familiesOpen && <DesktopWindowIdentity id="orders:capture:product-families">
       <OrderProductFamiliesDialog onClose={() => setFamiliesOpen(false)} onApply={(familyPattern, exactCode) => {
         setFields({ code: "", description: "", supplierCode: "" })
