@@ -48,6 +48,7 @@ movimiento para consultar el concepto de su póliza o preparar el documento.
 | Comentarios | Mostrar el concepto y los datos de la póliza | GET `/accounting/policies/:policyId` | `bank-auxiliary-panel.tsx` |
 | Imprimir Póliza | Abrir la impresión del navegador con las partidas y totales | GET en la misma ruta | `bank-policy-print.ts` |
 | Folio / Ver póliza | Abrir el detalle contable | GET en la misma ruta | `/contabilidad/polizas/:policyId` |
+| Aux. no aplicados → Aplicar | Confirmar una póliza de diario web | POST `/accounting/policies/:id/actions/apply` | Actualiza la ficha y los auxiliares bancarios |
 
 En **Pagos**, el PP original conserva su marca **X** y su fecha de conciliación
 al revertirse. El movimiento **RP** queda pendiente para el siguiente corte.

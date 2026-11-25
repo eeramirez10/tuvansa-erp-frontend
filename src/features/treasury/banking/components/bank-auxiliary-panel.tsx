@@ -1,14 +1,17 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { Link } from "react-router"
+import { toast } from "sonner"
 
 import { paths } from "@/app/router/paths"
 import { parsePostingReversal, type PostingReversal } from "@/features/accounts-payable/posting-reversal-model"
 import { supplierReversiblePayment } from "@/features/accounts-payable/suppliers/logic"
-import { accountingPolicyQueryOptions } from "@/features/accounting/policies/logic"
+import { ManualPolicyTransitionDialog } from "@/features/accounting/policies/components/manual-policy-transition-dialog"
+import { accountingPolicyKeys, accountingPolicyQueryOptions } from "@/features/accounting/policies/logic"
+import type { AccountingPolicy } from "@/features/accounting/policies/model"
 import { BankPanelTable, type BankPanelColumn } from "@/features/treasury/banking/components/bank-panel-table"
 import { printBankPolicy } from "@/features/treasury/banking/components/bank-policy-print"
-import { bankMoney } from "@/features/treasury/banking/logic"
+import { bankAccountKeys, bankMoney } from "@/features/treasury/banking/logic"
 import type { BankPanel, BankReversalTarget } from "@/features/treasury/banking/model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
@@ -134,6 +137,7 @@ export function BankAuxiliaryPanel({ data, variant, onReversal }: {
 }) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [comment, setComment] = useState<{ id: number; row: Row } | null>(null)
+  const [policyToApply, setPolicyToApply] = useState<Pick<AccountingPolicy, "id" | "number" | "date"> | null>(null)
   const queryClient = useQueryClient()
   const windowId = useDesktopWindowId(`banking:${variant}`)
   const print = useMutation({
@@ -174,7 +178,12 @@ export function BankAuxiliaryPanel({ data, variant, onReversal }: {
             onClick={() => {
               if (selectedRow && selectedPolicyId !== null) setComment({ id: selectedPolicyId, row: selectedRow })
             }} size="xs" variant="outline">Comentarios</Button>
-          {unapplied && <Button disabled size="xs" variant="outline">Aplicar</Button>}
+          {unapplied && <Button disabled={selectedRow?.canApplyPolicy !== true || selectedPolicyId === null || Boolean(policyToApply)}
+            onClick={() => {
+              if (!selectedRow || selectedPolicyId === null) return
+              setPolicyToApply({ id: selectedPolicyId, date: String(selectedRow.policyDate ?? ""), number: String(selectedRow.policyNumber ?? "") })
+            }}
+            size="xs" variant="outline">Aplicar</Button>}
           <Button disabled={selectedPolicyId === null || print.isPending}
             onClick={() => { if (selectedPolicyId !== null) print.mutate(selectedPolicyId) }}
             size="xs" variant="outline">
@@ -209,6 +218,18 @@ export function BankAuxiliaryPanel({ data, variant, onReversal }: {
       {print.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(print.error)}</AlertDescription></Alert>}
       {comment && <DesktopWindowIdentity id={`${windowId}:comments`}>
         <BankPolicyComments id={comment.id} onClose={() => setComment(null)} row={comment.row} />
+      </DesktopWindowIdentity>}
+      {policyToApply && <DesktopWindowIdentity id={`${windowId}:apply:${policyToApply.id}`}>
+        <ManualPolicyTransitionDialog operation="apply" policy={policyToApply} tone="banking" onClose={() => setPolicyToApply(null)}
+          onSaved={(policy) => {
+            setPolicyToApply(null)
+            setSelectedKey(null)
+            toast.success(`Póliza ${policy.number} aplicada.`)
+            void Promise.all([
+              queryClient.invalidateQueries({ queryKey: bankAccountKeys.all }),
+              queryClient.invalidateQueries({ queryKey: accountingPolicyKeys.all }),
+            ])
+          }} />
       </DesktopWindowIdentity>}
     </div>
   )

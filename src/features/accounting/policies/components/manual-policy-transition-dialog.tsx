@@ -15,11 +15,12 @@ const labels = {
   delete: { title: "Baja de póliza", text: "¿Dar de baja la póliza de diario?", button: "Dar de baja", capability: "canDelete", fallback: "La baja no está disponible." },
 } as const
 
-export function ManualPolicyTransitionDialog({ policy, operation, onClose, onSaved }: {
-  policy: AccountingPolicy
+export function ManualPolicyTransitionDialog({ policy, operation, onClose, onSaved, tone }: {
+  policy: Pick<AccountingPolicy, "id" | "number" | "date">
   operation: ManualPolicyOperation
   onClose: () => void
   onSaved: (policy: AccountingPolicy, operation: ManualPolicyOperation) => void
+  tone?: "banking"
 }) {
   const query = useQuery(manualPolicyPreviewQueryOptions(policy.id))
   const inFlight = useRef(false)
@@ -42,7 +43,7 @@ export function ManualPolicyTransitionDialog({ policy, operation, onClose, onSav
   }
 
   return (
-    <ErpDataDialog defaultWidth={455} description={`${text.title} ${policy.number}`} title={text.title}
+    <ErpDataDialog defaultWidth={455} description={`${text.title} ${policy.number}`} title={text.title} tone={tone}
       onOpenChange={open => { if (!open) close() }}>
       <ErpDataDialogBody className="grid gap-2 text-[10px]/normal" onKeyDown={event => {
         if (event.key === "Escape") { event.stopPropagation(); close() }
