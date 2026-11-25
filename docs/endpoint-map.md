@@ -444,6 +444,9 @@ Si el nombre interno heredado no coincide con el texto visible —por ejemplo, u
 | Captura / Cambio de pedido: Código / IEAN | Escribir prefijo; sugerencias, flechas y Enter/Tab o clic para cargar | GET /sales/orders/capture/products?warehouse=...&code=... | product-matches, almacén canónico, código, descripción, proveedor | order-product-code-input.tsx |
 | Captura / Cambio de pedido: Buscar producto | Código sin resolver, ambiguo, botón del campo o F2 | GET /sales/orders/capture/products | product-matches | order-product-matches-dialog.tsx |
 | Encuentra producto: fila / OK | Doble clic o OK; validar referencia y agregar al borrador | GET /sales/orders/capture/products/:code | capture/product, código, almacén, tipo y cliente | order-capture-dialog.tsx, order-form-dialog.tsx |
+| Encuentra producto: Alternos | Consultar alternos del producto y resolver el elegido en el almacén activo | GET `/inventories/products/:id/purchases-production/alternates`, GET `/sales/orders/capture/products` | La selección reemplaza las coincidencias | order-product-alternates-dialog.tsx |
+| Encuentra producto: Foto | Consultar la imagen de la variante elegida | GET `/inventories/products/:id/actions/photo/image?variant=normal` | Imagen JPG | order-product-photo-dialog.tsx |
+| Encuentra producto: Familias | Cargar el catálogo y aplicar la máscara al almacén activo | GET `/sales/orders/capture/product-families`, GET `/sales/orders/capture/products?warehouse=01&familyPattern=...` | product-families, product-matches | order-product-families-dialog.tsx |
 
 El SQL del buscador es derivado. No se efectuó una nueva captura OMNIS. El almacén procede del pedido (1 equivale a 01) y las lecturas no aplican la restricción de alta. La escritura final continúa por POST /sales/orders/capture o PATCH /sales/orders/:id; conserva el bloqueo de precio bajo costo.
 

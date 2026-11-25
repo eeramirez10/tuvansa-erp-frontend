@@ -2,7 +2,7 @@ import { normalizeOrderWarehouse } from "@/features/sales/orders/order-warehouse
 import { queryOptions } from "@tanstack/react-query"
 import type { CaptureCustomerSearchCriteria, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
 import { orderKeys } from "@/features/sales/orders/logic"
-import { getCaptureCustomer, getCaptureOptions, getCaptureProduct, searchCaptureCustomers, searchCaptureProducts } from "@/features/sales/orders/services/order-capture-service"
+import { getCaptureCustomer, getCaptureOptions, getCaptureProduct, getCaptureProductFamilies, searchCaptureCustomers, searchCaptureProducts } from "@/features/sales/orders/services/order-capture-service"
 
 export const captureOptionsQuery = () => queryOptions({ queryKey: [...orderKeys.all, "capture", "options"], queryFn: ({signal}) => getCaptureOptions(signal), staleTime: 0 })
 export const captureCustomerQuery = (code: string) => queryOptions({ queryKey: [...orderKeys.all, "capture", "customer", code], queryFn: ({signal}) => getCaptureCustomer(code, signal), staleTime: 0 })
@@ -13,5 +13,9 @@ export const captureProductQuery = (code: string, warehouse: string, typeCode: s
 }
 export const captureProductMatchesQuery = (criteria: CaptureProductSearchCriteria, warehouse: string) => {
   const warehouseCode = normalizeOrderWarehouse(warehouse)
-  return queryOptions({ queryKey: [...orderKeys.all, "capture", "product-matches", warehouseCode, criteria.code ?? "", criteria.description ?? "", criteria.supplierCode ?? ""], queryFn: ({signal}) => searchCaptureProducts(criteria, warehouseCode, signal), staleTime: 0 })
+  return queryOptions({ queryKey: [...orderKeys.all, "capture", "product-matches", warehouseCode, criteria.code ?? "", criteria.description ?? "", criteria.supplierCode ?? "", criteria.familyPattern ?? ""], queryFn: ({signal}) => searchCaptureProducts(criteria, warehouseCode, signal), staleTime: 0 })
 }
+export const captureProductFamiliesQuery = () => queryOptions({
+  queryKey: [...orderKeys.all, "capture", "product-families"],
+  queryFn: ({ signal }) => getCaptureProductFamilies(signal),
+})

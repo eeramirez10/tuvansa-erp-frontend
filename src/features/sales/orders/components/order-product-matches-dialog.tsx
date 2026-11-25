@@ -3,9 +3,13 @@ import { useState } from "react"
 
 import { captureProductMatchesQuery } from "@/features/sales/orders/capture-logic"
 import type { CaptureProductMatch, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
+import { OrderProductAlternatesDialog } from "@/features/sales/orders/components/order-product-alternates-dialog"
+import { OrderProductFamiliesDialog } from "@/features/sales/orders/components/order-product-families-dialog"
+import { OrderProductPhotoDialog } from "@/features/sales/orders/components/order-product-photo-dialog"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
+import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
@@ -30,14 +34,19 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
   const [fields, setFields] = useState<SearchFields>(initialFields)
   const [criteria, setCriteria] = useState<CaptureProductSearchCriteria>(() => toCriteria(initialFields))
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const result = useQuery({ ...captureProductMatchesQuery(criteria, warehouse), enabled: Boolean(criteria.code || criteria.description || criteria.supplierCode), retry:false })
-  const matches = result.data ?? []
+  const [alternate, setAlternate] = useState<CaptureProductMatch | null>(null)
+  const [alternatesFor, setAlternatesFor] = useState<CaptureProductMatch | null>(null)
+  const [photoFor, setPhotoFor] = useState<CaptureProductMatch | null>(null)
+  const [familiesOpen, setFamiliesOpen] = useState(false)
+  const result = useQuery({ ...captureProductMatchesQuery(criteria, warehouse), enabled: alternate === null && Boolean(criteria.code || criteria.description || criteria.supplierCode || criteria.familyPattern), retry:false })
+  const matches = alternate ? [alternate] : result.data ?? []
   const selected = matches.find(match => match.id === selectedId) ?? matches[0] ?? null
+  const childOpen = alternatesFor !== null || photoFor !== null || familiesOpen
   const hasFilter = Boolean(fields.code.trim() || fields.description.trim() || fields.supplierCode.trim())
-  const search = () => { if (hasFilter) { setSelectedId(null); setCriteria(toCriteria(fields)) } }
-  const accept = (match = selected) => { if (match && !result.isFetching) onSelect(match) }
+  const search = () => { if (hasFilter && !childOpen) { setAlternate(null); setSelectedId(null); setCriteria(toCriteria(fields)) } }
+  const accept = (match = selected) => { if (match && !result.isFetching && !childOpen) onSelect(match) }
 
-  return <ErpDataDialog defaultHeight={490} defaultWidth={985} description="Buscar y seleccionar un producto del almacén activo" fillHeight onOpenChange={onOpenChange} title="Encuentra producto" tone="sales">
+  return <><ErpDataDialog defaultHeight={490} defaultWidth={985} description="Buscar y seleccionar un producto del almacén activo" fillHeight onOpenChange={(open) => { if (!childOpen) onOpenChange(open) }} title="Encuentra producto" tone="sales">
     <ErpDataDialogBody className="flex min-h-0 flex-1 flex-col gap-1">
       <form className="grid grid-cols-[6.5rem_minmax(16rem,1fr)_7rem_auto] items-end gap-1" onSubmit={event => { event.preventDefault(); search() }}>
         <label className="grid gap-0.5"><span>Código / IEAN</span><Input autoFocus className="h-5 rounded-none px-1 text-[9px]" maxLength={30} onChange={event => setFields(current => ({...current,code:event.target.value}))} value={fields.code} /></label>
@@ -56,10 +65,32 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
         </table>
       </ErpDataTableViewport>
       <footer className="flex items-center justify-between gap-2">
-        <div className="flex gap-1"><Button disabled size="sm" title="Pendiente de captura" variant="outline">Alternos</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Foto</Button></div>
+        <div className="flex gap-1"><Button disabled={!selected || result.isFetching || childOpen} onClick={() => setAlternatesFor(selected)} size="sm" variant="outline">Alternos</Button>
+          <Button disabled={!selected || result.isFetching || childOpen} onClick={() => setPhotoFor(selected)} size="sm" variant="outline">Foto</Button></div>
         <span className="text-muted-foreground">Almacén {warehouse} · {matches.length} coincidencia{matches.length === 1 ? "" : "s"}</span>
-        <div className="flex gap-1"><Button disabled={!selected || result.isFetching} onClick={() => accept()} size="sm">✓ OK</Button><Button onClick={() => onOpenChange(false)} size="sm" variant="outline">× Cancelar</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Matriz de fotos</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Familias</Button></div>
+        <div className="flex gap-1"><Button disabled={!selected || result.isFetching || childOpen} onClick={() => accept()} size="sm">✓ OK</Button><Button disabled={childOpen} onClick={() => onOpenChange(false)} size="sm" variant="outline">× Cancelar</Button><Button disabled size="sm" title="Pendiente de captura" variant="outline">Matriz de fotos</Button>
+          <Button disabled={childOpen} onClick={() => setFamiliesOpen(true)} size="sm" variant="outline">Familias</Button></div>
       </footer>
     </ErpDataDialogBody>
   </ErpDataDialog>
+    {alternatesFor && <DesktopWindowIdentity id="orders:capture:product-alternates"><OrderProductAlternatesDialog product={alternatesFor} warehouse={warehouse} onClose={() => setAlternatesFor(null)}
+      onSelect={(match) => {
+        setAlternate(match)
+        setFields({ code: match.code, description: "", supplierCode: "" })
+        setSelectedId(match.id)
+        setAlternatesFor(null)
+      }} /></DesktopWindowIdentity>}
+    {photoFor && <DesktopWindowIdentity id="orders:capture:product-photo">
+      <OrderProductPhotoDialog product={photoFor} onClose={() => setPhotoFor(null)} />
+    </DesktopWindowIdentity>}
+    {familiesOpen && <DesktopWindowIdentity id="orders:capture:product-families">
+      <OrderProductFamiliesDialog onClose={() => setFamiliesOpen(false)} onApply={(familyPattern) => {
+        setFields({ code: "", description: "", supplierCode: "" })
+        setSelectedId(null)
+        setAlternate(null)
+        setCriteria({ familyPattern })
+        setFamiliesOpen(false)
+      }} />
+    </DesktopWindowIdentity>}
+  </>
 }

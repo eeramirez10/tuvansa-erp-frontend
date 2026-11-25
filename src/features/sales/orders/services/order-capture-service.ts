@@ -1,6 +1,6 @@
 import { apiClient } from "@/shared/api/api-client"
 import type { Order } from "@/features/sales/orders/model"
-import type { CaptureCustomer, CaptureCustomerMatch, CaptureCustomerSearchCriteria, CaptureInput, CaptureOptions, CaptureProduct, CaptureProductMatch, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
+import type { CaptureCustomer, CaptureCustomerMatch, CaptureCustomerSearchCriteria, CaptureInput, CaptureOptions, CaptureProduct, CaptureProductFamily, CaptureProductMatch, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
 
 export async function getCaptureOptions(signal?: AbortSignal) {
   return (await apiClient.get<{data: CaptureOptions}>("/sales/orders/capture/options", { signal })).data.data
@@ -26,9 +26,13 @@ export async function searchCaptureProducts(criteria: CaptureProductSearchCriter
     ...(criteria.code ? { code: criteria.code } : {}),
     ...(criteria.description ? { description: criteria.description } : {}),
     ...(criteria.supplierCode ? { supplierCode: criteria.supplierCode } : {}),
+    ...(criteria.familyPattern ? { familyPattern: criteria.familyPattern } : {}),
     limit: 50,
   }
   return (await apiClient.get<{data: CaptureProductMatch[]}>("/sales/orders/capture/products", { params, signal })).data.data
+}
+export async function getCaptureProductFamilies(signal?: AbortSignal) {
+  return (await apiClient.get<{ data: CaptureProductFamily[] }>("/sales/orders/capture/product-families", { signal })).data.data
 }
 export async function saveCapturedOrder(input: CaptureInput) {
   return (await apiClient.post<{data: Order}>("/sales/orders/capture", input)).data.data

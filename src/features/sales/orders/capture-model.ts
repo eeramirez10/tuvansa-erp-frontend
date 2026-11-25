@@ -35,6 +35,14 @@ export interface CaptureProductSearchCriteria {
   code?: string
   description?: string
   supplierCode?: string
+  familyPattern?: string
+}
+export interface CaptureProductFamily {
+  position: number
+  label: string
+  start: number
+  width: number
+  options: Array<{ code: string; description: string }>
 }
 export const captureHeaderSchema = z.object({
   warehouse: z.string().min(1, "Selecciona un almacén"), typeCode: z.literal("P"),

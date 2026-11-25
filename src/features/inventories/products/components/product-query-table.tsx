@@ -15,7 +15,7 @@ type ProductQueryTableProps = {
   className?: string
   tableClassName?: string
   sorting?: { key: string; onSort: (key: string) => void }
-  selection?: { id: number | null; column: string; label: (row: QueryRow) => string; onSelect: (id: number) => void }
+  selection?: { id: number | null; column: string; label: (row: QueryRow) => string; onSelect: (id: number) => void; onActivate?: (id: number) => void }
 }
 
 export function ProductQueryTable({
@@ -88,6 +88,7 @@ export function ProductQueryTable({
                 )}
                 key={textValue(row.id) || index}
                 onClick={choose}
+                onDoubleClick={choose && selection?.onActivate ? () => selection.onActivate?.(id) : undefined}
               >
                 {columns.map((column) => {
                   const cell = column.render ? column.render(row) : textValue(row[column.key])
