@@ -39,6 +39,7 @@ export type InventoryMovement = {
   header: InventoryMovementHeader
   lines: InventoryMovementLine[]
   totals: { quantity: number; cost: number; entries?: number; exits?: number }
+  comment?: string
   cancellationAvailable: boolean
   cancellationReason?: string
 }

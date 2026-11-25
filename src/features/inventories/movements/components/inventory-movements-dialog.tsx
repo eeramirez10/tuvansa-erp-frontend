@@ -99,6 +99,7 @@ export function InventoryMovementsDialog({
   const queryClient = useQueryClient()
   const [movementId, setMovementId] = useState<number | null>(null)
   const [confirmationOpen, setConfirmationOpen] = useState(false)
+  const [commentOpen, setCommentOpen] = useState(false)
   const [captureOpen, setCaptureOpen] = useState(false)
   const [cancellationNotice, setCancellationNotice] = useState("")
   const detail = useQuery(movementDetailsQueryOptions(movementId))
@@ -210,7 +211,7 @@ export function InventoryMovementsDialog({
               {movement && (
                 <>
                   <Button disabled size="sm" type="button" variant="outline">Imprimir</Button>
-                  <Button disabled size="sm" type="button" variant="outline">Comentarios</Button>
+                  <Button onClick={() => setCommentOpen(true)} size="sm" type="button" variant="outline">Comentarios</Button>
                 </>
               )}
             </div>
@@ -273,6 +274,17 @@ export function InventoryMovementsDialog({
         </DesktopWindowIdentity>
       )}
 
+      <AlertDialog onOpenChange={setCommentOpen} open={commentOpen}>
+        <AlertDialogContent style={{ zIndex: modalLayer }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Comentarios · {header?.document}</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-wrap">
+              {movement?.comment || "Sin comentarios para este documento."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel variant="default">OK</AlertDialogCancel></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog
         onOpenChange={(open) => { if (!cancellation.isPending) setConfirmationOpen(open) }}
         open={confirmationOpen}
