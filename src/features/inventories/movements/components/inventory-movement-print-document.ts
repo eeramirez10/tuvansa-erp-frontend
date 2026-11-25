@@ -33,16 +33,20 @@ const styles = `
 
 export function buildInventoryMovementPrintDocument(report: InventoryMovementPrint) {
   const entry = report.type === "EI"
-  const title = entry ? "Entrada de material" : "Salida de material"
+  const transfer = report.type === "TR"
+  const title = transfer ? "Traspaso de material" : entry ? "Entrada de material" : "Salida de material"
   const warehouse = [report.warehouse, report.warehouseName].filter(Boolean).join(" · ")
+  const warehouseLabel = transfer ? "Almacén destino" : entry ? "Entrada almacén" : "Salida almacén"
+  const columnCount = transfer ? 7 : 6
   const date = formatDate(report.date)
   const lines = report.lines.map((line, index) => {
     const lot = line.customs
     const customs = lot && (lot.entry || lot.date || lot.office)
-      ? `<tr><td colspan="6" class="customs">Pedimento ${text(lot.entry)} · Fecha ${text(formatDate(lot.date))} · Aduana ${text(lot.office)}</td></tr>`
+      ? `<tr><td colspan="${columnCount}" class="customs">Pedimento ${text(lot.entry)} · Fecha ${text(formatDate(lot.date))} · Aduana ${text(lot.office)}</td></tr>`
       : ""
     return `<tr><td class="number">${index + 1}</td><td class="number">${quantity.format(line.quantity)}</td>
       <td>${text(line.productCode)}</td><td>${text(line.description)}</td>
+      ${transfer ? `<td>${text(line.warehouse ?? "")}</td>` : ""}
       <td class="number">${unitCost.format(line.cost)}</td><td class="number">${amount.format(line.amount)}</td></tr>${customs}`
   }).join("")
 
@@ -53,13 +57,14 @@ export function buildInventoryMovementPrintDocument(report: InventoryMovementPri
       <dl>
         <dt>Documento</dt><dd>${text(report.document)}</dd>
         <dt>Lugar y fecha</dt><dd>${text([report.place, date].filter(Boolean).join(" · "))}</dd>
-        <dt>${entry ? "Entrada almacén" : "Salida almacén"}</dt><dd>${text(warehouse)}</dd>
-        <dt>${entry ? "Referencia" : "Salida de"}</dt><dd>${text(report.reference)}</dd>
+        ${transfer ? `<dt>Almacén origen</dt><dd>${text(report.sourceWarehouse ?? "")}</dd>` : ""}
+        <dt>${warehouseLabel}</dt><dd>${text(warehouse)}</dd>
+        <dt>${report.type === "SI" ? "Salida de" : "Referencia"}</dt><dd>${text(report.reference)}</dd>
       </dl>
       <table>
-        <thead><tr><th class="number">#</th><th class="number">Cant.</th><th>Código</th><th>Descripción</th><th class="number">Costo U.</th><th class="number">Importe</th></tr></thead>
+        <thead><tr><th class="number">#</th><th class="number">Cant.</th><th>Código</th><th>Descripción</th>${transfer ? "<th>Alm.</th>" : ""}<th class="number">Costo U.</th><th class="number">Importe</th></tr></thead>
         <tbody>${lines}</tbody>
-        <tfoot><tr><td colspan="5" class="number">Total</td><td class="number">${amount.format(report.total)}</td></tr></tfoot>
+        <tfoot><tr><td colspan="${columnCount - 1}" class="number">Total</td><td class="number">${amount.format(report.total)}</td></tr></tfoot>
       </table>
       <p class="comments"><strong>Comentarios</strong> ${text(report.comment)}</p>
       <div class="signatures"><p>Firma</p><p>Firma de aceptación</p></div>

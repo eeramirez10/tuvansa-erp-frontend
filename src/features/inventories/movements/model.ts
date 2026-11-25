@@ -48,11 +48,12 @@ export type InventoryMovement = {
 
 export type InventoryMovementPrint = {
   format: "QTUVANSA007" | "QTUVANSA002"
-  type: "EI" | "SI"
+  type: "EI" | "SI" | "TR"
   document: string
   date: string
   reference: string
   warehouse: string
+  sourceWarehouse?: string
   warehouseName: string
   companyName: string
   place: string
@@ -61,6 +62,7 @@ export type InventoryMovementPrint = {
     id: number
     productCode: string
     description: string
+    warehouse?: string
     quantity: number
     cost: number
     amount: number

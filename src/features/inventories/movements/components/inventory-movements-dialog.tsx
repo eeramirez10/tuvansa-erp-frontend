@@ -107,7 +107,8 @@ export function InventoryMovementsDialog({
   const detail = useQuery(movementDetailsQueryOptions(movementId))
   const movement = detail.data
   const header = movement?.header
-  const canPrint = header && (header.type === "EI" || header.type === "SI") && header.document.startsWith(header.type)
+  const canPrint = header && (header.type === "EI" || header.type === "SI" || header.type === "TR")
+    && header.document.startsWith(header.type)
     && header.company === 1 && header.status === 0 && header.inventoryFlag === 1 && header.billingFlag === 0
     && movement.lines.some((line) => line.type !== "K" && line.quantity !== 0)
   const local = header && isLocalInventoryAdjustment(header.id)
