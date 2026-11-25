@@ -348,6 +348,8 @@ La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difie
 | Facturación / Facturar / Cancelar | Cerrar | Ninguno | Descarta la selección |
 | Facturación / Cancelar remisión | Consultar una remisión web FAW o una FA histórica habilitada | GET `/sales/invoices/:id/actions/cancel-remission` | Muestra la fecha, el cargo, el pedido de origen, si se puede regenerar y cualquier bloqueo |
 | Facturación / Cancelar remisión / Confirmar | Registrar la cancelación | POST `/sales/invoices/:id/actions/cancel-remission` | Envía motivo, fecha, confirmación, UUID y la opción de regenerar el pedido. Actualiza Facturación, Pedidos, Inventarios y Clientes |
+| Facturación / Edita pzas | Abrir Cambio pzas para la partida seleccionada | GET `/sales/invoices/:id/summaries/edit-pieces` | Carga el valor textual y la versión de cada partida |
+| Facturación / Edita pzas / OK | Guardar el valor de la partida | PATCH `/sales/invoices/:id/summaries/edit-pieces/:lineId` | Envía el texto, la versión y un UUID. Actualiza la partida en Facturación y CT |
 | Pedidos / Auxiliar | Abrir folio de la remisión | GET `/sales/orders/:id/actions/auxiliar` | Permite abrir el documento asociado en Facturación |
 | Clientes / Saldo o Movimientos | Consultar el cliente | GET `/accounts-receivable/clients/:id/balance` o `/movements` | Incluye el cargo FA en el saldo del cliente |
 | Facturación / Sellar | Abrir la ventana de una remisión web en pruebas | GET `/sales/invoices/:id/actions/seal` | Muestra el importe y la referencia de simulación si existe |

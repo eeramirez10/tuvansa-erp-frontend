@@ -22,7 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
 
 type Notice = { kind: "success" | "error"; title: string; message: string }
-type InvoicePanelWindow = { invoice: Invoice; panel: InvoicePanelDefinition }
+type InvoicePanelWindow = { invoice: Invoice; panel: InvoicePanelDefinition; lineId?: number }
 
 export function InvoiceCatalogPage() {
   const invoiceId = Number(useParams().invoiceId)
@@ -34,7 +34,18 @@ export function InvoiceCatalogPage() {
   const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<InvoicePanelWindow>()
   const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<number>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const [selectedLineId, setSelectedLineId] = useState<number>()
+  const selectedLine = invoice.lines.find((line) => line.id === selectedLineId) ?? invoice.lines[0]
   const cancellationAvailable = isLocalRemission(invoice) || invoice.cancellationAvailable === true
+
+  const openPanel = (panel: InvoicePanelDefinition) => {
+    const key = `invoices:${invoice.id}:${panel.key}`
+    if (panel.key === "edit-pieces" && selectedLine) {
+      openPanelWindow(`${key}:${selectedLine.id}`, { invoice, panel, lineId: selectedLine.id })
+      return
+    }
+    openPanelWindow(key, { invoice, panel })
+  }
 
   const openFullInvoice = (next: Invoice) => {
     queryClient.setQueryData(invoiceKeys.detail(next.id), next)
@@ -91,12 +102,12 @@ export function InvoiceCatalogPage() {
 
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
         <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-          <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceActionPanels} title="Acciones" />
-          <InvoicePanelButtons onSelect={(panel) => openPanelWindow(`invoices:${invoice.id}:${panel.key}`, { invoice, panel })} panels={invoiceSummaryPanels} title="Sumarios" />
+          <InvoicePanelButtons onSelect={openPanel} panels={invoiceActionPanels} title="Acciones" />
+          <InvoicePanelButtons onSelect={openPanel} panels={invoiceSummaryPanels} title="Sumarios" />
         </aside>
         <InvoiceCatalogDetails invoice={invoice} onCancelRemission={cancellationAvailable
           ? () => openCancellation(`invoices:${invoice.id}:cancel-remission`, invoice.id)
-          : undefined} />
+          : undefined} onSelectLine={setSelectedLineId} selectedLineId={selectedLine?.id} />
       </div>
 
       {searchOpen && (
@@ -115,7 +126,11 @@ export function InvoiceCatalogPage() {
           }} />
         </DesktopWindowIdentity>
       )}
-      {panelWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><InvoicePanelDialog invoice={window.payload.invoice} onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} panel={window.payload.panel} /></DesktopWindowIdentity>)}
+      {panelWindows.map(({ id, payload }) => (
+        <DesktopWindowIdentity id={id} key={id}>
+          <InvoicePanelDialog {...payload} onOpenChange={(open) => { if (!open) closePanelWindow(id) }} />
+        </DesktopWindowIdentity>
+      ))}
       {cancellationWindows.map(({ id, payload }) => (
         <DesktopWindowIdentity id={id} key={id}>
           <RemissionCancellationDialog invoiceId={payload} onClose={() => closeCancellation(id)} />

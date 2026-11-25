@@ -1,12 +1,16 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useRef, useState } from "react"
+import { useForm } from "react-hook-form"
 import { Link } from "react-router"
+import { z } from "zod"
 
 import { paths } from "@/app/router/paths"
 import { invoiceKeys, invoicePanelQueryOptions, isLocalRemission } from "@/features/sales/invoicing/logic"
 import type { Invoice, InvoicePanel, InvoicePanelDefinition, StampingSimulation } from "@/features/sales/invoicing/model"
-import { simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
+import { editInvoiceLinePieces, simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -25,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 type Props = {
   invoice: Invoice
   panel: InvoicePanelDefinition
+  lineId?: number
   onOpenChange: (open: boolean) => void
 }
 
@@ -42,6 +47,8 @@ const date = (value: unknown) => {
 }
 const validPolicyId = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value > 0
+const piecesLimit = 24_000
+const editPiecesSchema = z.object({ value: z.string().max(piecesLimit, "El valor excede el límite de 24 000 caracteres.") })
 
 function Field({ label, value, className = "" }: { label: string; value: unknown; className?: string }) {
   return (
@@ -253,7 +260,7 @@ function Ct({ data }: { data: InvoicePanel }) {
           { label: "U.M.", key: "unit" },
           { label: "Precio", key: "price", format: number, numeric: true },
           { label: "Suc.", key: "branch" },
-          { label: "Pzas.", key: "pieces", format: number, numeric: true },
+          { label: "Pzas.", key: "pieces", numeric: true },
         ]}
         minWidth="min-w-[760px]"
         rows={data.items}
@@ -358,6 +365,54 @@ function SealSimulation({ invoice, result }: { invoice: Invoice; result: Stampin
   )
 }
 
+function EditPieces({ invoiceId, item, readOnly, reason, onClose }: {
+  invoiceId: number
+  item: Record<string, unknown>
+  readOnly: boolean
+  reason?: string
+  onClose: () => void
+}) {
+  const queryClient = useQueryClient()
+  const form = useForm({ resolver: zodResolver(editPiecesSchema), defaultValues: { value: text(item.pieces) } })
+  const [expectedVersion] = useState(() => text(item.version))
+  const request = useRef<{ value: string; key: string } | null>(null)
+  const save = useMutation({
+    mutationFn: (edit: { value: string; requestKey: string }) =>
+      editInvoiceLinePieces(invoiceId, Number(item.id), { expectedVersion, ...edit }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(invoiceId) })
+      onClose()
+    },
+  })
+
+  return (
+    <form className="grid gap-1.5" onSubmit={(event) => {
+      void form.handleSubmit(({ value }) => {
+        if (readOnly || save.isPending || !expectedVersion) return
+        if (request.current?.value !== value) request.current = { value, key: crypto.randomUUID() }
+        save.mutate({ value, requestKey: request.current.key })
+      })(event)
+    }}>
+      <Field label="Producto" value={item.productCode} />
+      <label className="grid gap-0.5">
+        <span>Valor</span>
+        <Input {...form.register("value")} aria-invalid={Boolean(form.formState.errors.value)} disabled={save.isPending} maxLength={piecesLimit} readOnly={readOnly} />
+      </label>
+      {form.formState.errors.value && <p className="text-destructive" role="alert">{form.formState.errors.value.message}</p>}
+      {(reason || save.isError) && (
+        <Alert variant={save.isError ? "destructive" : "default"}>
+          <HugeiconsIcon icon={InformationCircleIcon} />
+          <AlertDescription>{save.isError ? getApiErrorMessage(save.error) : reason}</AlertDescription>
+        </Alert>
+      )}
+      <footer className="flex justify-end gap-1">
+        <Button disabled={readOnly || save.isPending || !expectedVersion} size="sm" type="submit">{save.isPending ? "Guardando…" : "OK"}</Button>
+        <Button disabled={save.isPending} onClick={onClose} size="sm" type="button" variant="outline">Cancelar</Button>
+      </footer>
+    </form>
+  )
+}
+
 function PanelContent({ data, invoice }: { data: InvoicePanel; invoice: Invoice }) {
   switch (data.key) {
     case "auxiliary": return <Auxiliary data={data} />
@@ -367,8 +422,7 @@ function PanelContent({ data, invoice }: { data: InvoicePanel; invoice: Invoice 
     case "ct": return <Ct data={data} />
     case "print": return <PrintOptions data={data} invoice={invoice} />
     case "lots": return <Lots data={data} />
-    case "pieces":
-    case "edit-pieces": return <Pieces data={data} />
+    case "pieces": return <Pieces data={data} />
     case "transfer": return (
       <DataTable columns={[
         { label: "Código", key: "productCode" }, { label: "Descripción", key: "description" },
@@ -379,9 +433,13 @@ function PanelContent({ data, invoice }: { data: InvoicePanel; invoice: Invoice 
   }
 }
 
-export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
+export function InvoicePanelDialog({ invoice, panel, lineId, onOpenChange }: Props) {
   const queryClient = useQueryClient()
-  const query = useQuery(invoicePanelQueryOptions(invoice.id, panel.key))
+  const editPieces = panel.key === "edit-pieces"
+  const query = useQuery({
+    ...invoicePanelQueryOptions(invoice.id, panel.key),
+    ...(editPieces ? { refetchOnMount: "always" as const, refetchOnWindowFocus: false } : {}),
+  })
   const stamp = useMutation({
     mutationFn: () => simulateInvoiceStamping(invoice.id),
     onSuccess: (result) => {
@@ -391,17 +449,20 @@ export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
     },
   })
   const simulation = panel.key === "seal" && isLocalRemission(invoice) ? query.data?.stampingSimulation : undefined
+  const loading = query.isPending || (editPieces && !query.isFetchedAfterMount && !query.isError)
+  const pieceLine = editPieces && !loading && !query.isError ? query.data?.items.find((item) => item.id === lineId) : undefined
 
   return (
     <ErpDataDialog
       className="sm:max-w-[62rem]"
+      defaultWidth={editPieces ? 370 : 736}
       description={`${panel.label} de la factura ${invoice.number}`}
       onOpenChange={onOpenChange}
-      title={panel.label}
+      title={editPieces ? "Cambio pzas" : panel.label}
       tone="sales"
     >
       <ErpDataDialogBody className="grid gap-1.5">
-        {query.isPending && <div className="grid min-h-64 place-items-center"><Spinner /></div>}
+        {loading && <div className={`grid place-items-center ${editPieces ? "min-h-24" : "min-h-64"}`}><Spinner /></div>}
         {query.isError && (
           <Alert variant="destructive">
             <HugeiconsIcon icon={InformationCircleIcon} />
@@ -409,9 +470,11 @@ export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
             <AlertDescription>Revise la conexión con la API.</AlertDescription>
           </Alert>
         )}
-        {simulation
+        {pieceLine && query.data
+          ? <EditPieces invoiceId={invoice.id} item={pieceLine} onClose={() => onOpenChange(false)} readOnly={query.data.readOnly !== false} reason={query.data.reason} />
+          : simulation
           ? <SealSimulation invoice={invoice} result={simulation.result} />
-          : query.data && <PanelContent data={query.data} invoice={invoice} />}
+          : !loading && query.data && <PanelContent data={query.data} invoice={invoice} />}
         {stamp.isError && (
           <Alert variant="destructive">
             <HugeiconsIcon icon={InformationCircleIcon} />
@@ -419,12 +482,12 @@ export function InvoicePanelDialog({ invoice, panel, onOpenChange }: Props) {
             <AlertDescription>{getApiErrorMessage(stamp.error)}</AlertDescription>
           </Alert>
         )}
-        <footer className="flex justify-end gap-1">
+        {!pieceLine && <footer className="flex justify-end gap-1">
           {simulation && !simulation.result
             ? <Button disabled={query.isFetching || query.isError || stamp.isPending} onClick={() => stamp.mutate()} size="sm">{stamp.isPending ? "Simulando…" : "Simular timbrado"}</Button>
             : <Button onClick={() => onOpenChange(false)} size="sm">{simulation ? "Cerrar" : "OK"}</Button>}
           {!simulation?.result && <Button disabled={stamp.isPending} onClick={() => onOpenChange(false)} size="sm" variant="outline">Cancelar</Button>}
-        </footer>
+        </footer>}
       </ErpDataDialogBody>
     </ErpDataDialog>
   )

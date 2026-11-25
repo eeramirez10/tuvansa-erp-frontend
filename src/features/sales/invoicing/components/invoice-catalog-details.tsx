@@ -41,7 +41,12 @@ function Metric({ label, value: fieldValue }: { label: string; value: string | n
   )
 }
 
-export function InvoiceCatalogDetails({ invoice, onCancelRemission }: { invoice: Invoice; onCancelRemission?: () => void }) {
+export function InvoiceCatalogDetails({ invoice, onCancelRemission, selectedLineId, onSelectLine }: {
+  invoice: Invoice
+  onCancelRemission?: () => void
+  selectedLineId?: number
+  onSelectLine: (id: number) => void
+}) {
   return (
     <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">
@@ -108,7 +113,20 @@ export function InvoiceCatalogDetails({ invoice, onCancelRemission }: { invoice:
               </TableHeader>
               <TableBody>
                 {invoice.lines.map((line) => (
-                  <TableRow key={line.id}>
+                  <TableRow
+                    aria-selected={selectedLineId === line.id}
+                    className="cursor-pointer"
+                    data-state={selectedLineId === line.id ? "selected" : undefined}
+                    key={line.id}
+                    onClick={() => onSelectLine(line.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        onSelectLine(line.id)
+                      }
+                    }}
+                    tabIndex={0}
+                  >
                     <TableCell className="px-1 py-0.5 font-mono">{line.productCode}</TableCell>
                     <TableCell className="max-w-[300px] truncate px-1 py-0.5">{line.description}</TableCell>
                     <TableCell className="px-1 py-0.5 text-right">{decimal.format(line.quantity)}</TableCell>

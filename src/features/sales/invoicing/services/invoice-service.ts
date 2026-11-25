@@ -102,6 +102,14 @@ export async function simulateInvoiceStamping(invoiceId: number) {
   return response.data.data
 }
 
+export async function editInvoiceLinePieces(invoiceId: number, lineId: number, edit: {
+  expectedVersion: string
+  requestKey: string
+  value: string
+}) {
+  await apiClient.patch(`/sales/invoices/${invoiceId}/${panelPaths["edit-pieces"]}/${lineId}`, edit)
+}
+
 const fromOrderPath = "/sales/invoices/from-order"
 
 export async function getInvoiceFromOrderPreview(orderNumber: string, signal?: AbortSignal) {
