@@ -5,6 +5,7 @@ import type {
   Supplier,
   SupplierCatalogFields,
   SupplierClassificationsResponse,
+  SupplierClassificationUpdate,
   SupplierCreatePreview,
   SupplierEditPreview,
   SupplierPanelDefinition,
@@ -115,6 +116,10 @@ export async function getSupplierClassifications(
 
 const supplierPaymentPath = (supplierId: number, receiptId: number) =>
   `/accounts-payable/suppliers/${supplierId}/payments/${receiptId}`
+
+export async function saveSupplierClassifications(supplierId: number, input: SupplierClassificationUpdate) {
+  await apiClient.patch(`/accounts-payable/suppliers/${supplierId}/actions/classifications`, input)
+}
 
 export async function getSupplierPaymentPreview(supplierId: number, receiptId: number, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<SupplierPaymentPreview>>(

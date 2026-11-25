@@ -50,6 +50,8 @@ export const supplierClassificationsQueryOptions = (supplierId: number, position
   queryKey: supplierKeys.classifications(supplierId, position),
   queryFn: ({ signal }) => getSupplierClassifications(supplierId, position, signal),
   placeholderData: (previousData) => previousData,
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
 })
 
 export const supplierPaymentQueryOptions = (supplierId: number, receiptId: number) => queryOptions({

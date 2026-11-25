@@ -2,10 +2,11 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { Link } from "react-router"
 import { paths } from "@/app/router/paths"
+import { SupplierClassificationsDialog } from "@/features/accounts-payable/suppliers/components/supplier-classifications-dialog"
 import { SupplierPaymentDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-dialog"
 import { SupplierPaymentReversalDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-reversal-dialog"
 import {
-  supplierBalanceReceiptId, supplierCalendarDate, supplierClassificationsQueryOptions, supplierDateLabel,
+  supplierBalanceReceiptId, supplierCalendarDate, supplierDateLabel,
   supplierPanelQueryOptions, supplierReversiblePayment,
 } from "@/features/accounts-payable/suppliers/logic"
 import type { Supplier, SupplierPanelColumn, SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
@@ -117,31 +118,6 @@ function DisabledButtons({ labels }: { labels: readonly string[] }) {
 
 function DetailField({ label, value, className }: { label: string; value: unknown; className?: string }) {
   return <label className={cn("grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-1", className)}><span className="text-right">{label}</span><Input className="h-5 px-1 text-[9px]" readOnly value={valueText(value)} /></label>
-}
-
-function ClassificationsDialog({ supplier, panel, onOpenChange }: Props) {
-  const [position, setPosition] = useState(1)
-  const query = useQuery(supplierClassificationsQueryOptions(supplier.id, position))
-  const data = query.data?.data
-  return (
-    <ErpDataDialog className="sm:max-w-[64rem]" description="Clasificaciones del proveedor." onOpenChange={onOpenChange} title={panel.title} tone="payable">
-      <ErpDataDialogBody className="grid min-h-[31rem] grid-cols-[11rem_minmax(0,1fr)_minmax(0,1.3fr)] gap-2">
-        <div className="flex flex-col gap-1 pt-6">
-          {(data?.classifications ?? Array.from({ length: 9 }, (_, index) => ({ position: index + 1, label: "", code: "", description: "" }))).map((item) => <Button className={cn("justify-start", item.position === position && "bg-module-payable text-module-payable-foreground")} key={item.position} onClick={() => setPosition(item.position)} size="xs" variant="outline">{item.label || " "}</Button>)}
-          <Button className="mt-3" disabled size="xs" variant="outline">Guardar todos</Button>
-        </div>
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="grid h-5 grid-cols-[4rem_1fr] border bg-background"><span className="border-r px-1">Fam</span><span className="px-1">Descripción</span></div>
-          <ErpDataTableViewport axes="y" className="flex-1"><table className="w-full table-fixed text-[9px]"><tbody>{(data?.options ?? []).map((option) => <tr className="h-4 border-b border-dotted" key={option.id}><td className="w-16 px-1">{option.code}</td><td className="truncate px-1">{option.description}</td></tr>)}</tbody></table></ErpDataTableViewport>
-        </div>
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="grid h-5 place-items-center border bg-background font-bold">SELECCIONADOS</div>
-          <div className="grid h-5 grid-cols-[5.5rem_4rem_1fr] border bg-background"><span className="border-r px-1">Fam</span><span className="border-r px-1">Cod.</span><span className="px-1">Descripción</span></div>
-          <ErpDataTableViewport axes="y" className="flex-1"><table className="w-full table-fixed text-[9px]"><tbody>{(data?.classifications ?? []).map((item) => <tr className="h-4 border-b border-dotted" key={item.position}><td className="w-[5.5rem] px-1">{item.label}</td><td className="w-16 px-1">{item.code}</td><td className="truncate px-1">{item.description}</td></tr>)}</tbody></table></ErpDataTableViewport>
-        </div>
-      </ErpDataDialogBody>
-    </ErpDataDialog>
-  )
 }
 
 function VariousView({ detail }: { detail: Record<string, unknown> }) {
@@ -264,6 +240,6 @@ function GeneralPanelDialog(props: Props) {
 }
 
 export function SupplierPanelDialog(props: Props) {
-  if (props.panel.key === "classifications") return <ClassificationsDialog {...props} />
+  if (props.panel.key === "classifications") return <SupplierClassificationsDialog supplier={props.supplier} title={props.panel.title} onOpenChange={props.onOpenChange} />
   return <GeneralPanelDialog {...props} />
 }

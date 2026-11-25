@@ -145,6 +145,14 @@ la ficha comprueba coincidencias de código en el catálogo. Al confirmar, la
 API valida el código y la cuenta contable según la configuración de la compañía.
 La ficha actualiza los catálogos dependientes de Compras y Bancos.
 
+## Cuentas por pagar · Clasificar proveedor
+
+| Control | Evento | Método y endpoint | Componente |
+| --- | --- | --- | --- |
+| Clasificar y grupo | Cargar selección vigente, revisión y opciones del grupo | GET `/accounts-payable/suppliers/:id/actions/classifications?position=1..9` | `supplier-classifications-dialog.tsx` |
+| Opción / doble clic | Pasar la opción a Seleccionados y conservar el borrador al cambiar de grupo | Sin solicitud | `supplier-classifications-dialog.tsx` |
+| Guardar todos | Validar y guardar los nueve clasificadores juntos. Recargar al confirmar | PATCH `/accounts-payable/suppliers/:id/actions/classifications` | `supplier-classifications-dialog.tsx` |
+
 ## Cuentas por pagar · Saldo y Paga
 
 **Paga** se habilita al seleccionar una recepción o un GA web con saldo pendiente en

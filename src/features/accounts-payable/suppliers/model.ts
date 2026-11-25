@@ -95,11 +95,15 @@ export type SupplierPanelResponse = {
 export type SupplierClassificationsResponse = {
   data: {
     supplier: Pick<Supplier, "id" | "code" | "name"> & { currentBalance: number }
-    classifications: Array<{ position: number; label: string; code: string; description: string }>
+    classifications: Array<{ position: number; label: string; code: string; number: string; description: string }>
     selectedPosition: number
     options: Array<{ id: number; code: string; description: string; number: string; type: string }>
+    revision: number
+    canWrite: boolean
   }
 }
+
+export type SupplierClassificationUpdate = { current: string[]; revision: number; requestKey: string }
 
 export type SupplierPaymentMode = "transfer" | "check"
 
