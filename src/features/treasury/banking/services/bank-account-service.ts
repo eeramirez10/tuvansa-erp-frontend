@@ -78,6 +78,13 @@ export async function getBankPanel(id: number, key: BankPanelKey, signal?: Abort
   return response.data
 }
 
+export async function getBankReconciliationDetail(id: number, movementId: number, signal?: AbortSignal) {
+  const response = await apiClient.get<BankPanel>(`/treasury/bank-accounts/${id}/actions/reconciliation/detail`, {
+    signal, params: { movementId },
+  })
+  return response.data
+}
+
 export async function registerBankReconciliation(id: number, input: BankReconciliationInput) {
   const response = await apiClient.post<ItemResponse<BankReconciliation>>(
     `/treasury/bank-accounts/${id}/${panelPaths.reconciliation}`,

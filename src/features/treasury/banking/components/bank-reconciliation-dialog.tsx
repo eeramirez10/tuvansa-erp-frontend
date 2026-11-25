@@ -9,6 +9,7 @@ import { z } from "zod"
 import { accountingPolicyQueryOptions } from "@/features/accounting/policies/logic"
 import { BankPanelTable, type BankPanelColumn } from "@/features/treasury/banking/components/bank-panel-table"
 import { printBankPolicy } from "@/features/treasury/banking/components/bank-policy-print"
+import { BankReconciliationDetail } from "@/features/treasury/banking/components/bank-reconciliation-detail"
 import { bankAccountKeys, bankMoney, bankPanelQueryOptions } from "@/features/treasury/banking/logic"
 import type { BankAccount, BankPanel, BankPostdateInput, BankReconciliationInput, BankTransitInput } from "@/features/treasury/banking/model"
 import { registerBankReconciliation, setBankPostdate, setBankTransit } from "@/features/treasury/banking/services/bank-account-service"
@@ -69,7 +70,7 @@ function reconciliationSchema({ earliest, latest, projected }: { earliest: strin
   })
 }
 
-function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, onSave, onTransit, onPostdate }: {
+function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, onSave, onTransit, onPostdate, onDetail }: {
   data: BankPanel
   locked: boolean
   saving: boolean
@@ -78,6 +79,7 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
   onSave: (input: DraftInput) => void
   onTransit: (input: BankTransitInput) => Promise<boolean>
   onPostdate: (input: PostdateDraft) => void
+  onDetail: (movementId: number) => void
 }) {
   const dateId = useId()
   const balanceId = useId()
@@ -211,7 +213,8 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
           </Button>
           <Button aria-pressed={transitOnly} disabled={locked} onClick={() => setTransitOnly((value) => !value)}
             size="xs" type="button" variant="outline">Filtra tránsito</Button>
-          <Button disabled size="xs" type="button" variant="outline">Detalle</Button>
+          <Button disabled={locked || focused?.canViewDetail !== true || focusedId === null} size="xs" type="button" variant="outline"
+            onClick={() => { if (focusedId !== null) onDetail(focusedId) }}>Detalle</Button>
           <Button disabled={locked || policyId === null || typeof postdateRevision !== "number"} size="xs" type="button" variant="outline"
             onClick={() => {
               if (focusedId === null || policyId === null || typeof postdateRevision !== "number") return
@@ -271,6 +274,7 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
   const queryClient = useQueryClient()
   const [draftVersion, setDraftVersion] = useState(0)
   const [postdateDraft, setPostdateDraft] = useState<PostdateDraft | null>(null)
+  const [detailMovementId, setDetailMovementId] = useState<number | null>(null)
   const inFlight = useRef(false)
   const requestKeys = useRef(new Map<string, string>())
   const query = useQuery({
@@ -378,8 +382,9 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
           }} size="xs" type="button" variant="outline">Actualizar pendientes</Button>}
         </AlertDescription></Alert>}
         {ready && query.data ? (
-          <ReconciliationDraft data={query.data} key={draftVersion} locked={query.isFetching || save.isPending || transit.isPending || postdateDraft !== null}
-            onClose={close} onSave={submit} onTransit={changeTransit} onPostdate={setPostdateDraft}
+          <ReconciliationDraft data={query.data} key={draftVersion}
+            locked={query.isFetching || save.isPending || transit.isPending || postdateDraft !== null || detailMovementId !== null}
+            onClose={close} onSave={submit} onTransit={changeTransit} onPostdate={setPostdateDraft} onDetail={setDetailMovementId}
             saving={save.isPending} changingTransit={transit.isPending} />
         ) : (
           <div className="flex justify-end gap-1">
@@ -390,6 +395,8 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
       </ErpDataDialogBody>
       {postdateDraft && <BankPostdateDialog draft={postdateDraft} error={postdate.error} pending={postdate.isPending}
         onClose={closePostdate} onSave={savePostdate} />}
+      {detailMovementId !== null && <BankReconciliationDetail accountId={account.id} movementId={detailMovementId}
+        onClose={() => setDetailMovementId(null)} />}
     </ErpDataDialog>
   )
 }

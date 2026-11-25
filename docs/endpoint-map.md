@@ -66,6 +66,7 @@ ese importe al saldo bancario actual para mostrar el saldo proyectado.
 | Imprimir Póliza | Abrir la vista de impresión de la partida resaltada | GET `/accounting/policies/:policyId` | `bank-policy-print.ts` |
 | Tránsito | Marcar o desmarcar la partida resaltada | PATCH `/treasury/bank-accounts/:bankAccountId/actions/reconciliation/transit` | `bank-account-service.ts` |
 | FP | Guardar la fecha de posfechado de la póliza histórica resaltada | PATCH `/treasury/bank-accounts/:bankAccountId/actions/reconciliation/postdate` | Invalida Conciliar, Auxiliar y Pólizas |
+| Detalle | Consultar documentos enlazados a la partida histórica resaltada | GET `/treasury/bank-accounts/:bankAccountId/actions/reconciliation/detail?movementId=...` | Auxiliar de la partida |
 | Filtra tránsito | Mostrar sólo filas con asterisco en T | Filtro local sobre la consulta de Conciliar | `bank-reconciliation-dialog.tsx` |
 | Registrar | Guardar la conciliación cotejada con el estado de cuenta | POST en la misma ruta | `bank-account-service.ts` |
 | Actualizar pendientes | Recargar la consulta tras un conflicto | GET en la misma ruta | `bank-reconciliation-dialog.tsx` |
