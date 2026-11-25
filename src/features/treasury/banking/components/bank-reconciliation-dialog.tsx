@@ -17,6 +17,7 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { Checkbox } from "@/shared/ui/checkbox"
+import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
 import { Label } from "@/shared/ui/label"
@@ -393,10 +394,14 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
           </div>
         )}
       </ErpDataDialogBody>
-      {postdateDraft && <BankPostdateDialog draft={postdateDraft} error={postdate.error} pending={postdate.isPending}
-        onClose={closePostdate} onSave={savePostdate} />}
-      {detailMovementId !== null && <BankReconciliationDetail accountId={account.id} movementId={detailMovementId}
-        onClose={() => setDetailMovementId(null)} />}
+      {postdateDraft && <DesktopWindowIdentity id={`banking:${account.id}:reconciliation:postdate`}>
+        <BankPostdateDialog draft={postdateDraft} error={postdate.error} pending={postdate.isPending}
+          onClose={closePostdate} onSave={savePostdate} />
+      </DesktopWindowIdentity>}
+      {detailMovementId !== null && <DesktopWindowIdentity id={`banking:${account.id}:reconciliation:detail`}>
+        <BankReconciliationDetail accountId={account.id} movementId={detailMovementId}
+          onClose={() => setDetailMovementId(null)} />
+      </DesktopWindowIdentity>}
     </ErpDataDialog>
   )
 }
