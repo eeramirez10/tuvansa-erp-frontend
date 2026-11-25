@@ -28,6 +28,11 @@ operar y el costo vigente de las partidas pendientes al autorizar. Un pedido
 asignado o con surtido conserva la autorización. **Comentarios → Autorizó**
 muestra el usuario que dio la última autorización.
 
+En **Encuentra producto → Familias**, **Cálculo por código** permite usar
+`ICOD='01201603'` junto con los clasificadores elegidos. Usa `1` para
+quitar el filtro de código. Al elegir un resultado, vuelve a la captura
+en el almacén del pedido.
+
 La ficha central de Pedido conserva la distribución observada en PROSCAI: ocho bandas de ancho desigual en el primer renglón (Pedido, Pedido cliente, Carrito, Status., Surtido, Anticipo, Canal y Sucursal), Cliente y Nombre ocupan el bloque izquierdo del segundo, y Fecha/Desde/Vence/Agt./Plazo/Almacén forman el tercero. La tabla mantiene las proporciones visibles de Producto y Descripción, seguida por cantidades e importes; abajo, Totales ocupa cerca de un tercio del ancho e Importes el espacio restante. Carrito, Anticipo, Canal y la primera Sucursal permanecen visibles pero vacíos porque el contrato HTTP aún no expone esos valores.
 
 El primer OK conserva un borrador local y comienza el recorrido de descuentos; no inserta un encabezado como OMNIS hasta el OK final. Cancelar Comentarios regresa a Captura. Cerrar un borrador pide confirmar descarte. Durante el guardado se deshabilitan controles; los errores conservan el contenido y no se reintenta automáticamente.

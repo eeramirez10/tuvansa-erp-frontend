@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { ErpDataDialog, ErpDataDialogBody } from "@/shared/ui/erp-data-dialog"
+import { Input } from "@/shared/ui/input"
 import { Spinner } from "@/shared/ui/spinner"
 
 type FamilyChoice = { position: number; code: string }
@@ -23,11 +24,15 @@ function familyPattern(groups: CaptureProductFamily[], selected: FamilyChoice[])
 
 export function OrderProductFamiliesDialog({ onClose, onApply }: {
   onClose: () => void
-  onApply: (pattern: string) => void
+  onApply: (pattern: string, exactCode?: string) => void
 }) {
   const families = useQuery(captureProductFamiliesQuery())
   const [selected, setSelected] = useState<FamilyChoice[]>([])
+  const [calculation, setCalculation] = useState("1")
   const groups = families.data ?? []
+  const expression = calculation.trim()
+  const exactCode = /^ICOD\s*=\s*'([^']{1,13})'$/i.exec(expression)?.[1]?.trim()
+  const validCalculation = !expression || expression === "1" || Boolean(exactCode)
   return (
     <ErpDataDialog defaultWidth={510} description="Filtrar los productos por familia en el almacén activo"
       onOpenChange={onClose} title="Familias" tone="sales">
@@ -36,7 +41,7 @@ export function OrderProductFamiliesDialog({ onClose, onApply }: {
         {families.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(families.error)}</AlertDescription></Alert>}
         <form className="grid gap-2" onSubmit={(event) => {
           event.preventDefault()
-          if (groups.length) onApply(familyPattern(groups, selected))
+          if (groups.length && validCalculation) onApply(familyPattern(groups, selected), exactCode)
         }}>
           {groups.map(({ position, label, options }) => (
             <label className="grid grid-cols-[8rem_1fr] items-center gap-1" key={position}>{label}
@@ -55,9 +60,15 @@ export function OrderProductFamiliesDialog({ onClose, onApply }: {
               </select>
             </label>
           ))}
+          <label className="grid grid-cols-[8rem_1fr] items-center gap-1">
+            Cálculo por código
+            <Input aria-invalid={!validCalculation} className="h-6" maxLength={32}
+              onChange={event => setCalculation(event.target.value)} value={calculation} />
+          </label>
+          {!validCalculation && <p className="text-destructive" role="alert">Usa un código exacto, por ejemplo ICOD='01201603', o 1 para quitar el filtro.</p>}
           <footer className="flex justify-end gap-1">
             <Button onClick={onClose} type="button" size="sm" variant="outline">Cancelar</Button>
-            <Button disabled={groups.length === 0 || families.isFetching} type="submit" size="sm">OK</Button>
+            <Button disabled={groups.length === 0 || families.isFetching || !validCalculation} type="submit" size="sm">OK</Button>
           </footer>
         </form>
       </ErpDataDialogBody>

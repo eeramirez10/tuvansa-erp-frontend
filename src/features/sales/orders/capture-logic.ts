@@ -13,7 +13,7 @@ export const captureProductQuery = (code: string, warehouse: string, typeCode: s
 }
 export const captureProductMatchesQuery = (criteria: CaptureProductSearchCriteria, warehouse: string) => {
   const warehouseCode = normalizeOrderWarehouse(warehouse)
-  return queryOptions({ queryKey: [...orderKeys.all, "capture", "product-matches", warehouseCode, criteria.code ?? "", criteria.description ?? "", criteria.supplierCode ?? "", criteria.familyPattern ?? ""], queryFn: ({signal}) => searchCaptureProducts(criteria, warehouseCode, signal), staleTime: 0 })
+  return queryOptions({ queryKey: [...orderKeys.all, "capture", "product-matches", warehouseCode, criteria.code ?? "", criteria.description ?? "", criteria.supplierCode ?? "", criteria.familyPattern ?? "", criteria.exactCode ?? ""], queryFn: ({signal}) => searchCaptureProducts(criteria, warehouseCode, signal), staleTime: 0 })
 }
 export const captureProductFamiliesQuery = () => queryOptions({
   queryKey: [...orderKeys.all, "capture", "product-families"],

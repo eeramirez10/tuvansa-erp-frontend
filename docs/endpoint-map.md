@@ -369,6 +369,7 @@ Implementación 2026-09-17 basada en `ORDERS_*` del reporte `orders-behaviors-ne
 | --- | --- | --- | --- | --- |
 | Captura / Cliente | Tab con código parcial; abre una ventana ERP independiente delante de Captura de pedido, con filtros Código/Nombre/RFC | GET `/sales/orders/capture/customers?code=...&name=...&taxId=...` | customer-matches | order-customer-matches-dialog.tsx |
 | Captura / Código de producto inexistente | Tab o Enter; abre Encuentra producto delante de Captura de pedido, con filtros Código/IEAN, Descripción y Cod Prv | GET `/sales/orders/capture/products?warehouse=01&code=...&description=...&supplierCode=...` | product-matches | order-product-matches-dialog.tsx |
+| Encuentra producto / Familias | OK aplica los clasificadores y el cálculo por código | GET `/sales/orders/capture/products?warehouse=01&familyPattern=...&exactCode=...` | product-matches | order-product-families-dialog.tsx |
 | Captura / Precio | Blur o agregar partida; pesos contra lista 5, dólares contra lista 6 | Validación local y validación del POST | `ORDER_PRICE_BELOW_COST` | order-capture-dialog.tsx |
 | Pedidos / Autorizar | Clic o Ctrl+A autoriza o desautoriza. El botón indica el estado y se deshabilita durante la operación | POST `/sales/orders/:id/actions/authorization` | `authorized`, `revision` y sesión con permiso `MPED5` | order-catalog-page.tsx |
 | Pedidos / Asignar todo | Clic o Ctrl+P | POST `/sales/orders/:id/actions/assignment` | setOrderAssignment | order-assignment-dialog.tsx |

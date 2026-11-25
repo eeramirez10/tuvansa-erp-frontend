@@ -27,6 +27,7 @@ export async function searchCaptureProducts(criteria: CaptureProductSearchCriter
     ...(criteria.description ? { description: criteria.description } : {}),
     ...(criteria.supplierCode ? { supplierCode: criteria.supplierCode } : {}),
     ...(criteria.familyPattern ? { familyPattern: criteria.familyPattern } : {}),
+    ...(criteria.exactCode ? { exactCode: criteria.exactCode } : {}),
     limit: 50,
   }
   return (await apiClient.get<{data: CaptureProductMatch[]}>("/sales/orders/capture/products", { params, signal })).data.data
