@@ -132,7 +132,11 @@ export function BankAutomaticReconciliationDialog({ account, onOpenChange }: {
     const assigned = matchedLineByMovement.get(movement.movementId)
     return assigned === undefined || assigned === linkLine ? [{ ...movement, reference: row.bankNumber ?? row.checkNumber }] : []
   }) : []
-  const lastStatementDate = typeof data?.summary?.lastStatementDate === "string" ? data.summary.lastStatementDate : ""
+  const lastWebDate = typeof data?.summary?.lastStatementDate === "string" ? data.summary.lastStatementDate : ""
+  const historicalIds = new Set(data?.items.filter(({ historical }) => historical === true).map(({ movementId }) => movementId))
+  const lastLegacyDate = selected.some(({ movementId }) => historicalIds.has(movementId))
+    && typeof data?.summary?.lastLegacyStatementDate === "string" ? data.summary.lastLegacyStatementDate : ""
+  const lastStatementDate = lastWebDate > lastLegacyDate ? lastWebDate : lastLegacyDate
   const cutoffValid = validDate && cutoff >= lastStatementDate
   const bank = bankStatementCents(data?.summary?.bankBalance)
   const net = sumCents(selected.map(({ row }) => row))

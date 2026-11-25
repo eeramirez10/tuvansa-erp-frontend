@@ -33,7 +33,7 @@ Al confirmar **Baja**, el catálogo abre su primera cuenta disponible.
 | Revisar → Traspasa + | POST `/treasury/bank-accounts/:id/actions/authorization-review/transfer` | Elige destino y fecha contable, y abre la póliza aplicada desde el aviso de éxito |
 | Gastos por prv. | GET `/treasury/bank-accounts/:id/actions/supplier-expenses` | Consulta Compras por proveedor y totales del auxiliar |
 | Gastos por prv. → Pagar recepción | GET `/treasury/bank-accounts/:id/actions/supplier-expenses/capture`, POST `/treasury/bank-accounts/:id/actions/supplier-expenses` | Pago por cheque de la recepción seleccionada desde la cuenta abierta |
-| Concilia Automático → Registra | GET `/treasury/bank-accounts/:id/actions/automatic-reconciliation?asOfDate=YYYY-MM-DD`, POST `/treasury/bank-accounts/:id/actions/reconciliation` | Partidas web emparejadas desde CSV o TSV y saldo de corte validado |
+| Concilia Automático → Registra | GET `/treasury/bank-accounts/:id/actions/automatic-reconciliation?asOfDate=YYYY-MM-DD`, POST `/treasury/bank-accounts/:id/actions/reconciliation` | Partidas históricas y web elegibles emparejadas desde CSV o TSV y saldo de corte validado |
 
 En **Concilia Automático**, **Liga** permite elegir una partida pendiente con
 el mismo importe y signo cuando el archivo no tiene una coincidencia única.
@@ -77,10 +77,16 @@ El resultado actualiza Bancos y las consultas de Contabilidad.
 **Auxiliar**, **Pagos** y **Depósitos** muestran **Fecha conc.** cuando la
 consulta devuelve una fecha de conciliación.
 
+**Aux. no aplicados → Aplicar** abre la confirmación de diario para una
+póliza web o histórica elegible. Usa GET `/accounting/policies/:id/actions/manual`
+y POST `/accounting/policies/:id/actions/apply`. Al confirmar, recarga
+el Auxiliar, los saldos de Bancos y las consultas de Pólizas.
+
 La marca cambia **Saldo tránsito** en **Conciliar** y en la ficha bancaria.
 Las partidas marcadas se excluyen de la selección de corte y de **Concilia
-Automático**. Al quitar la marca, las partidas web pendientes vuelven a
-estar disponibles para registrar un corte.
+Automático**. Al quitar la marca, las partidas elegibles vuelven a estar
+disponibles. Un corte que incluye partidas históricas respeta también la
+última fecha de corte de German.
 
 ## Cuentas por cobrar · Alta, Cambio, Baja y Bloquear clientes
 

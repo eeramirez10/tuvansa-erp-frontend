@@ -90,13 +90,13 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
     mutationFn: async (id: number) => printBankPolicy(await queryClient.fetchQuery(accountingPolicyQueryOptions(id))),
   })
   const movements = useMemo(() => {
-    const result = new Map<number, { net: number; date: string }>()
+    const result = new Map<number, { net: number; date: string; historical: boolean }>()
     for (const row of data.items) {
       const id = reconcilableMovementId(row)
       const charge = cents(row.charge)
       const credit = cents(row.credit)
       if (id !== null && charge !== null && credit !== null) {
-        result.set(id, { net: charge - credit, date: datePart(row.policyDate) })
+        result.set(id, { net: charge - credit, date: datePart(row.policyDate), historical: row.historical === true })
       }
     }
     return result
@@ -108,8 +108,9 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
   const net = selectedMovements.reduce((sum, movement) => sum + movement.net, 0)
   const validNet = Number.isSafeInteger(net)
   const projected = bankBalance !== null && validNet && Number.isSafeInteger(bankBalance + net) ? bankBalance + net : null
-  const earliest = selectedMovements.reduce((latest, movement) => movement.date > latest ? movement.date : latest,
-    datePart(data.summary?.lastStatementDate))
+  const cutoffDates = [datePart(data.summary?.lastStatementDate), ...selectedMovements.map(({ date }) => date)]
+  if (selectedMovements.some(({ historical }) => historical)) cutoffDates.push(datePart(data.summary?.lastLegacyStatementDate))
+  const earliest = cutoffDates.reduce((latest, date) => date > latest ? date : latest, "")
   const latest = mexicoDate.format()
   const { clearErrors, formState: { errors }, handleSubmit, register } = useForm({
     resolver: zodResolver(reconciliationSchema({ earliest, latest, projected })),
@@ -164,7 +165,7 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
       )}
       {bankBalance === null && <p className="text-destructive" role="alert">No se pudo obtener el saldo bancario actual.</p>}
       {bankBalance !== null && projected === null && <p className="text-destructive" role="alert">El saldo proyectado excede el rango permitido.</p>}
-      {movements.size === 0 && <p className="text-muted-foreground" role="status">Sin movimientos web pendientes para conciliar.</p>}
+      {movements.size === 0 && <p className="text-muted-foreground" role="status">Sin movimientos disponibles para conciliar.</p>}
       {print.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(print.error)}</AlertDescription></Alert>}
       <fieldset className="grid min-w-0 gap-1.5 sm:grid-cols-2" disabled={locked || movements.size === 0}>
         <div className="grid content-start gap-1">
