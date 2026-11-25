@@ -113,6 +113,14 @@ export type BankTransitInput = {
   inTransit: boolean
 }
 
+export type BankPostdateInput = {
+  movementId: number
+  policyId: number
+  revision: number
+  postDate: string | null
+  requestKey: string
+}
+
 export type BankReconciliation = {
   id: number
   movementIds: number[]

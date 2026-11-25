@@ -10,8 +10,8 @@ import { accountingPolicyQueryOptions } from "@/features/accounting/policies/log
 import { BankPanelTable, type BankPanelColumn } from "@/features/treasury/banking/components/bank-panel-table"
 import { printBankPolicy } from "@/features/treasury/banking/components/bank-policy-print"
 import { bankAccountKeys, bankMoney, bankPanelQueryOptions } from "@/features/treasury/banking/logic"
-import type { BankAccount, BankPanel, BankReconciliationInput, BankTransitInput } from "@/features/treasury/banking/model"
-import { registerBankReconciliation, setBankTransit } from "@/features/treasury/banking/services/bank-account-service"
+import type { BankAccount, BankPanel, BankPostdateInput, BankReconciliationInput, BankTransitInput } from "@/features/treasury/banking/model"
+import { registerBankReconciliation, setBankPostdate, setBankTransit } from "@/features/treasury/banking/services/bank-account-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -22,6 +22,7 @@ import { Label } from "@/shared/ui/label"
 import { Spinner } from "@/shared/ui/spinner"
 
 type DraftInput = Omit<BankReconciliationInput, "requestKey">
+type PostdateDraft = Omit<BankPostdateInput, "requestKey">
 
 const columns: BankPanelColumn[] = [
   { label: "Beneficiario", key: "beneficiary" }, { label: "OK", key: "reconciled" },
@@ -68,7 +69,7 @@ function reconciliationSchema({ earliest, latest, projected }: { earliest: strin
   })
 }
 
-function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, onSave, onTransit }: {
+function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, onSave, onTransit, onPostdate }: {
   data: BankPanel
   locked: boolean
   saving: boolean
@@ -76,6 +77,7 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
   onClose: () => void
   onSave: (input: DraftInput) => void
   onTransit: (input: BankTransitInput) => Promise<boolean>
+  onPostdate: (input: PostdateDraft) => void
 }) {
   const dateId = useId()
   const balanceId = useId()
@@ -86,6 +88,7 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
   const rows = transitOnly ? data.items.filter((row) => row.inTransit === "*") : data.items
   const focused = rows.find((row) => row.movementId === focusedId)
   const policyId = typeof focused?.policyId === "number" && focused.policyId > 0 ? focused.policyId : null
+  const postdateRevision = focused?.postdateRevision
   const print = useMutation({
     mutationFn: async (id: number) => printBankPolicy(await queryClient.fetchQuery(accountingPolicyQueryOptions(id))),
   })
@@ -209,7 +212,12 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
           <Button aria-pressed={transitOnly} disabled={locked} onClick={() => setTransitOnly((value) => !value)}
             size="xs" type="button" variant="outline">Filtra tránsito</Button>
           <Button disabled size="xs" type="button" variant="outline">Detalle</Button>
-          <Button disabled size="xs" type="button" variant="outline">FP</Button>
+          <Button disabled={locked || policyId === null || typeof postdateRevision !== "number"} size="xs" type="button" variant="outline"
+            onClick={() => {
+              if (focusedId === null || policyId === null || typeof postdateRevision !== "number") return
+              const currentDate = datePart(focused?.postdatedAt)
+              onPostdate({ movementId: focusedId, policyId, revision: postdateRevision, postDate: currentDate > "1900-12-31" ? currentDate : null })
+            }}>FP</Button>
         </div>
         <div className="ml-auto flex gap-1">
           <Button disabled={saving || changingTransit} onClick={onClose} size="sm" type="button" variant="outline">Cancelar</Button>
@@ -220,12 +228,49 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
   )
 }
 
+function BankPostdateDialog({ draft, pending, error, onClose, onSave }: {
+  draft: PostdateDraft
+  pending: boolean
+  error: Error | null
+  onClose: () => void
+  onSave: (input: PostdateDraft) => void
+}) {
+  const dateId = useId()
+  const [postDate, setPostDate] = useState(draft.postDate ?? "")
+  return (
+    <ErpDataDialog defaultWidth={340} description="Fecha de posfechado de la póliza seleccionada"
+      onOpenChange={onClose} title="Fecha P." tone="banking">
+      <ErpDataDialogBody>
+        <form className="grid gap-2" onSubmit={(event) => {
+          event.preventDefault()
+          if (!pending) onSave({ ...draft, postDate: postDate || null })
+        }} onKeyDown={(event) => {
+          if (event.key !== "Escape" || pending) return
+          event.preventDefault()
+          event.stopPropagation()
+          onClose()
+        }}>
+          <Label htmlFor={dateId}>Fecha de posfechado</Label>
+          <Input id={dateId} type="date" value={postDate}
+            disabled={pending} onChange={(event) => setPostDate(event.target.value)} />
+          {error && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(error)}</AlertDescription></Alert>}
+          <div className="flex justify-end gap-1">
+            <Button type="button" size="sm" variant="outline" disabled={pending} onClick={onClose}>Cancelar</Button>
+            <Button type="submit" size="sm" disabled={pending}>{pending && <Spinner />}Guardar</Button>
+          </div>
+        </form>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
+  )
+}
+
 export function BankReconciliationDialog({ account, onOpenChange }: {
   account: BankAccount
   onOpenChange: (open: boolean) => void
 }) {
   const queryClient = useQueryClient()
   const [draftVersion, setDraftVersion] = useState(0)
+  const [postdateDraft, setPostdateDraft] = useState<PostdateDraft | null>(null)
   const inFlight = useRef(false)
   const requestKeys = useRef(new Map<string, string>())
   const query = useQuery({
@@ -252,6 +297,35 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: bankAccountKeys.all }),
     onSettled: () => { inFlight.current = false },
   })
+  const postdate = useMutation({
+    networkMode: "always",
+    mutationFn: (input: BankPostdateInput) => setBankPostdate(account.id, input),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: bankAccountKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["accounting"] }),
+      ])
+      setPostdateDraft(null)
+      toast.success("Fecha de posfechado guardada.")
+    },
+    onSettled: () => { inFlight.current = false },
+  })
+
+  function savePostdate(input: PostdateDraft) {
+    if (inFlight.current) return
+    const signature = JSON.stringify(input)
+    const requestKey = requestKeys.current.get(signature) ?? crypto.randomUUID()
+    requestKeys.current.set(signature, requestKey)
+    inFlight.current = true
+    postdate.mutate({ ...input, requestKey })
+  }
+
+  function closePostdate() {
+    if (inFlight.current) return
+    if (isAxiosError(postdate.error) && postdate.error.response?.status === 409) void query.refetch()
+    postdate.reset()
+    setPostdateDraft(null)
+  }
 
   function close() {
     if (!inFlight.current) onOpenChange(false)
@@ -304,8 +378,9 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
           }} size="xs" type="button" variant="outline">Actualizar pendientes</Button>}
         </AlertDescription></Alert>}
         {ready && query.data ? (
-          <ReconciliationDraft data={query.data} key={draftVersion} locked={query.isFetching || save.isPending || transit.isPending}
-            onClose={close} onSave={submit} onTransit={changeTransit} saving={save.isPending} changingTransit={transit.isPending} />
+          <ReconciliationDraft data={query.data} key={draftVersion} locked={query.isFetching || save.isPending || transit.isPending || postdateDraft !== null}
+            onClose={close} onSave={submit} onTransit={changeTransit} onPostdate={setPostdateDraft}
+            saving={save.isPending} changingTransit={transit.isPending} />
         ) : (
           <div className="flex justify-end gap-1">
             <Button onClick={close} size="sm" type="button" variant="outline">Cancelar</Button>
@@ -313,6 +388,8 @@ export function BankReconciliationDialog({ account, onOpenChange }: {
           </div>
         )}
       </ErpDataDialogBody>
+      {postdateDraft && <BankPostdateDialog draft={postdateDraft} error={postdate.error} pending={postdate.isPending}
+        onClose={closePostdate} onSave={savePostdate} />}
     </ErpDataDialog>
   )
 }
