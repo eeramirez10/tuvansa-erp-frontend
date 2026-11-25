@@ -6,7 +6,9 @@ import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
+import { accountingPolicyQueryOptions } from "@/features/accounting/policies/logic"
 import { BankPanelTable, type BankPanelColumn } from "@/features/treasury/banking/components/bank-panel-table"
+import { printBankPolicy } from "@/features/treasury/banking/components/bank-policy-print"
 import { bankAccountKeys, bankMoney, bankPanelQueryOptions } from "@/features/treasury/banking/logic"
 import type { BankAccount, BankPanel, BankReconciliationInput, BankTransitInput } from "@/features/treasury/banking/model"
 import { registerBankReconciliation, setBankTransit } from "@/features/treasury/banking/services/bank-account-service"
@@ -77,11 +79,16 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
 }) {
   const dateId = useId()
   const balanceId = useId()
+  const queryClient = useQueryClient()
   const [selected, setSelected] = useState(new Set<number>())
   const [focusedId, setFocusedId] = useState<number | null>(null)
   const [transitOnly, setTransitOnly] = useState(false)
   const rows = transitOnly ? data.items.filter((row) => row.inTransit === "*") : data.items
   const focused = rows.find((row) => row.movementId === focusedId)
+  const policyId = typeof focused?.policyId === "number" && focused.policyId > 0 ? focused.policyId : null
+  const print = useMutation({
+    mutationFn: async (id: number) => printBankPolicy(await queryClient.fetchQuery(accountingPolicyQueryOptions(id))),
+  })
   const movements = useMemo(() => {
     const result = new Map<number, { net: number; date: string }>()
     for (const row of data.items) {
@@ -142,7 +149,10 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
         <ErpDataMetric label="Saldo banco proyectado" value={displayCents(projected)} />
       </div>
       <BankPanelTable columns={movements.size ? [selectionColumn, ...columns] : columns} rows={rows}
-        onSelect={(row) => setFocusedId(typeof row.movementId === "number" ? row.movementId : null)} selectedId={focusedId} />
+        onSelect={(row) => {
+          print.reset()
+          setFocusedId(typeof row.movementId === "number" ? row.movementId : null)
+        }} selectedId={focusedId} />
       {transitOnly && rows.length === 0 && <p className="text-muted-foreground" role="status">Sin movimientos en tránsito.</p>}
       {changed && (
         <Alert><AlertDescription className="flex items-center justify-between gap-2">
@@ -155,6 +165,7 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
       {bankBalance === null && <p className="text-destructive" role="alert">No se pudo obtener el saldo bancario actual.</p>}
       {bankBalance !== null && projected === null && <p className="text-destructive" role="alert">El saldo proyectado excede el rango permitido.</p>}
       {movements.size === 0 && <p className="text-muted-foreground" role="status">Sin movimientos web pendientes para conciliar.</p>}
+      {print.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(print.error)}</AlertDescription></Alert>}
       <fieldset className="grid min-w-0 gap-1.5 sm:grid-cols-2" disabled={locked || movements.size === 0}>
         <div className="grid content-start gap-1">
           <Label htmlFor={dateId}>Fecha de estado de cuenta</Label>
@@ -173,7 +184,10 @@ function ReconciliationDraft({ data, locked, saving, changingTransit, onClose, o
       </fieldset>
       <footer className="flex flex-wrap items-end justify-between gap-1">
         <div className="flex flex-wrap gap-1">
-          <Button disabled size="xs" type="button" variant="outline">Imprimir Póliza</Button>
+          <Button disabled={policyId === null || print.isPending} size="xs" type="button" variant="outline"
+            onClick={() => { if (policyId !== null) print.mutate(policyId) }}>
+            {print.isPending && <Spinner />}Imprimir Póliza
+          </Button>
           <Button disabled size="xs" type="button" variant="outline">Imprimir Cheque</Button>
           <Button disabled={locked || focused?.canChangeTransit !== true} size="xs" type="button" variant="outline"
             aria-pressed={focused?.inTransit === "*"} onClick={async () => {
