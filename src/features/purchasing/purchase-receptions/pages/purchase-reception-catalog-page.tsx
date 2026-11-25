@@ -53,6 +53,9 @@ export function PurchaseReceptionCatalogPage() {
   const { windows: cancellationWindows, openWindow: openCancellation, closeWindow: closeCancellation } = useDesktopWindowCollection<CancellationWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
   const kind = reception ? cancellationKind(reception) : null
+  const showCancellation = reception && kind
+    ? () => openCancellation(`purchase-receptions:${reception.id}:cancel-${kind}`, { id: reception.id, kind })
+    : undefined
   const selectLine = reception && !reception.cancelled && /^R[AW]\d/.test(reception.number) && reception.lines.length > 0
   const selectedLine = selectLine && lineSelection?.receiptId === reception.id
     ? reception.lines.find((line) => line.id === lineSelection.lineId)
@@ -85,6 +88,7 @@ export function PurchaseReceptionCatalogPage() {
       <PurchaseReceptionToolbar
         disabled={navigation.isPending}
         hasReception={Boolean(reception)}
+        onCancel={kind === "reception" && !reception?.cancelled ? showCancellation : undefined}
         onCreate={() => setCreateOpen(true)}
         onGeneralExpenses={() => setGeneralExpensesOpen(true)}
         onNext={() => navigation.mutate("next")}
@@ -97,9 +101,7 @@ export function PurchaseReceptionCatalogPage() {
       <section className="min-w-0">
         {notice && <Alert className="mb-2" variant={notice.error ? "destructive" : "default"}><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
         {reception && <PurchaseReceptionDetails
-          onCancel={kind
-            ? () => openCancellation(`purchase-receptions:${reception.id}:cancel-${kind}`, { id: reception.id, kind })
-            : undefined}
+          onCancel={showCancellation}
           onSelectLine={selectLine ? (lineId) => setLineSelection({ receiptId: reception.id, lineId }) : undefined}
           reception={reception}
           selectedLineId={selectedLine?.id}

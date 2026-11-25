@@ -18,7 +18,7 @@ function Tool({ label, icon, onClick, disabled }: { label: string; icon: typeof 
   )
 }
 
-export function PurchaseReceptionToolbar({ disabled, hasReception, onCreate, onGeneralExpenses, onPrevious, onSearch, onNext }: {
+export function PurchaseReceptionToolbar({ disabled, hasReception, onCreate, onGeneralExpenses, onPrevious, onSearch, onNext, onCancel }: {
   disabled?: boolean
   hasReception: boolean
   onCreate: () => void
@@ -26,6 +26,7 @@ export function PurchaseReceptionToolbar({ disabled, hasReception, onCreate, onG
   onPrevious: () => void
   onSearch: () => void
   onNext: () => void
+  onCancel?: () => void
 }) {
   return (
     <ErpModuleToolbarPortal><div aria-label="Navegación de recepciones" className="flex items-center gap-1" role="toolbar">
@@ -35,8 +36,8 @@ export function PurchaseReceptionToolbar({ disabled, hasReception, onCreate, onG
       <Separator className="mx-0.5 h-5" orientation="vertical" />
       <Tool icon={FileAddIcon} label="Nueva recepción" onClick={onCreate} />
       <Button onClick={onGeneralExpenses} size="sm" type="button" variant="outline">Gastos múltiples</Button>
-      <Tool disabled icon={Delete01Icon} label="Eliminar recepción (escritura pendiente)" />
-      <Tool disabled icon={Edit02Icon} label="Editar recepción (escritura pendiente)" />
+      <Tool disabled={disabled || !onCancel} icon={Delete01Icon} label="Eliminar recepción" onClick={onCancel} />
+      <Tool disabled icon={Edit02Icon} label="Editar recepción (sin edición general en German)" />
     </div></ErpModuleToolbarPortal>
   )
 }

@@ -615,6 +615,7 @@ confirmada en la captura.
 | Gastos múltiples / OK | `POST /general-expenses` |
 | Cancelar GA | `GET y POST /:id/actions/cancel-expense` |
 | Cancelar recepción RW o RA histórica habilitada | `GET y POST /:id/actions/cancel-reception` |
+| Barra / Eliminar recepción | Abre la confirmación y usa los mismos GET y POST de Cancelar recepción |
 | Ficha y partidas | `GET /:purchaseReceptionId` |
 | Auxiliar | `GET /:purchaseReceptionId/actions/auxiliary` |
 | Cambia Prv / Confirmar | `GET /:purchaseReceptionId/actions/change-supplier` |
