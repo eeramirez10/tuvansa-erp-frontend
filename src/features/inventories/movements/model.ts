@@ -1,6 +1,7 @@
 export const movementWindowId = "inventory:movements"
 export const movementSearchWindowId = "inventory:movements:search"
 export const movementCaptureWindowId = "inventory:movements:capture"
+export const movementPrintWindowId = "inventory:movements:print"
 export const isLocalInventoryAdjustment = (id: number) => id >= 7_950_000_000_000 && id <= 7_950_099_999_999
 
 export type InventoryMovementHeader = {
@@ -31,6 +32,7 @@ export type InventoryMovementLine = {
   pieces: number
   piecesText?: string
   warehouse: string
+  type: string
   lotId?: number
   lotWarehouse?: string
 }
@@ -42,6 +44,29 @@ export type InventoryMovement = {
   comment?: string
   cancellationAvailable: boolean
   cancellationReason?: string
+}
+
+export type InventoryMovementPrint = {
+  format: "QTUVANSA007" | "QTUVANSA002"
+  type: "EI" | "SI"
+  document: string
+  date: string
+  reference: string
+  warehouse: string
+  warehouseName: string
+  companyName: string
+  place: string
+  comment: string
+  lines: Array<{
+    id: number
+    productCode: string
+    description: string
+    quantity: number
+    cost: number
+    amount: number
+    customs: { entry: string; date: string | null; office: string } | null
+  }>
+  total: number
 }
 
 export type MovementCaptureType = "EI" | "SI" | "TR"

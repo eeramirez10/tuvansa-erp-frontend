@@ -1,4 +1,4 @@
-import type { InventoryMovement, MovementCaptureInput, MovementCaptureOptions, MovementSearchCriteria, MovementSearchResponse } from "@/features/inventories/movements/model"
+import type { InventoryMovement, InventoryMovementPrint, MovementCaptureInput, MovementCaptureOptions, MovementSearchCriteria, MovementSearchResponse } from "@/features/inventories/movements/model"
 import { apiClient } from "@/shared/api/api-client"
 
 const movementPath = "/inventories/movements"
@@ -13,6 +13,11 @@ export async function getMovements(criteria: MovementSearchCriteria, page: numbe
 
 export async function getMovement(id: number, signal?: AbortSignal) {
   const response = await apiClient.get<{ data: InventoryMovement }>(`${movementPath}/${id}`, { signal })
+  return response.data.data
+}
+
+export async function getMovementPrint(id: number, signal?: AbortSignal) {
+  const response = await apiClient.get<{ data: InventoryMovementPrint }>(`${movementPath}/${id}/actions/print`, { signal })
   return response.data.data
 }
 

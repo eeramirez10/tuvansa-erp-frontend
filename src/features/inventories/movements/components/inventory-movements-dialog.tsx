@@ -3,10 +3,11 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 
+import { InventoryMovementPrintDialog } from "@/features/inventories/movements/components/inventory-movement-print-dialog"
 import { InventoryMovementSearchDialog } from "@/features/inventories/movements/components/inventory-movement-search-dialog"
 import { MovementCaptureDialog } from "@/features/inventories/movements/components/movement-capture-dialog"
 import { movementDetailsQueryOptions, movementKeys } from "@/features/inventories/movements/logic"
-import { isLocalInventoryAdjustment, movementCaptureWindowId, movementSearchWindowId, movementWindowId, type InventoryMovementLine } from "@/features/inventories/movements/model"
+import { isLocalInventoryAdjustment, movementCaptureWindowId, movementPrintWindowId, movementSearchWindowId, movementWindowId, type InventoryMovementLine } from "@/features/inventories/movements/model"
 import { cancelMovement } from "@/features/inventories/movements/services/movement-service"
 import { ProductQueryTable } from "@/features/inventories/products/components/product-query-table"
 import { productKeys } from "@/features/inventories/products/logic"
@@ -101,10 +102,14 @@ export function InventoryMovementsDialog({
   const [confirmationOpen, setConfirmationOpen] = useState(false)
   const [commentOpen, setCommentOpen] = useState(false)
   const [captureOpen, setCaptureOpen] = useState(false)
+  const [printDocument, setPrintDocument] = useState<{ id: number; document: string } | null>(null)
   const [cancellationNotice, setCancellationNotice] = useState("")
   const detail = useQuery(movementDetailsQueryOptions(movementId))
   const movement = detail.data
   const header = movement?.header
+  const canPrint = header && (header.type === "EI" || header.type === "SI") && header.document.startsWith(header.type)
+    && header.company === 1 && header.status === 0 && header.inventoryFlag === 1 && header.billingFlag === 0
+    && movement.lines.some((line) => line.type !== "K" && line.quantity !== 0)
   const local = header && isLocalInventoryAdjustment(header.id)
   const transfer = local && (header.type === "TR" || (header.type === "K" && /^TR/.test(header.document))) && Boolean(header.reference2)
   const precision = local ? 3 : 2
@@ -116,6 +121,7 @@ export function InventoryMovementsDialog({
     mutationFn: cancelMovement,
     onSuccess: (_, id) => {
       setConfirmationOpen(false)
+      setPrintDocument((current) => current?.id === id ? null : current)
       if (isLocalInventoryAdjustment(id)) {
         setCancellationNotice("El documento se marcó como cancelado.")
         void queryClient.invalidateQueries({ queryKey: movementKeys.detail(id), exact: true })
@@ -210,7 +216,9 @@ export function InventoryMovementsDialog({
                 size="sm" type="button" variant="outline">Capturar movimiento</Button>
               {movement && (
                 <>
-                  <Button disabled size="sm" type="button" variant="outline">Imprimir</Button>
+                  <Button disabled={!canPrint || cancellation.isPending}
+                    onClick={() => setPrintDocument({ id: movement.header.id, document: movement.header.document })}
+                    size="sm" type="button" variant="outline">Imprimir</Button>
                   <Button onClick={() => setCommentOpen(true)} size="sm" type="button" variant="outline">Comentarios</Button>
                 </>
               )}
@@ -271,6 +279,11 @@ export function InventoryMovementsDialog({
             setCaptureOpen(false)
             restoreWindow(movementWindowId)
           }} />
+        </DesktopWindowIdentity>
+      )}
+      {printDocument && (
+        <DesktopWindowIdentity id={movementPrintWindowId}>
+          <InventoryMovementPrintDialog {...printDocument} onClose={() => setPrintDocument(null)} />
         </DesktopWindowIdentity>
       )}
 

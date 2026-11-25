@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import { z } from "zod"
 
 import { movementSearchFields, type MovementSearchCriteria } from "@/features/inventories/movements/model"
-import { getMovement, getMovementCaptureOptions, getMovements } from "@/features/inventories/movements/services/movement-service"
+import { getMovement, getMovementCaptureOptions, getMovementPrint, getMovements } from "@/features/inventories/movements/services/movement-service"
 
 export const movementKeys = {
   all: ["inventories", "movements"] as const,
@@ -33,6 +33,15 @@ export function movementDetailsQueryOptions(id: number | null) {
     queryKey: movementKeys.detail(id),
     queryFn: ({ signal }) => id === null ? Promise.resolve(null) : getMovement(id, signal),
     enabled: id !== null,
+  })
+}
+
+export function movementPrintQueryOptions(id: number) {
+  return queryOptions({
+    queryKey: [...movementKeys.detail(id), "print"],
+    queryFn: ({ signal }) => getMovementPrint(id, signal),
+    refetchOnMount: "always",
+    retry: false,
   })
 }
 
