@@ -23,9 +23,25 @@ export type DirectoryUser = UserProfile & {
   shared: boolean; legacyActive: boolean | null; revision: number; configured: boolean; effectiveActive: boolean
 }
 
+export type GermanUserDetails = {
+  company: number | null; department: number | null; multiCompany: number | null; notes: string | null
+  hideCosts: boolean | null; hideBalances: boolean | null; ownCustomersOnly: boolean | null
+  parameter: string | null; printer: string | null; labelPrinter: number | null; supplierClassifiers: string | null
+  captureFrom: string | null; captureUntil: string | null; store: string | null; payrollNumber: string | null; position: string | null
+}
+
+export type DirectoryUserDetail = DirectoryUser & {
+  legacyDetails: GermanUserDetails | null
+  activationExpiresAt: string | null
+}
+
 export type DirectoryFilters = {
   search: string; group?: number; state?: "active" | "inactive" | "pending"; offset: number; limit: number
 }
+
+export type DirectoryResult = { items: DirectoryUser[]; total: number }
+export type DirectoryDirection = "previous" | "next"
+export type DirectoryPosition = { filters: DirectoryFilters; index: number | null; total: number | null }
 
 export type Permission = {
   key: string; label: string; module: string; inherited: boolean; override: boolean | null

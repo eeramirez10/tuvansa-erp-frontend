@@ -20,9 +20,9 @@ const limit = 25
 const selection = (value: boolean | null): Override => value === null ? "inherit" : value ? "allow" : "deny"
 const override = (value: Override) => value === "inherit" ? null : value === "allow"
 
-export function GroupPermissions() {
+export function GroupPermissions({ initialGroup }: { initialGroup: number }) {
   const queryClient = useQueryClient()
-  const [group, setGroup] = useState(0)
+  const [group, setGroup] = useState(initialGroup)
   const [search, setSearch] = useState("")
   const [offset, setOffset] = useState(0)
   const [draft, setDraft] = useState<Draft | null>(null)

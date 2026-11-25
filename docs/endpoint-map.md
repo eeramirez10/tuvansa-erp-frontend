@@ -24,13 +24,20 @@ en Datos Generales, Usuarios y la autorización de Pedidos.
 | --- | --- |
 | Iniciar o cerrar sesión | `GET /session`, `POST /session`, `DELETE /session` |
 | Activar cuenta desde el enlace | `POST /session/activation` |
-| Buscar y dar de alta usuarios | `GET /general-data/users`, `POST /general-data/users` |
+| Encuentra por código o nombre | `GET /general-data/users` |
+| Anterior y Siguiente | `GET /general-data/users?anchor=:userId&direction=previous\|next` |
+| Consultar la ficha seleccionada | `GET /general-data/users/:userId` |
+| Alta desde la ficha | `POST /general-data/users` |
 | Cambio de usuario | `PATCH /general-data/users/:userId` |
 | Activar o restablecer | `POST /general-data/users/:userId/activation` |
 | Editar permisos por grupo | `GET /general-data/permission-groups/:group`, `PATCH /general-data/permission-groups/:group` |
 
 Estas rutas y la autorización de Pedidos usan `/api` desde el mismo origen
 que el frontend. La API valida el acceso y las revisiones en cada escritura.
+**Encuentra** abre una ventana de resultados delante de la ficha. **Alta**
+y **Cambio** editan dentro de **Usuarios** y dejan seleccionada la cuenta
+al guardar. Las restricciones individuales de German se muestran en consulta.
+**Permisos** abre el grupo de la cuenta seleccionada.
 
 ## Bancos · Alta, Cambio, Baja y traspasos
 

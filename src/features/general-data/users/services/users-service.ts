@@ -1,5 +1,5 @@
 import { sessionApiClient } from "@/shared/api/api-client"
-import type { DirectoryFilters, DirectoryUser, PermissionChange, PermissionGroup, UserProfile, WebSession } from "../model"
+import type { DirectoryDirection, DirectoryFilters, DirectoryResult, DirectoryUser, DirectoryUserDetail, PermissionChange, PermissionGroup, UserProfile, WebSession } from "../model"
 
 const users = "/general-data/users"
 const groups = "/general-data/permission-groups"
@@ -21,8 +21,18 @@ export async function activateWebAccount(token: string, password: string) {
   await sessionApiClient.post("/session/activation", { token, password })
 }
 
-export async function listUsers(filters: DirectoryFilters) {
-  return (await sessionApiClient.get<Response<{ items: DirectoryUser[]; total: number }>>(users, { params: filters })).data.data
+export async function listUsers(filters: DirectoryFilters, signal?: AbortSignal) {
+  return (await sessionApiClient.get<Response<DirectoryResult>>(users, { params: filters, signal })).data.data
+}
+
+export async function readUser(userId: string, signal?: AbortSignal) {
+  return (await sessionApiClient.get<Response<DirectoryUserDetail>>(`${users}/${userId}`, { signal })).data.data
+}
+
+export async function adjacentUser(filters: DirectoryFilters, userId: string, direction: DirectoryDirection) {
+  const params = { ...filters, anchor: userId, direction }
+  const response = await sessionApiClient.get<Response<DirectoryResult & { position: number | null }>>(users, { params })
+  return response.data.data
 }
 
 export async function saveUser(profile: UserProfile, user?: DirectoryUser) {
