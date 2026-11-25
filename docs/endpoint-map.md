@@ -424,6 +424,8 @@ El SQL del buscador es derivado. No se efectuó una nueva captura OMNIS. El alma
 | Alta / OK | Registrar una póliza con cargos y abonos iguales | POST `/accounting/policies` |
 | Duplicar | Consultar fecha y revisión de una póliza tipo 3 | GET `/accounting/policies/:id/actions/duplicate` |
 | Duplicar / Confirmar | Guardar una copia aplicada y abrir su folio | POST `/accounting/policies/:id/actions/duplicate` |
+| Clasificar | Cargar catálogo 4 y seleccionar el `POPAR1` actual | GET `/accounting/policies/:id/actions/classifications` |
+| Clasificadores / Guardar | Enviar `AGTNUM`, revisión y UUID. Actualizar ficha y búsqueda al confirmar | PATCH `/accounting/policies/:id/actions/classifications` |
 | Comentarios | Cargar la cabecera y las seis líneas; verificar si se puede editar | GET `/accounting/policies/:id/actions/comments` |
 | Comentarios / OK | Actualizar cabecera y notas de un diario web desaplicado con revisión y UUID | PATCH `/accounting/policies/:id/actions/comments` |
 | Cambio, Aplicar, Des - Aplicar o Baja | Consultar permisos, revisión y motivo de restricción | GET `/accounting/policies/:id/actions/manual` |

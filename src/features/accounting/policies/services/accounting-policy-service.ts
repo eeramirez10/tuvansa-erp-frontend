@@ -1,5 +1,6 @@
 import type {
   AccountingPolicy,
+  AccountingPolicyClassificationInput,
   AccountingPolicyClassifications,
   AccountingPolicyComments,
   AccountingPolicyCommentsInput,
@@ -52,6 +53,10 @@ export async function getAccountingPolicyClassifications(id: number, signal?: Ab
 }
 
 const policyPath = "/accounting/policies"
+
+export async function saveAccountingPolicyClassification(id: number, input: AccountingPolicyClassificationInput) {
+  await apiClient.patch(`${policyPath}/${id}/actions/classifications`, input)
+}
 
 export async function getAccountingPolicyComments(id: number, signal?: AbortSignal) {
   const { data } = await apiClient.get<ItemResponse<AccountingPolicyComments>>(`${policyPath}/${id}/actions/comments`, { signal })

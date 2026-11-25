@@ -111,10 +111,12 @@ export type AccountingPolicyClassifications = {
   key: "classifications"
   section: "actions"
   button: "Clasificar"
-  source: "mysql"
-  items: Array<Record<string, unknown>>
-  summary: { current: string[] }
+  source: "mysql" | "mysql+postgres"
+  items: Array<{ code: string; description: string; compositeCode: string }>
+  summary: { current: string[]; revision: number; canWrite: boolean; reason: string | null }
 }
+
+export type AccountingPolicyClassificationInput = { compositeCode: string; revision: number; requestKey: string }
 
 export type AccountingPolicyAction = {
   key: string

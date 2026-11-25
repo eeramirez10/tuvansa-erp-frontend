@@ -36,6 +36,8 @@ export const accountingPolicySearchQueryOptions = (criteria: AccountingPolicySea
 export const accountingPolicyClassificationsQueryOptions = (id: number) => queryOptions({
   queryKey: accountingPolicyKeys.classifications(id),
   queryFn: ({ signal }) => getAccountingPolicyClassifications(id, signal),
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
 })
 
 export const accountingPolicyCommentsQueryOptions = (id: number) => queryOptions({
