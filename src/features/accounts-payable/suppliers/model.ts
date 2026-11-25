@@ -105,6 +105,23 @@ export type SupplierClassificationsResponse = {
 
 export type SupplierClassificationUpdate = { current: string[]; revision: number; requestKey: string }
 
+export type SupplierActivityKind = "events" | "contacts"
+export type SupplierActivityCommand = {
+  operation: "create" | "change" | "remove"
+  requestKey: string
+  id?: string | number
+  revision?: number
+  fields?: Record<string, string | null>
+}
+
+export type SupplierActivityItem = { id: string | number; revision: number } & Record<string, unknown>
+
+export type SupplierVariousUpdate = {
+  requestKey: string
+  revision: number
+  fields: Record<string, string | number | number[]>
+}
+
 export type SupplierPaymentMode = "transfer" | "check"
 
 export type SupplierPaymentPreview = {

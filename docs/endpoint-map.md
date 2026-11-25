@@ -153,6 +153,23 @@ La ficha actualiza los catálogos dependientes de Compras y Bancos.
 | Opción / doble clic | Pasar la opción a Seleccionados y conservar el borrador al cambiar de grupo | Sin solicitud | `supplier-classifications-dialog.tsx` |
 | Guardar todos | Validar y guardar los nueve clasificadores juntos. Recargar al confirmar | PATCH `/accounts-payable/suppliers/:id/actions/classifications` | `supplier-classifications-dialog.tsx` |
 
+## Cuentas por pagar · Eventos y Contactos
+
+| Control | Evento | Método y endpoint bajo `/accounts-payable/suppliers/:id/actions` |
+| --- | --- | --- |
+| Eventos, Contactos | Carga la lista y la revisión de cada registro | GET `/events` y `/contacts` |
+| Eventos / Nuevo y Cambiar | Guarda los campos y recarga la ficha | POST `/events` y PATCH `/events/:activityId` |
+| Eventos / Eliminar | Retira el evento seleccionado tras confirmación | DELETE `/events/:activityId` |
+| Contactos / Alta y Baja | Registra o retira el contacto, con confirmación de baja | POST `/contacts` y DELETE `/contacts/:activityId` |
+
+El editor se encuentra en `supplier-activity-dialog.tsx`. La API usa UUID
+para reintentos y la revisión de la fila en Cambio y Baja.
+
+| Control | Evento | Método y endpoint | Componente |
+| --- | --- | --- | --- |
+| Varios | Abrir Enviar a con campos guardados y revisión | GET `/accounts-payable/suppliers/:id/actions/various` | `supplier-various-dialog.tsx` |
+| Enviar a / Cambio / OK | Guarda los campos con revisión y UUID y refresca la ficha | PATCH `/accounts-payable/suppliers/:id/actions/various` | `supplier-various-dialog.tsx` |
+
 ## Cuentas por pagar · Saldo y Paga
 
 **Paga** se habilita al seleccionar una recepción o un GA web con saldo pendiente en

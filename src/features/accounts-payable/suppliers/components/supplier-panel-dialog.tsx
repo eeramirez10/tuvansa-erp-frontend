@@ -3,8 +3,10 @@ import { useState } from "react"
 import { Link } from "react-router"
 import { paths } from "@/app/router/paths"
 import { SupplierClassificationsDialog } from "@/features/accounts-payable/suppliers/components/supplier-classifications-dialog"
+import { SupplierActivityDialog } from "@/features/accounts-payable/suppliers/components/supplier-activity-dialog"
 import { SupplierPaymentDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-dialog"
 import { SupplierPaymentReversalDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-reversal-dialog"
+import { SupplierVariousDialog } from "@/features/accounts-payable/suppliers/components/supplier-various-dialog"
 import {
   supplierBalanceReceiptId, supplierCalendarDate, supplierDateLabel,
   supplierPanelQueryOptions, supplierReversiblePayment,
@@ -120,18 +122,6 @@ function DetailField({ label, value, className }: { label: string; value: unknow
   return <label className={cn("grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-1", className)}><span className="text-right">{label}</span><Input className="h-5 px-1 text-[9px]" readOnly value={valueText(value)} /></label>
 }
 
-function VariousView({ detail }: { detail: Record<string, unknown> }) {
-  const fields: Array<[string, string]> = [
-    ["branch", "Sucursal"], ["bankAccount", "Número de cuenta"], ["bankCode", "Clave de banco"],
-    ["cieReference", "REF CIE"], ["internetPassword", "Password internet"], ["multiCompany", "Multicia"],
-    ["deliveryDays", "Tiempo de entrega"], ["purchaseFrequencyDays", "Frecuencia de compras (Días)"],
-    ["tolerancePercent", "% Tolerancia O.C."], ["vatWithholdingPercent", "% Retención I.V.A."],
-    ["incomeTaxWithholdingPercent", "% Retención I.S.R."], ["thirdPartyType", "Tipo de Tercero"],
-    ["operationType", "Tipo de Operación"], ["countryCode", "Código País"],
-  ]
-  return <div className="grid gap-1 sm:grid-cols-2">{fields.map(([key, label]) => <DetailField key={key} label={label} value={detail[key]} />)}<div className="col-span-full mt-1 grid grid-cols-8 gap-1">{Array.from({ length: 8 }, (_, index) => <Input className="h-5 text-right text-[9px]" key={index} readOnly value={valueText(detail[`minimum${index + 1}`])} />)}</div><DisabledButtons labels={["Cambio"]} /></div>
-}
-
 const panelButtons: Record<string, readonly string[]> = {
   balance: ["Aux. doc.", "Productos", "Agrupar", "Gastos", "Coment", "Documenta", "PESOS", "Docto.", "Contrarecibo", "Relación de 'X'", "Referencia"],
   movements: ["Filtrar documentos saldados", "Ref pago"],
@@ -140,8 +130,6 @@ const panelButtons: Record<string, readonly string[]> = {
   "quoted-products": ["Filtrar pedidos surtidos"],
   "purchased-products-detail": ["Último"],
   "work-in-progress": ["Salida maquila", "Filtra recibidos"],
-  events: ["Nuevo", "Cambiar", "Eliminar"],
-  contacts: ["Alta", "Baja", "Cambio", "Eventos", "REDRAW"],
 }
 
 function AnnualChart({ rows }: { rows: Array<Record<string, unknown>> }) {
@@ -159,7 +147,7 @@ function GeneralPanelDialog(props: Props) {
   const payload = query.data?.data
   const detail = payload?.detail ?? {}
   const rows = payload?.items ?? []
-  const tableHeight = props.panel.key === "events" || props.panel.key === "contacts" ? "13rem" : "21rem"
+  const tableHeight = "21rem"
   const totals = Object.entries(payload?.summary ?? {})
   const balancePanel = props.panel.key === "balance"
   const movementsPanel = props.panel.key === "movements"
@@ -179,7 +167,7 @@ function GeneralPanelDialog(props: Props) {
         <LoadingOrError error={query.error} loading={query.isLoading} />
         {!query.isLoading && !query.error && (
           <>
-            {props.panel.key === "various" ? <VariousView detail={detail} /> : props.panel.columns.length > 0 ? (
+            {props.panel.columns.length > 0 ? (
               <PanelTable columns={props.panel.columns} height={tableHeight} movements={movementsPanel} rows={rows}
                 selection={balancePanel || paymentSelection ? {
                   index: selectedIndex,
@@ -187,8 +175,6 @@ function GeneralPanelDialog(props: Props) {
                   allowsRow: paymentSelection ? row => supplierReversiblePayment(row) !== null : undefined,
                 } : undefined} />
             ) : <div className="grid min-h-36 place-items-center"><div className="grid w-80 gap-1">{Object.entries(detail).map(([key, value]) => <DetailField key={key} label={key} value={value} />)}</div></div>}
-            {props.panel.key === "events" && <div className="mt-1 grid gap-1"><Input className="h-20 text-[9px]" readOnly value={valueText(rows[0]?.description)} /><DisabledButtons labels={panelButtons.events ?? []} /></div>}
-            {props.panel.key === "contacts" && <div className="mt-1 grid grid-cols-2 gap-1"><DetailField label="Teléfono" value={rows[0]?.phone1} /><DetailField label="Tel 2" value={rows[0]?.phone2} /><DetailField label="Mail" value={rows[0]?.email} /><DetailField label="Cumpleaños" value={rows[0]?.birthday} /><DisabledButtons labels={panelButtons.contacts ?? []} /></div>}
             {props.panel.key === "annual-purchases-summary" && <AnnualChart rows={rows} />}
             {payload?.unavailableReason && <p className="mt-1 text-muted-foreground">{payload.unavailableReason}</p>}
             <div className="mt-1 flex items-end justify-between gap-2">
@@ -241,5 +227,9 @@ function GeneralPanelDialog(props: Props) {
 
 export function SupplierPanelDialog(props: Props) {
   if (props.panel.key === "classifications") return <SupplierClassificationsDialog supplier={props.supplier} title={props.panel.title} onOpenChange={props.onOpenChange} />
+  if (props.panel.key === "various") return <SupplierVariousDialog {...props} />
+  if (props.panel.key === "events" || props.panel.key === "contacts") {
+    return <SupplierActivityDialog {...props} kind={props.panel.key} />
+  }
   return <GeneralPanelDialog {...props} />
 }

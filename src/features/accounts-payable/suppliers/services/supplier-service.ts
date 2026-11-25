@@ -6,6 +6,10 @@ import type {
   SupplierCatalogFields,
   SupplierClassificationsResponse,
   SupplierClassificationUpdate,
+  SupplierActivityCommand,
+  SupplierActivityItem,
+  SupplierActivityKind,
+  SupplierVariousUpdate,
   SupplierCreatePreview,
   SupplierEditPreview,
   SupplierPanelDefinition,
@@ -119,6 +123,23 @@ const supplierPaymentPath = (supplierId: number, receiptId: number) =>
 
 export async function saveSupplierClassifications(supplierId: number, input: SupplierClassificationUpdate) {
   await apiClient.patch(`/accounts-payable/suppliers/${supplierId}/actions/classifications`, input)
+}
+
+export async function saveSupplierVarious(supplierId: number, input: SupplierVariousUpdate) {
+  await apiClient.patch(`/accounts-payable/suppliers/${supplierId}/actions/various`, input)
+}
+
+export async function saveSupplierActivity(supplierId: number, kind: SupplierActivityKind, input: SupplierActivityCommand) {
+  const url = `/accounts-payable/suppliers/${supplierId}/actions/${kind}`
+  const { operation, id, requestKey, revision, fields } = input
+  if (operation === "remove") {
+    await apiClient.delete(`${url}/${id}`, { data: { requestKey, revision, confirmed: true } })
+    return undefined
+  }
+  const response = operation === "create"
+    ? await apiClient.post<ItemResponse<SupplierActivityItem>>(url, { requestKey, fields })
+    : await apiClient.patch<ItemResponse<SupplierActivityItem>>(`${url}/${id}`, { requestKey, revision, fields })
+  return response.data.data
 }
 
 export async function getSupplierPaymentPreview(supplierId: number, receiptId: number, signal?: AbortSignal) {
