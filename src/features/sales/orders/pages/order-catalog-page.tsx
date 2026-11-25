@@ -116,7 +116,10 @@ export function OrderCatalogPage() {
       <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorizing || conversion.isPending} onCreate={() => { setCustomerSearch(null); setProductSearch(null); setFormMode("create") }} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
       {notice && <Alert variant={notice.kind === "error" ? "destructive" : "default"}><HugeiconsIcon icon={notice.kind === "error" ? AlertCircleIcon : InformationCircleIcon} /><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
-        <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={selectPanel} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={selectPanel} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
+        <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+          <OrderPanelButtons authorization={{ pressed: order.authorization === "O.K.", pending: authorizing }} onSelect={selectPanel} panels={orderActionPanels} title="Acciones" />
+          <OrderPanelButtons onSelect={selectPanel} panels={orderSecondaryActionPanels} title="Acciones sec" />
+        </aside>
         <OrderCatalogDetails order={order} />
       </div>
       {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={openSearchResult} /></DesktopWindowIdentity>}

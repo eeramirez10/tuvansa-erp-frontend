@@ -22,10 +22,11 @@ Las ventanas ERP de Ventas comparten el teclado: Enter activa el botón visible 
 
 En la ficha, **Autorizar** y **Ctrl+A** cambian el estado con tu sesión web.
 Si tu sesión terminó, inicia sesión y vuelve a pulsar **Autorizar** en el pedido.
-La API comprueba el permiso `MPED5`, la revisión y el costo vigente de las
-partidas pendientes al autorizar. Un pedido asignado o con surtido conserva
-la autorización. **Comentarios → Autorizó** muestra el usuario
-que dio la última autorización.
+El permiso **Autorizar** (`MPED5`) se administra en **Usuarios → Grupo →
+Permisos**. La API comprueba ese permiso, la revisión, si el cliente puede
+operar y el costo vigente de las partidas pendientes al autorizar. Un pedido
+asignado o con surtido conserva la autorización. **Comentarios → Autorizó**
+muestra el usuario que dio la última autorización.
 
 La ficha central de Pedido conserva la distribución observada en PROSCAI: ocho bandas de ancho desigual en el primer renglón (Pedido, Pedido cliente, Carrito, Status., Surtido, Anticipo, Canal y Sucursal), Cliente y Nombre ocupan el bloque izquierdo del segundo, y Fecha/Desde/Vence/Agt./Plazo/Almacén forman el tercero. La tabla mantiene las proporciones visibles de Producto y Descripción, seguida por cantidades e importes; abajo, Totales ocupa cerca de un tercio del ancho e Importes el espacio restante. Carrito, Anticipo, Canal y la primera Sucursal permanecen visibles pero vacíos porque el contrato HTTP aún no expone esos valores.
 
