@@ -102,10 +102,14 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
     }
     finally { if (version === lookupVersion.current) setLoading(false) }
   }
-  const applyProduct = (value: CaptureProduct) => {
-    setProduct(value); lineForm.setValue("productCode", value.code); lineForm.setValue("price", value.price); lineForm.setValue("discount", 0)
+  const applyProduct = (value: CaptureProduct, fromSearch: boolean) => {
+    setProduct(value)
+    lineForm.setValue("productCode", value.code)
+    lineForm.setValue("price", value.price)
+    if (!fromSearch) lineForm.setValue("discount", 0)
+    else if (!(lineForm.getValues("quantity") > 0)) lineForm.setValue("quantity", 1)
   }
-  const loadProduct = async (selectedCode?: string, addToOrder = false) => {
+  const loadProduct = async (selectedCode?: string, fromSearch = false) => {
     const code = selectedCode ?? lineForm.getValues("productCode").trim()
     if (!code || (!selectedCode && product?.code === code)) return
     if (selectedCode) lineForm.setValue("productCode", code)
@@ -119,10 +123,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
       }
       const value = await queryClient.fetchQuery(captureProductQuery(code, form.getValues("warehouse"), "P", form.getValues("customerCode")))
       if (version !== lookupVersion.current || lineForm.getValues("productCode").trim() !== code) return
-      if (addToOrder) {
-        const current = lineForm.getValues()
-        commitLine({...current, productCode:value.code, price:value.price, quantity:current.quantity > 0 ? current.quantity : 1}, value)
-      } else applyProduct(value)
+      applyProduct(value, fromSearch)
     } catch (e) {
       if (version !== lookupVersion.current) return
       if (!selectedCode) openProductSearch(code)
@@ -168,6 +169,11 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
     setError(""); clearLineCapture()
   }
   const addLine = lineForm.handleSubmit(value => commitLine(value, product))
+  const finishLineOnTab = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Tab" || event.shiftKey || !product) return
+    event.preventDefault()
+    void addLine()
+  }
   const draftIsReady = () => {
     if (!customer || customer.code !== form.getValues("customerCode").trim()) { setError("Carga un cliente válido."); return }
     if (!lines.length) { setError("Agrega al menos una partida."); return }
@@ -239,14 +245,14 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
                   <td><OrderProductCodeInput aria-label="Código o IEAN del producto" className={inputClass} title="Código o IEAN" ref={element => lineForm.register("productCode").ref(element)} value={draft.productCode ?? ""} warehouse={form.getValues("warehouse")} resolved={Boolean(product)} onChangeCode={code => { lookupVersion.current += 1; setLoading(false); setProduct(null); lineForm.setValue("productCode", code, {shouldDirty:true}) }} onResolve={code => { void loadProduct(code) }} onSearch={() => openProductSearch()} /></td>
                   <td><Input aria-label="Descripción del producto" className={inputClass} value={product?.description ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Cantidad" className={inputClass} type="number" step="0.001" {...lineForm.register("quantity", { valueAsNumber: true })} /></td>
-                  <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly /></td>
+                  <td><Input aria-label="UM" className={inputClass} value={product?.unit ?? ""} readOnly tabIndex={-1} /></td>
                   <td><Input aria-label="Precio" className={inputClass} title={product ? `Precio en ${captureCurrencyName(product.currencyId)}` : ""} type="number" step="0.00001" {...lineForm.register("price", { valueAsNumber: true, onBlur: () => { if (product && product.currencyId === product.costCurrencyId && lineForm.getValues("price") < product.cost) warnPriceBelowCost() } })} /></td>
-                  <td><Input aria-label="Dto" className={inputClass} type="number" step="0.01" {...lineForm.register("discount", { valueAsNumber: true })} /></td>
-                  <td><Input aria-label="Importe" className={inputClass} readOnly value={money((draft.quantity || 0) * (draft.price || 0) * (1 - (draft.discount || 0)/100))} /></td>
-                  <td><Input aria-label="Sucursal de la partida" className={inputClass} value="0" readOnly title="Asignación de sucursal pendiente de captura" /></td>
-                  <td><Input aria-label="Pzas." className={inputClass} value="" readOnly onKeyDown={e => { if (e.key === "Tab" && !e.shiftKey && product) { e.preventDefault(); void addLine() } }} /></td>
+                  <td><Input aria-label="Dto" className={inputClass} type="number" step="0.01" {...lineForm.register("discount", { valueAsNumber: true })} onKeyDown={finishLineOnTab} /></td>
+                  <td><Input aria-label="Importe" className={inputClass} readOnly tabIndex={-1} value={money((draft.quantity || 0) * (draft.price || 0) * (1 - (draft.discount || 0)/100))} /></td>
+                  <td><Input aria-label="Sucursal de la partida" className={inputClass} value="0" readOnly tabIndex={-1} title="Asignación de sucursal pendiente de captura" /></td>
+                  <td><Input aria-label="Pzas." className={inputClass} value="" readOnly tabIndex={-1} onKeyDown={finishLineOnTab} /></td>
                 </tr></tbody></table></div>
-                <div className="flex items-center justify-end gap-2"><span>Disp</span><Input aria-label="Disponible" className={`${inputClass} w-16 text-right`} value={money(product?.available ?? 0)} readOnly /><Input aria-label="Asignado" className={`${inputClass} w-16 text-right`} value={money(product?.assigned ?? 0)} readOnly /><Button className="h-5 rounded-none px-2 text-[9px]" variant="outline" disabled={!product} onClick={() => void addLine()}>{editingLineIndex === null ? "Agregar partida" : "Actualizar partida"}</Button></div>
+                <div className="flex items-center justify-end gap-2"><span>Disp</span><Input aria-label="Disponible" className={`${inputClass} w-16 text-right`} value={money(product?.available ?? 0)} readOnly tabIndex={-1} /><Input aria-label="Asignado" className={`${inputClass} w-16 text-right`} value={money(product?.assigned ?? 0)} readOnly tabIndex={-1} /><Button className="h-5 rounded-none px-2 text-[9px]" variant="outline" disabled={!product} onClick={() => void addLine()}>{editingLineIndex === null ? "Agregar partida" : "Actualizar partida"}</Button></div>
               </fieldset>
               <div className="ml-[7.8125rem] mr-1.5 min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead><tr className="h-5 bg-muted">{lineColumns.map(([label],i) => <th className="border-r border-input px-1 text-right font-normal last:border-r-0" key={label}>{i === 2 ? totals.quantity.toFixed(3) : i === 4 ? totals.subtotal.toFixed(5) : i === 5 ? totals.discount.toFixed(2) : i === 6 ? totals.total.toFixed(2) : ""}</th>)}</tr></thead><tbody>{lines.map((line,index) => <tr aria-selected={editingLineIndex === index} className={`h-5 cursor-pointer border-t border-input ${editingLineIndex === index ? "bg-module-sales/15" : "hover:bg-muted/60"}`} key={index} tabIndex={0} title="Seleccionar partida para editar" onClick={() => editLine(index)} onKeyDown={event => { if (event.key === "Enter") editLine(index) }}><td className="px-1">{line.productCode}</td><td className="truncate px-1" title={line.product.description}>{line.product.description}</td><td className="px-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-1 text-center">{line.product.unit}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{line.price.toFixed(5)}</td><td className="px-1 text-right">{line.discount.toFixed(2)}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{money(line.quantity*line.price*(1-line.discount/100))}</td><td className="px-1 text-right">0</td><td className="px-1 text-right"><Button className="h-4 w-4 rounded-none p-0 text-[9px]" variant="ghost" aria-label={`Quitar partida ${index+1}`} onClick={event => { event.stopPropagation(); removeLine(index) }}>×</Button></td></tr>)}</tbody></table></div>
               <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-7 pb-8 pl-2 pt-4">
