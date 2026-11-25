@@ -21,3 +21,7 @@ export function getApiErrorMessage(error: unknown) {
 
 export const isApiNotFound = (error: unknown) =>
   axios.isAxiosError(error) && error.response?.status === 404
+
+export const isApiSessionRequired = (error: unknown) =>
+  axios.isAxiosError<ErrorPayload & { error?: { code?: string } }>(error) &&
+  error.response?.data.error?.code === "WEB_SESSION_REQUIRED"

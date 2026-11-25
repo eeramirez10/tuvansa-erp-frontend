@@ -1,6 +1,10 @@
 export const paths = {
   home: "/",
   startup: "/inicio",
+  signIn: "/ingresar",
+  activateAccount: "/activar-cuenta",
+  generalData: "/datos-generales",
+  users: "/datos-generales/usuarios",
   inventoryProducts: "/inventarios/productos",
   inventoryProduct: (productId: number) => `/inventarios/productos/${productId}`,
   accountsReceivableClients: "/cuentas-por-cobrar/clientes",

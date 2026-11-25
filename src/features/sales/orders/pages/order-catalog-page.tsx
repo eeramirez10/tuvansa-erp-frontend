@@ -4,14 +4,14 @@ import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleI
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
 import { paths } from "@/app/router/paths"
+import { signInPath, userDirectoryKey, webSessionKey } from "@/features/general-data/users/logic"
 import { OrderCatalogDetails } from "@/features/sales/orders/components/order-catalog-details"
 import { OrderAssignmentDialog } from "@/features/sales/orders/components/order-assignment-dialog"
 import { OrderFormDialog } from "@/features/sales/orders/components/order-form-dialog"
 import { OrderCaptureDialog } from "@/features/sales/orders/components/order-capture-dialog"
-import { toggleOrderQuote } from "@/features/sales/orders/services/order-capture-service"
-import { OrderAuthorizationDialog } from "@/features/sales/orders/components/order-authorization-dialog"
+import { setOrderAuthorization, toggleOrderQuote } from "@/features/sales/orders/services/order-capture-service"
 import { OrderPanelDialog } from "@/features/sales/orders/components/order-panel-dialog"
 import { OrderSearchDialog } from "@/features/sales/orders/components/order-search-dialog"
 import { OrderPanelButtons } from "@/features/sales/orders/components/order-side-panels"
@@ -23,11 +23,12 @@ import type { CaptureCustomerMatch, CaptureProductMatch } from "@/features/sales
 import { OrderCustomerMatchesDialog } from "@/features/sales/orders/components/order-customer-matches-dialog"
 import { OrderProductMatchesDialog } from "@/features/sales/orders/components/order-product-matches-dialog"
 import { deleteOrder, getAdjacentOrder } from "@/features/sales/orders/services/order-service"
-import { getApiErrorMessage } from "@/shared/api/api-error"
+import { getApiErrorMessage, isApiSessionRequired } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/shared/ui/alert-dialog"
 import { Spinner } from "@/shared/ui/spinner"
 import { DesktopWindowIdentity, useDesktopWindowCollection } from "@/shared/ui/desktop-window-context"
+import { isTypingOrInDialog } from "@/shared/ui/erp-shortcuts"
 
 type Notice = { kind: "success" | "error"; title: string; message: string }
 type OrderPanelWindow = { order: Order; panel: OrderPanelDefinition }
@@ -36,17 +37,37 @@ type ProductSearchWindow = { initialCode: string; warehouse: string; onSelect: (
 export function OrderCatalogPage() {
   const orderId = Number(useParams().orderId)
   const navigate = useNavigate(); const queryClient = useQueryClient()
+  const location = useLocation()
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId))
   const [searchOpen, setSearchOpen] = useState(false)
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [authorizationOrder, setAuthorizationOrder] = useState<Order | null>(null)
   const [assignmentOpen, setAssignmentOpen] = useState(false)
   const [customerSearch, setCustomerSearch] = useState<CustomerSearchWindow | null>(null)
   const [productSearch, setProductSearch] = useState<ProductSearchWindow | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
   const { windows: panelWindows, openWindow: openPanelWindow, closeWindow: closePanelWindow } = useDesktopWindowCollection<OrderPanelWindow>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const { mutate: authorize, isPending: authorizing } = useMutation({
+    networkMode: "always",
+    retry: false,
+    mutationFn: () => setOrderAuthorization(order.id, order.authorization !== "O.K.", order.storage?.revision ?? 0),
+    onSuccess: saved => {
+      queryClient.setQueryData(orderKeys.detail(saved.id), saved)
+      void queryClient.invalidateQueries({ queryKey: orderKeys.all })
+      setNotice({ kind: "success", title: "Autorizar", message: saved.authorization === "O.K." ? "Pedido autorizado: O.K." : "Pedido desautorizado." })
+    },
+    onError: error => {
+      if (isApiSessionRequired(error)) {
+        queryClient.setQueryData(webSessionKey, null)
+        queryClient.removeQueries({ queryKey: userDirectoryKey })
+        void navigate(signInPath(location.pathname + location.search + location.hash))
+        return
+      }
+      void queryClient.invalidateQueries({ queryKey: orderKeys.detail(order.id) })
+      setNotice({ kind: "error", title: "Autorización de pedido", message: getApiErrorMessage(error) })
+    },
+  })
   const conversion = useMutation({ mutationFn: () => toggleOrderQuote(order.id), onSuccess: async next => {
     await queryClient.invalidateQueries({ queryKey: orderKeys.all })
     await queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
@@ -63,7 +84,7 @@ export function OrderCatalogPage() {
   }
   const selectPanel = (panel: OrderPanelDefinition) => {
     if (panel.key === "quote-conversion") { if (!conversion.isPending) conversion.mutate(); return }
-    if (panel.key === "authorize") { setAuthorizationOrder(order); return }
+    if (panel.key === "authorize") { if (!authorizing) authorize(); return }
     if (panel.key === "assign-all") { openAssignment(); return }
     openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })
   }
@@ -77,9 +98,10 @@ export function OrderCatalogPage() {
   const deletion = useMutation({ mutationFn: () => deleteOrder(order.id), onSuccess: async () => { setDeleteOpen(false); await queryClient.invalidateQueries({ queryKey: orderKeys.all }); void navigate(paths.salesOrders, { replace: true }) }, onError: (error) => { setDeleteOpen(false); setNotice({ kind: "error", title: "No fue posible eliminar el pedido", message: getApiErrorMessage(error) }) } })
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
-      if (!event.ctrlKey || event.altKey || event.metaKey || event.repeat || formMode || searchOpen || assignmentOpen || authorizationOrder || deleteOpen || warning || panelWindows.length) return
+      if (event.defaultPrevented || !event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || event.repeat ||
+        isTypingOrInDialog(event) || formMode || searchOpen || assignmentOpen || authorizing || deleteOpen || warning || panelWindows.length) return
       const key=event.key.toLowerCase()
-      if (key === "a") { event.preventDefault(); setAuthorizationOrder(order) }
+      if (key === "a") { event.preventDefault(); authorize() }
       if (key === "p") {
         event.preventDefault()
         if (order.authorization !== "O.K.") setWarning("Para asignar un pedido es necesario autorizarlo antes.")
@@ -88,24 +110,16 @@ export function OrderCatalogPage() {
     }
     window.addEventListener("keydown", shortcut)
     return () => window.removeEventListener("keydown", shortcut)
-  }, [assignmentOpen, authorizationOrder, deleteOpen, formMode, order, panelWindows.length, searchOpen, warning])
+  }, [assignmentOpen, authorize, authorizing, deleteOpen, formMode, order, panelWindows.length, searchOpen, warning])
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
-      <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorizationOrder !== null || conversion.isPending} onCreate={() => { setCustomerSearch(null); setProductSearch(null); setFormMode("create") }} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
+      <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorizing || conversion.isPending} onCreate={() => { setCustomerSearch(null); setProductSearch(null); setFormMode("create") }} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
       {notice && <Alert variant={notice.kind === "error" ? "destructive" : "default"}><HugeiconsIcon icon={notice.kind === "error" ? AlertCircleIcon : InformationCircleIcon} /><AlertTitle>{notice.title}</AlertTitle><AlertDescription>{notice.message}</AlertDescription></Alert>}
       <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)]">
         <aside className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1"><OrderPanelButtons onSelect={selectPanel} panels={orderActionPanels} title="Acciones" /><OrderPanelButtons onSelect={selectPanel} panels={orderSecondaryActionPanels} title="Acciones sec" /></aside>
         <OrderCatalogDetails order={order} />
       </div>
       {searchOpen && <DesktopWindowIdentity id="orders:search"><OrderSearchDialog onOpenChange={setSearchOpen} onSelect={openSearchResult} /></DesktopWindowIdentity>}
-      {authorizationOrder && <DesktopWindowIdentity id={`orders:authorization:${authorizationOrder.id}`}>
-        <OrderAuthorizationDialog order={authorizationOrder} onClose={() => setAuthorizationOrder(null)} onSaved={(saved) => {
-          setAuthorizationOrder(null)
-          void queryClient.invalidateQueries({ queryKey: orderKeys.all })
-          openOrder(saved)
-          setNotice({ kind: "success", title: "Autorizar", message: saved.authorization === "O.K." ? "Pedido autorizado: O.K." : "Pedido desautorizado." })
-        }} />
-      </DesktopWindowIdentity>}
       {formMode === "create" && <DesktopWindowIdentity id="orders:create:new"><OrderCaptureDialog onCustomerSearch={(initialCode, onSelect) => setCustomerSearch({ initialCode, onSelect })} onProductSearch={(initialCode, warehouse, onSelect) => setProductSearch({initialCode,warehouse,onSelect})} onOpenChange={open => { if (!open) { setCustomerSearch(null); setProductSearch(null); setFormMode(null) } }} onSaved={saved => { setCustomerSearch(null); setProductSearch(null); setFormMode(null); setNotice({ kind: "success", title: "Alta guardada", message: saved.number }); openOrder(saved) }} /></DesktopWindowIdentity>}
       {formMode === "create" && customerSearch && <DesktopWindowIdentity id="orders:capture:customer-search"><OrderCustomerMatchesDialog initialCode={customerSearch.initialCode} onOpenChange={open => { if (!open) setCustomerSearch(null) }} onSelect={match => { const select = customerSearch.onSelect; setCustomerSearch(null); select(match) }} /></DesktopWindowIdentity>}
       {formMode !== null && productSearch && <DesktopWindowIdentity id="orders:capture:product-search"><OrderProductMatchesDialog initialCode={productSearch.initialCode} warehouse={productSearch.warehouse} onOpenChange={open => { if (!open) setProductSearch(null) }} onSelect={match => { const select = productSearch.onSelect; setProductSearch(null); select(match) }} /></DesktopWindowIdentity>}

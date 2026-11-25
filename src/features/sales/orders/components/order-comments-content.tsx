@@ -110,7 +110,7 @@ export function OrderCommentsContent({ order, panel, exchangeRate, collectionCur
             {branches.map((branch, index) => <option key={`${text(branch.code)}-${index}`} value={String(index + 1)}>{[branch.code, branch.name].map(text).filter(Boolean).join(" - ")}</option>)}
           </select>
           <span>Alta</span><Input className="h-5 px-1 text-[9px]" readOnly value={text(comment.createdBy ?? summary.createdBy)} />
-          <span>Autorizo</span><Input className="h-5 px-1 text-[9px]" readOnly value={text(comment.authorizedBy ?? summary.authorizedBy)} />
+          <span>Autorizo</span><Input className="h-5 px-1 text-[9px]" readOnly value={text(comment.authorizedByName ?? summary.authorizedByName ?? comment.authorizedBy ?? summary.authorizedBy)} />
         </div>
 
         <textarea className="col-span-12 h-28 resize-none overflow-auto border border-input bg-background p-1 font-mono text-[9px] leading-3 shadow-inner outline-none" readOnly value={text(comment.auditTrail)} />

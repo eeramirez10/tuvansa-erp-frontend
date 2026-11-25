@@ -8,6 +8,16 @@ import { requireCompanyContext } from "@/features/startup/multicia/company-conte
 
 export const router = createBrowserRouter([
   {
+    path: paths.signIn,
+    ErrorBoundary: RootErrorBoundary,
+    lazy: () => import("@/features/general-data/users/sign-in-route"),
+  },
+  {
+    path: paths.activateAccount,
+    ErrorBoundary: RootErrorBoundary,
+    lazy: () => import("@/features/general-data/users/activation-route"),
+  },
+  {
     path: paths.startup,
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RouteLoadingFallback,
@@ -20,6 +30,14 @@ export const router = createBrowserRouter([
     middleware: [requireCompanyContext],
     loader: () => null,
     children: [
+      {
+        path: paths.generalData.slice(1),
+        lazy: () => import("@/features/general-data/users/general-data-route"),
+      },
+      {
+        path: paths.users.slice(1),
+        lazy: () => import("@/features/general-data/users/users-route"),
+      },
       {
         index: true,
         lazy: () => import("@/features/workspace/workspace-route"),

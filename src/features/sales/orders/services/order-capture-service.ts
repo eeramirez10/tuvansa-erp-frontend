@@ -1,4 +1,4 @@
-import { apiClient } from "@/shared/api/api-client"
+import { apiClient, sessionApiClient } from "@/shared/api/api-client"
 import type { Order } from "@/features/sales/orders/model"
 import type { CaptureCustomer, CaptureCustomerMatch, CaptureCustomerSearchCriteria, CaptureInput, CaptureOptions, CaptureProduct, CaptureProductFamily, CaptureProductMatch, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
 
@@ -40,9 +40,8 @@ export async function saveCapturedOrder(input: CaptureInput) {
 export async function toggleOrderQuote(id: number) {
   return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/quote-conversion`, {})).data.data
 }
-export async function setOrderAuthorization(id: number, authorized: boolean, revision: number, credential: string) {
-  return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/authorization`, { authorized, revision },
-    { headers: { Authorization: `Bearer ${credential}` } })).data.data
+export async function setOrderAuthorization(id: number, authorized: boolean, revision: number) {
+  return (await sessionApiClient.post<{data: Order}>(`/sales/orders/${id}/actions/authorization`, { authorized, revision })).data.data
 }
 export async function setOrderAssignment(id: number, lines: Array<{lineId: number; assigned: number}>) {
   return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/assignment`, { lines })).data.data

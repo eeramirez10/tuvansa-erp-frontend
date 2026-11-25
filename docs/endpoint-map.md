@@ -13,6 +13,25 @@ contexto antes de ejecutar los loaders del ERP. Sin contexto válido redirige a
 volver después de elegir México. Los cuatro campos de Usuario y **Aceptar**
 están inactivos durante esta fase.
 
+## Proscai · Datos Generales · Usuarios
+
+**F10** abre `/datos-generales` y **Ctrl+U** abre `/datos-generales/usuarios`
+cuando el navegador entrega el atajo. Las dos rutas están en los menús
+del encabezado. La sesión web de México se inicia en `/ingresar` y se usa
+en Datos Generales, Usuarios y la autorización de Pedidos.
+
+| Control | Método y endpoint relativo a `/api` |
+| --- | --- |
+| Iniciar o cerrar sesión | `GET /session`, `POST /session`, `DELETE /session` |
+| Activar cuenta desde el enlace | `POST /session/activation` |
+| Buscar y dar de alta usuarios | `GET /general-data/users`, `POST /general-data/users` |
+| Cambio de usuario | `PATCH /general-data/users/:userId` |
+| Activar o restablecer | `POST /general-data/users/:userId/activation` |
+| Editar permisos por grupo | `GET /general-data/permission-groups/:group`, `PATCH /general-data/permission-groups/:group` |
+
+Estas rutas y la autorización de Pedidos usan `/api` desde el mismo origen
+que el frontend. La API valida el acceso y las revisiones en cada escritura.
+
 ## Bancos · Alta, Cambio, Baja y traspasos
 
 | Control | Evento | Método y endpoint relativo a `/api` | Query key / archivo |
@@ -342,7 +361,7 @@ Implementación 2026-09-17 basada en `ORDERS_*` del reporte `orders-behaviors-ne
 | Captura / Cliente | Tab con código parcial; abre una ventana ERP independiente delante de Captura de pedido, con filtros Código/Nombre/RFC | GET `/sales/orders/capture/customers?code=...&name=...&taxId=...` | customer-matches | order-customer-matches-dialog.tsx |
 | Captura / Código de producto inexistente | Tab o Enter; abre Encuentra producto delante de Captura de pedido, con filtros Código/IEAN, Descripción y Cod Prv | GET `/sales/orders/capture/products?warehouse=01&code=...&description=...&supplierCode=...` | product-matches | order-product-matches-dialog.tsx |
 | Captura / Precio | Blur o agregar partida; pesos contra lista 5, dólares contra lista 6 | Validación local y validación del POST | `ORDER_PRICE_BELOW_COST` | order-capture-dialog.tsx |
-| Pedidos / Autorizar | Clic o Ctrl+A abre la firma | POST `/sales/orders/:id/actions/authorization` | `authorized`, `revision` y clave personal en `Authorization: Bearer` | order-authorization-dialog.tsx |
+| Pedidos / Autorizar | Clic o Ctrl+A autoriza o desautoriza | POST `/sales/orders/:id/actions/authorization` | `authorized`, `revision` y sesión con permiso `MPED5` | order-catalog-page.tsx |
 | Pedidos / Asignar todo | Clic o Ctrl+P | POST `/sales/orders/:id/actions/assignment` | setOrderAssignment | order-assignment-dialog.tsx |
 | Pedidos / Editar | Clic; selecciona renglones. Tab desde Pzas. agrega/actualiza o elimina si el código quedó vacío y devuelve foco a Código/IEAN | PATCH `/sales/orders/:id` | updateOrder; reemplazo del detalle completo | order-form-dialog.tsx |
 | Pedidos / Cotiz | Clic en Pedido o Cotización | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote | order-catalog-page.tsx |
