@@ -1,4 +1,14 @@
-# Facturación · Cancelar una remisión
+# Facturación · Remisiones
+
+## Remisión México desde pedido
+
+En **Facturación → Facturar**, busca un pedido autorizado y asignado. La
+ventana muestra el ejercicio fiscal junto a **Fecha**. Precarga hoy en
+horario de México si está dentro del periodo. Con el campo vacío o una
+fecha fuera del ejercicio, **OK** queda deshabilitado hasta elegir una fecha
+válida. La API vuelve a verificar el ejercicio al guardar.
+
+## Cancelar una remisión
 
 En `/facturacion/:invoiceId`, **Cancelar remisión** está disponible para los
 folios FAW web y para las remisiones FA históricas que la API identifica con

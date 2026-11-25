@@ -357,7 +357,7 @@ La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difie
 
 | Vista o control | Evento | Endpoint | Resultado |
 |---|---|---|---|
-| Facturación / Facturar | Cargar pedido autorizado y asignado | GET `/sales/invoices/from-order?orderNumber=:number` | Obtiene la revisión del pedido y el máximo que se puede remitir por partida |
+| Facturación / Facturar | Cargar pedido autorizado y asignado | GET `/sales/invoices/from-order?orderNumber=:number` | Obtiene la revisión, el máximo por partida y el ejercicio fiscal. La fecha sugerida queda vacía si hoy cae fuera del rango |
 | Facturación / Facturar / OK | Confirmar fecha y cantidades | POST `/sales/invoices/from-order` | Abre el folio FAW y actualiza las consultas de Facturación, Pedidos, Inventarios y Clientes |
 | Facturación / Facturar / Cancelar | Cerrar | Ninguno | Descarta la selección |
 | Facturación / Cancelar remisión | Consultar una remisión web FAW o una FA histórica habilitada | GET `/sales/invoices/:id/actions/cancel-remission` | Muestra la fecha, el cargo, el pedido de origen, si se puede regenerar y cualquier bloqueo |

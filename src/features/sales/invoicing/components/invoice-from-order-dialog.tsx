@@ -29,7 +29,9 @@ const normalizeFolio = (value: string) => value.trim().toUpperCase()
 
 function draftSchema(preview: InvoiceFromOrderPreview) {
   return z.object({
-    issuedAt: z.iso.date({ error: "Captura una fecha válida." }),
+    issuedAt: z.iso.date({ error: "Captura una fecha válida." }).refine((date) => (
+      preview.fiscalStart && preview.fiscalEnd && date >= preview.fiscalStart && date <= preview.fiscalEnd
+    ), { error: "Captura una fecha dentro del ejercicio fiscal." }),
     lines: z.array(z.object({ selected: z.boolean(), quantity: z.string() })),
   }).superRefine(({ lines }, context) => {
     if (!lines.some(({ selected }) => selected)) {
@@ -57,10 +59,13 @@ function InvoiceFromOrderDraft({ preview, saving, onSubmit, onClose }: {
   onClose: () => void
 }) {
   const dateId = useId()
+  const fiscalPeriodId = useId()
+  const dateMessageId = useId()
+  const schema = draftSchema(preview)
   const { control, formState: { errors }, handleSubmit, register, setValue } = useForm({
-    resolver: zodResolver(draftSchema(preview)),
+    resolver: zodResolver(schema),
     defaultValues: {
-      issuedAt: preview.defaults.issuedAt.slice(0, 10),
+      issuedAt: preview.defaults.issuedAt ?? "",
       lines: preview.lines.map(({ maximum, suggested }) => ({
         selected: maximum > 0 && suggested > 0,
         quantity: suggested > 0 ? String(suggested) : "",
@@ -68,6 +73,8 @@ function InvoiceFromOrderDraft({ preview, saving, onSubmit, onClose }: {
     },
   })
   const lines = useWatch({ control, name: "lines" })
+  const issuedAt = useWatch({ control, name: "issuedAt" })
+  const validDate = schema.shape.issuedAt.safeParse(issuedAt).success
   const selectedCount = lines.filter(({ selected }) => selected).length
   const selectableCount = preview.lines.filter(({ maximum }) => maximum > 0).length
   const allSelected = selectedCount === selectableCount
@@ -82,13 +89,20 @@ function InvoiceFromOrderDraft({ preview, saving, onSubmit, onClose }: {
         : []),
     }))}>
       <fieldset className="grid min-w-0 gap-2" disabled={saving}>
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="grid gap-1">
-            <Label htmlFor={dateId}>Fecha</Label>
-            <Input aria-invalid={Boolean(errors.issuedAt)} className={fieldClass} id={dateId} type="date" {...register("issuedAt")} />
-            {errors.issuedAt && <span className="text-destructive" role="alert">{errors.issuedAt.message}</span>}
+        <div className="grid gap-1">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="grid gap-1">
+              <Label htmlFor={dateId}>Fecha</Label>
+              <Input aria-describedby={validDate ? fiscalPeriodId : `${fiscalPeriodId} ${dateMessageId}`}
+                aria-invalid={Boolean(issuedAt) && !validDate} className={fieldClass} id={dateId}
+                min={preview.fiscalStart ?? undefined} max={preview.fiscalEnd ?? undefined} type="date" {...register("issuedAt")} />
+            </div>
+            <div id={fiscalPeriodId}>
+              <ErpDataMetric label="Ejercicio fiscal" value={`${preview.fiscalStart} al ${preview.fiscalEnd}`} />
+            </div>
+            <ErpDataMetric label="Almacén" value={preview.warehouse} />
           </div>
-          <ErpDataMetric label="Almacén" value={preview.warehouse} />
+          {!validDate && <p id={dateMessageId}>{errors.issuedAt?.message ?? "Captura una fecha dentro del ejercicio fiscal."}</p>}
         </div>
         <ErpDataTableViewport axes="xy" className="max-h-[46vh]">
           <Table className="min-w-[40rem] text-[10px]">
@@ -138,7 +152,7 @@ function InvoiceFromOrderDraft({ preview, saving, onSubmit, onClose }: {
       </fieldset>
       <div className="flex justify-end gap-1">
         <Button disabled={saving} onClick={onClose} size="sm" type="button" variant="outline">Cancelar</Button>
-        <Button disabled={saving || selectedCount === 0} size="sm" type="submit">{saving && <Spinner />}OK</Button>
+        <Button disabled={saving || !validDate || selectedCount === 0} size="sm" type="submit">{saving && <Spinner />}OK</Button>
       </div>
     </form>
   )
@@ -158,7 +172,7 @@ export function InvoiceFromOrderDialog({ onClose, onCreated }: {
   const lookup = useQuery(invoiceFromOrderQueryOptions(submittedFolio))
   const matchesLookup = submittedFolio !== "" && normalizedFolio === submittedFolio
   const preview = matchesLookup && !lookup.isFetching && !lookup.isError ? lookup.data : undefined
-  const ready = preview?.canWrite && preview.lines.some(({ maximum }) => maximum > 0)
+  const ready = preview?.canWrite && preview.fiscalStart && preview.fiscalEnd && preview.lines.some(({ maximum }) => maximum > 0)
   const save = useMutation({
     mutationFn: createInvoiceFromOrder,
     networkMode: "always",

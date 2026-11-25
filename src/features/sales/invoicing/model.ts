@@ -83,7 +83,9 @@ export type InvoiceFromOrderPreview = {
   revision: number
   canWrite: boolean
   reason: string | null
-  defaults: { issuedAt: string }
+  fiscalStart: string | null
+  fiscalEnd: string | null
+  defaults: { issuedAt: string | null }
   lines: Array<{
     orderLineId: number
     productCode: string
