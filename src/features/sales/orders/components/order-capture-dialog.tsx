@@ -40,6 +40,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [reviewingDiscounts, setReviewingDiscounts] = useState(false)
   const [saved, setSaved] = useState<Order | null>(null)
   const [discard, setDiscard] = useState(false)
   const lookupVersion = useRef(0)
@@ -51,6 +52,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
     noPartialDeliveries: false, transportation: "", deliveryAddress: ["", "", ""], contact: "", additionalComments: "",
   } })
   const lineForm = useForm<CaptureLine>({ resolver: zodResolver(captureLineSchema), defaultValues: { productCode: "", quantity: 0, price: 0, discount: 0 } })
+  const customerOrderNumber = useWatch({ control: form.control, name: "customerOrderNumber" })
   const collectionCurrency = useWatch({ control: form.control, name: "collectionCurrency" }) ?? "PESOS"
   const orderDiscounts = useWatch({ control: form.control, name: "orderDiscounts" }) ?? [0, 0, 0, 0]
   const watchedExchangeRate = useWatch({ control: form.control, name: "exchangeRate" })
@@ -182,10 +184,12 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   }
   const focusOrderDiscounts = form.handleSubmit(() => {
     if (!draftIsReady()) return
+    setReviewingDiscounts(true)
     requestAnimationFrame(() => form.setFocus("orderDiscounts.0"))
   })
   const openComments = form.handleSubmit(() => {
     if (!draftIsReady()) return
+    setReviewingDiscounts(true)
     setStage("comments")
   })
   const orderDiscountKeyDown = (index: 0 | 1 | 2 | 3) => (event: KeyboardEvent<HTMLInputElement>) => {
@@ -219,7 +223,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
         </> : stage === "continue" ? <>
           <p className="font-semibold">{saved?.number} guardado · Cotización · {money(saved?.totals.total ?? 0)} {saved?.currencyId === 1 ? "DOLARES" : "PESOS"}</p>
           <p>¿Continuo?</p><div className="flex gap-2"><Button size="sm" onClick={() => {
-            setSaved(null); setCustomer(null); setProduct(null); setLines([]); form.reset(); lineForm.reset(); setStage("warehouse"); mutation.reset()
+            setSaved(null); setCustomer(null); setProduct(null); setLines([]); setReviewingDiscounts(false); form.reset(); lineForm.reset(); setStage("warehouse"); mutation.reset()
           }}>Sí</Button><Button size="sm" variant="outline" onClick={() => { if (saved) onSaved(saved) }}>No</Button></div>
         </> : <>
           <fieldset disabled={mutation.isPending || loading} className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
@@ -256,7 +260,14 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
               </fieldset>
               <div className="ml-[7.8125rem] mr-1.5 min-h-0 flex-1 overflow-auto border border-input bg-background"><table className="w-full min-w-[810px] table-fixed border-collapse"><colgroup>{lineColumns.map(([label,width]) => <col key={label} style={{ width }} />)}</colgroup><thead><tr className="h-5 bg-muted">{lineColumns.map(([label],i) => <th className="border-r border-input px-1 text-right font-normal last:border-r-0" key={label}>{i === 2 ? totals.quantity.toFixed(3) : i === 4 ? totals.subtotal.toFixed(5) : i === 5 ? totals.discount.toFixed(2) : i === 6 ? totals.total.toFixed(2) : ""}</th>)}</tr></thead><tbody>{lines.map((line,index) => <tr aria-selected={editingLineIndex === index} className={`h-5 cursor-pointer border-t border-input ${editingLineIndex === index ? "bg-module-sales/15" : "hover:bg-muted/60"}`} key={index} tabIndex={0} title="Seleccionar partida para editar" onClick={() => editLine(index)} onKeyDown={event => { if (event.key === "Enter") editLine(index) }}><td className="px-1">{line.productCode}</td><td className="truncate px-1" title={line.product.description}>{line.product.description}</td><td className="px-1 text-right">{line.quantity.toFixed(3)}</td><td className="px-1 text-center">{line.product.unit}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{line.price.toFixed(5)}</td><td className="px-1 text-right">{line.discount.toFixed(2)}</td><td className="px-1 text-right" title={captureCurrencyName(line.currencyId ?? line.product.currencyId)}>{money(line.quantity*line.price*(1-line.discount/100))}</td><td className="px-1 text-right">0</td><td className="px-1 text-right"><Button className="h-4 w-4 rounded-none p-0 text-[9px]" variant="ghost" aria-label={`Quitar partida ${index+1}`} onClick={event => { event.stopPropagation(); removeLine(index) }}>×</Button></td></tr>)}</tbody></table></div>
               <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-7 pb-8 pl-2 pt-4">
-                <div className="flex flex-col gap-1"><Button className="h-8 justify-start rounded-none" disabled={!customer || lines.length === 0} onClick={() => void focusOrderDiscounts()}>✓&nbsp;&nbsp; OK</Button><Button className="h-8 justify-start rounded-none" variant="outline" onClick={close}>×&nbsp;&nbsp; Cancelar</Button></div>
+                <div className="flex flex-col gap-1">
+                  <Button
+                    className="h-8 justify-start rounded-none"
+                    disabled={!customer || lines.length === 0}
+                    onClick={() => void (reviewingDiscounts ? openComments() : focusOrderDiscounts())}
+                  >✓ {reviewingDiscounts ? "Continuar" : "OK"}</Button>
+                  <Button className="h-8 justify-start rounded-none" variant="outline" onClick={close}>×&nbsp;&nbsp; Cancelar</Button>
+                </div>
                 <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-x-5">
                   <div className="grid grid-cols-[4.5rem_1fr] items-center gap-x-1 gap-y-0.5"><span className="text-right">Tot Cant.</span><Input aria-label="Tot Cant." className={`${inputClass} text-right`} value={totals.quantity.toFixed(3)} readOnly /><span className="text-right">Volumen</span><Input aria-label="Volumen" className={`${inputClass} text-right`} value={money(totals.volume)} readOnly /><span className="text-right">Peso</span><Input aria-label="Peso" className={`${inputClass} text-right`} value={money(totals.weight)} readOnly /></div>
                   <div className="grid content-end gap-0.5">
@@ -275,7 +286,19 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
                 <label>Plazo<Input className={inputClass} type="number" {...form.register("termsDays", { valueAsNumber: true })} /></label><label>Comisión<Input className={inputClass} type="number" step="0.01" {...form.register("commission", { valueAsNumber: true })} /></label><label className="col-span-2 flex items-center gap-1"><input type="checkbox" {...form.register("noPartialDeliveries")} />No acepta entregas parciales</label>
                 <label>Tda Vende<Input className={inputClass} {...form.register("store")} maxLength={4} /></label><label>Almacén<Input className={inputClass} value={form.getValues("warehouse")} readOnly /></label><label className="col-span-2">Transporte<Input className={inputClass} maxLength={100} {...form.register("transportation")} /></label>
               </div>
-              <fieldset className="grid gap-1"><legend>Comentarios:</legend><label>Pedido Cliente<Input className={inputClass} {...form.register("customerOrderNumber")} maxLength={30} /></label>{([0,1,2] as const).map(index => <label key={index}>{index === 0 ? "Entregar en" : `Entregar en ${index + 1}`}<Input className={inputClass} maxLength={100} {...form.register(`deliveryAddress.${index}`)} /></label>)}<label>Contacto<Input className={inputClass} maxLength={100} {...form.register("contact")} /></label><label>Obs.<Input className={inputClass} maxLength={21} {...form.register("observations")} /></label><textarea className="h-16 resize-none border bg-background p-1" maxLength={2000} aria-label="Comentarios adicionales" {...form.register("additionalComments")} /></fieldset>
+              <fieldset className="grid gap-1">
+                <legend>Comentarios:</legend>
+                <label>Pedido Cliente
+                  <Input
+                    className={inputClass}
+                    value={customerOrderNumber}
+                    maxLength={30}
+                    onChange={event => form.setValue("customerOrderNumber", event.target.value, { shouldDirty: true })}
+                  />
+                </label>
+                {([0,1,2] as const).map(index => <label key={index}>{index === 0 ? "Entregar en" : `Entregar en ${index + 1}`}<Input className={inputClass} maxLength={100} {...form.register(`deliveryAddress.${index}`)} /></label>)}
+                <label>Contacto<Input className={inputClass} maxLength={100} {...form.register("contact")} /></label><label>Obs.<Input className={inputClass} maxLength={21} {...form.register("observations")} /></label><textarea className="h-16 resize-none border bg-background p-1" maxLength={2000} aria-label="Comentarios adicionales" {...form.register("additionalComments")} />
+              </fieldset>
               {belowCostLine && <Alert variant="destructive"><AlertDescription>El precio de {belowCostLine.productCode} está abajo del costo convertido con T.C. {exchangeRate}.</AlertDescription></Alert>}
               <div className="grid grid-cols-4 gap-1 border-t pt-1"><label>Subtotal<Input className={`${inputClass} text-right`} readOnly value={money(totals.subtotal)} /></label><label>Descuento<Input className={`${inputClass} text-right`} readOnly value={money(totals.discount)} /></label><label>IVA<Input className={`${inputClass} text-right`} readOnly value={money(totals.tax)} /></label><label>Gran Total ({collectionCurrency})<Input className={`${inputClass} text-right`} readOnly value={money(totals.total)} /></label></div>
               <div className="flex justify-between"><span>Total {money(totals.total)} {collectionCurrency}</span><span>Se guardará como Cotización; Cotiz la convierte en Pedido.</span></div>
