@@ -11,7 +11,14 @@ import {
   searchSuppliers,
   type SupplierSearchCriteria,
 } from "@/features/accounts-payable/suppliers/services/supplier-service"
-import type { SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
+import type { SupplierGroupingPosition, SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
+
+export function supplierGroupingPosition(row?: Record<string, unknown>): SupplierGroupingPosition | null {
+  if (!row) return null
+  const { id, document, amount, groupingRevision } = row
+  if (typeof id !== "number" || typeof document !== "string" || typeof amount !== "number" || typeof groupingRevision !== "string") return null
+  return { id, document, amount, revision: groupingRevision }
+}
 
 export const supplierKeys = {
   all: ["accounts-payable", "suppliers"] as const,

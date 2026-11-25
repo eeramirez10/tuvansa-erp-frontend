@@ -179,10 +179,15 @@ para reintentos y la revisión de la fila en Cambio y Baja.
 
 | Control | Evento | Método y endpoint relativo a `/api` | Archivo |
 | --- | --- | --- | --- |
+| Saldo / X y Agrupar | Marcar orígenes en pesos, seleccionar un destino sin marca y confirmar el traslado del pendiente | GET `/accounts-payable/suppliers/:supplierId/balance` y POST en `/accounts-payable/suppliers/:supplierId/balance/grouping` | `supplier-panel-dialog.tsx`, `supplier-grouping-dialog.tsx` |
 | Paga | Consultar saldo, bancos y valores iniciales | GET `/accounts-payable/suppliers/:supplierId/payments/:receiptId` | `supplier-payment-dialog.tsx` |
 | OK | Registrar pago completo o parcial de la recepción | POST en la misma ruta | `supplier-service.ts` |
 | Cancelar / Escape | Cerrar la captura | Sin petición de escritura | `supplier-payment-dialog.tsx` |
 | Movimientos / Revertir PP | Consultar y registrar la contrapartida de un PP web pendiente o conciliado | GET y POST `/accounts-payable/suppliers/:supplierId/payments/:paymentId/reversal` | `posting-reversal-dialog.tsx` |
+
+El diálogo **Agrupar documentos** usa la revisión de cada fila elegible y
+conserva la clave del intento hasta que se cierra. Al confirmar se actualizan
+**Saldo**, **Movimientos** y el auxiliar de las recepciones afectadas.
 
 **Bancos → Pagos → Revertir PP** usa las mismas rutas y abre la confirmación a partir del pago seleccionado.
 

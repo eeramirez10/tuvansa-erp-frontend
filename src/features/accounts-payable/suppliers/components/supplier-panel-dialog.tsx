@@ -1,18 +1,21 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { Link } from "react-router"
 import { paths } from "@/app/router/paths"
 import { SupplierClassificationsDialog } from "@/features/accounts-payable/suppliers/components/supplier-classifications-dialog"
 import { SupplierActivityDialog } from "@/features/accounts-payable/suppliers/components/supplier-activity-dialog"
+import { SupplierGroupingDialog } from "@/features/accounts-payable/suppliers/components/supplier-grouping-dialog"
 import { SupplierPaymentDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-dialog"
 import { SupplierPaymentReversalDialog } from "@/features/accounts-payable/suppliers/components/supplier-payment-reversal-dialog"
 import { SupplierVariousDialog } from "@/features/accounts-payable/suppliers/components/supplier-various-dialog"
 import {
   supplierBalanceReceiptId, supplierCalendarDate, supplierDateLabel,
-  supplierPanelQueryOptions, supplierReversiblePayment,
+  supplierGroupingPosition, supplierKeys, supplierPanelQueryOptions, supplierReversiblePayment,
 } from "@/features/accounts-payable/suppliers/logic"
-import type { Supplier, SupplierPanelColumn, SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
+import type { Supplier, SupplierGroupingPosition, SupplierPanelColumn, SupplierPanelDefinition } from "@/features/accounts-payable/suppliers/model"
+import { purchaseReceptionKeys } from "@/features/purchasing/purchase-receptions/logic"
 import { Button } from "@/shared/ui/button"
+import { Checkbox } from "@/shared/ui/checkbox"
 import { DesktopWindowIdentity } from "@/shared/ui/desktop-window-context"
 import { ErpDataDialog, ErpDataDialogBody, ErpDataMetric, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
@@ -61,7 +64,7 @@ function LoadingOrError({ loading, error }: { loading: boolean; error: unknown }
   return null
 }
 
-function PanelTable({ columns, rows, height = "21rem", movements = false, selection }: {
+function PanelTable({ columns, rows, height = "21rem", movements = false, selection, grouping }: {
   columns: readonly SupplierPanelColumn[]
   rows: Array<Record<string, unknown>>
   height?: string
@@ -71,18 +74,20 @@ function PanelTable({ columns, rows, height = "21rem", movements = false, select
     onSelect: (key: string) => void
     allowsRow?: (row: Record<string, unknown>) => boolean
   }
+  grouping?: { marked: Set<number>; onMark: (id: number, marked: boolean) => void }
 }) {
   const minimumWidth = columns.reduce((total, column) => total + Number.parseFloat(column.width ?? "7"), 0)
   return (
     <ErpDataTableViewport axes="xy" style={{ height }}>
       <table className="table-fixed border-collapse text-[9px]/none" style={{ minWidth: `${Math.max(minimumWidth, 42)}rem`, width: "100%" }}>
-        <colgroup>{columns.map((column, index) => <col key={`${column.key}-${index}`} style={{ width: column.width ?? "7rem" }} />)}</colgroup>
-        <thead className="sticky top-0 z-10 bg-background"><tr className="h-5 border-b">{columns.map((column, index) => <th className="border-r px-1 text-left font-normal" key={`${column.key}-${index}`}>{column.label}</th>)}</tr></thead>
+        <colgroup>{grouping && <col style={{ width: "2rem" }} />}{columns.map((column, index) => <col key={`${column.key}-${index}`} style={{ width: column.width ?? "7rem" }} />)}</colgroup>
+        <thead className="sticky top-0 z-10 bg-background"><tr className="h-5 border-b">{grouping && <th className="border-r text-center font-normal">X</th>}{columns.map((column, index) => <th className="border-r px-1 text-left font-normal" key={`${column.key}-${index}`}>{column.label}</th>)}</tr></thead>
         <tbody>
           {rows.map((row, rowIndex) => {
             const rowKey = panelRowKey(row, rowIndex, movements)
             const selected = rowIndex === (selection?.index ?? 0)
             const cancellationPolicyId = movements ? historicalReceptionCancellationPolicyId(row) : null
+            const position = grouping ? supplierGroupingPosition(row) : null
             const selectRow = selection && (!selection.allowsRow || selection.allowsRow(row))
               ? () => selection.onSelect(rowKey)
               : undefined
@@ -90,6 +95,11 @@ function PanelTable({ columns, rows, height = "21rem", movements = false, select
               <tr className={cn("h-4 border-b border-dotted", selectRow && "cursor-pointer",
                 selected && "bg-module-payable text-module-payable-foreground")} key={rowKey}
                 onClick={selectRow}>
+                {grouping && <td className="border-r px-1">{position && (
+                  <Checkbox aria-label={`Marcar ${position.document} para agrupar`}
+                    checked={grouping.marked.has(position.id)} onClick={(event) => event.stopPropagation()}
+                    onCheckedChange={(checked) => grouping.onMark(position.id, checked)} />
+                )}</td>}
                 {columns.map((column, columnIndex) => {
                   const value = valueText(row[column.key], column)
                   return <td className={cn("truncate border-r px-1", (column.format === "money" || column.format === "number") && "text-right tabular-nums")}
@@ -107,15 +117,18 @@ function PanelTable({ columns, rows, height = "21rem", movements = false, select
               </tr>
             )
           })}
-          {rows.length === 0 && <tr><td className="h-48 text-center text-muted-foreground" colSpan={columns.length}>Sin datos para este proveedor</td></tr>}
+          {rows.length === 0 && <tr><td className="h-48 text-center text-muted-foreground" colSpan={columns.length + Number(Boolean(grouping))}>Sin datos para este proveedor</td></tr>}
         </tbody>
       </table>
     </ErpDataTableViewport>
   )
 }
 
-function DisabledButtons({ labels }: { labels: readonly string[] }) {
-  return <div className="flex flex-wrap gap-1">{labels.map((label) => <Button disabled key={label} size="xs" variant="outline">{label}</Button>)}</div>
+function PanelButtons({ labels, group }: { labels: readonly string[]; group?: () => void }) {
+  return <div className="flex flex-wrap gap-1">{labels.map((label) => (
+    <Button disabled={label !== "Agrupar" || !group} key={label} onClick={label === "Agrupar" ? group : undefined}
+      size="xs" type="button" variant="outline">{label}</Button>
+  ))}</div>
 }
 
 function DetailField({ label, value, className }: { label: string; value: unknown; className?: string }) {
@@ -143,6 +156,9 @@ function GeneralPanelDialog(props: Props) {
   const [selectedRow, setSelectedRow] = useState<string>()
   const [paymentReceipt, setPaymentReceipt] = useState<{ id: number; number: string; date?: string } | null>(null)
   const [paymentReversalId, setPaymentReversalId] = useState<number | null>(null)
+  const [marked, setMarked] = useState<Set<number>>(() => new Set())
+  const [grouping, setGrouping] = useState<{ target: SupplierGroupingPosition; sources: SupplierGroupingPosition[] } | null>(null)
+  const queryClient = useQueryClient()
   const query = useQuery(supplierPanelQueryOptions(props.supplier.id, props.panel))
   const payload = query.data?.data
   const detail = payload?.detail ?? {}
@@ -157,11 +173,17 @@ function GeneralPanelDialog(props: Props) {
   const selectedBalance = balancePanel ? rows[selectedIndex] : undefined
   const receiptId = supplierBalanceReceiptId(selectedBalance)
   const selectedPayment = paymentSelection ? supplierReversiblePayment(rows[selectedIndex]) : null
+  const target = supplierGroupingPosition(selectedBalance)
+  const positions = balancePanel ? rows.flatMap((row) => supplierGroupingPosition(row) ?? []) : []
+  const sources = positions.filter(({ id }) => marked.has(id))
+  const staleMarks = sources.length !== marked.size
+  const group = target && !query.isFetching && !marked.has(target.id) && !staleMarks && sources.length
+    ? () => setGrouping({ target, sources }) : undefined
 
   return (
     <>
     <ErpDataDialog className="sm:max-w-[68rem]" description={`${props.panel.title} del proveedor.`}
-      onOpenChange={(open) => { if (open || (!paymentReceipt && paymentReversalId === null)) props.onOpenChange(open) }}
+      onOpenChange={(open) => { if (open || (!paymentReceipt && paymentReversalId === null && !grouping)) props.onOpenChange(open) }}
       title={props.panel.title} tone="payable">
       <ErpDataDialogBody>
         <LoadingOrError error={query.error} loading={query.isLoading} />
@@ -169,6 +191,12 @@ function GeneralPanelDialog(props: Props) {
           <>
             {props.panel.columns.length > 0 ? (
               <PanelTable columns={props.panel.columns} height={tableHeight} movements={movementsPanel} rows={rows}
+                grouping={positions.length ? { marked, onMark: (id, checked) => setMarked((current) => {
+                  const next = new Set(current)
+                  if (checked) next.add(id)
+                  else next.delete(id)
+                  return next
+                }) } : undefined}
                 selection={balancePanel || paymentSelection ? {
                   index: selectedIndex,
                   onSelect: setSelectedRow,
@@ -179,7 +207,10 @@ function GeneralPanelDialog(props: Props) {
             {payload?.unavailableReason && <p className="mt-1 text-muted-foreground">{payload.unavailableReason}</p>}
             <div className="mt-1 flex items-end justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1">
-                <DisabledButtons labels={panelButtons[props.panel.key] ?? []} />
+                <PanelButtons labels={panelButtons[props.panel.key] ?? []} group={group} />
+                {staleMarks && <Button onClick={() => setMarked(new Set())} size="xs" type="button" variant="outline">
+                  Quitar marcas de agrupación
+                </Button>}
                 {balancePanel && <Button disabled={receiptId === null || Boolean(paymentReceipt) || query.isFetching}
                   onClick={() => {
                     if (receiptId === null) return
@@ -208,6 +239,18 @@ function GeneralPanelDialog(props: Props) {
         )}
       </ErpDataDialogBody>
     </ErpDataDialog>
+    {grouping && <DesktopWindowIdentity id={`suppliers:${props.supplier.id}:balance-grouping`}>
+      <SupplierGroupingDialog supplierId={props.supplier.id} {...grouping}
+        onClose={() => { setGrouping(null); void query.refetch() }}
+        onSaved={async () => {
+          setMarked(new Set())
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: supplierKeys.detail(props.supplier.id) }),
+            queryClient.invalidateQueries({ queryKey: purchaseReceptionKeys.all }),
+          ])
+          setGrouping(null)
+        }} />
+    </DesktopWindowIdentity>}
     {paymentReceipt && <DesktopWindowIdentity id={`suppliers:${props.supplier.id}:payments:${paymentReceipt.id}`}>
       <SupplierPaymentDialog documentNumber={paymentReceipt.number} onClose={() => setPaymentReceipt(null)}
         receiptDate={paymentReceipt.date} receiptId={paymentReceipt.id} supplierId={props.supplier.id} />

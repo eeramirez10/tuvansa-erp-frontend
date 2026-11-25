@@ -92,6 +92,27 @@ export type SupplierPanelResponse = {
   }
 }
 
+export type SupplierGroupingPosition = {
+  id: number
+  revision: string
+  document: string
+  amount: number
+}
+
+export type SupplierGroupingInput = {
+  requestKey: string
+  target: Pick<SupplierGroupingPosition, "id" | "revision">
+  sources: Array<Pick<SupplierGroupingPosition, "id" | "revision">>
+}
+
+export type SupplierGroupingResult = {
+  targetId: number
+  sourceIds: number[]
+  amount: number
+  remaining: number
+  date: string
+}
+
 export type SupplierClassificationsResponse = {
   data: {
     supplier: Pick<Supplier, "id" | "code" | "name"> & { currentBalance: number }

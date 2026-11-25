@@ -14,6 +14,8 @@ import type {
   SupplierEditPreview,
   SupplierPanelDefinition,
   SupplierPanelResponse,
+  SupplierGroupingInput,
+  SupplierGroupingResult,
   SupplierPayment,
   SupplierPaymentInput,
   SupplierPaymentPreview,
@@ -21,6 +23,11 @@ import type {
 } from "@/features/accounts-payable/suppliers/model"
 
 type ItemResponse<T> = { data: T }
+
+export async function groupSupplierBalance(supplierId: number, input: SupplierGroupingInput) {
+  const response = await apiClient.post<ItemResponse<SupplierGroupingResult>>(`/accounts-payable/suppliers/${supplierId}/balance/grouping`, input)
+  return response.data.data
+}
 
 export type SupplierSearchCriteria = {
   q?: string
