@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect } from "react"
+import { useEffect, type ReactNode } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 import { paths } from "@/app/router/paths"
 import { companySessionKey } from "@/features/startup/multicia/logic"
@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuShortc
 import { signInPath, webSessionKey, webSessionOptions } from "../logic"
 import { endWebSession } from "../services/users-service"
 
-export function ProscaiMenu() {
+export function ProscaiMenu({ globalMenus, contextualMenus }: { globalMenus: ReactNode; contextualMenus: ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
@@ -41,13 +41,17 @@ export function ProscaiMenu() {
   }, [navigate])
 
   return (
-    <nav aria-label="Proscai" className="flex min-h-8 flex-wrap items-center gap-1 border-b px-2">
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger render={<Button variant="ghost" size="sm" />}>Proscai</DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem render={<Link to={paths.generalData} />}>Datos Generales<DropdownMenuShortcut>F10</DropdownMenuShortcut></DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <nav aria-label="Menús del ERP" className="flex min-h-8 flex-wrap items-center gap-1 border-b px-2">
+      <div className="flex shrink-0 items-center gap-1">
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger render={<Button variant="ghost" size="sm" />}>Proscai</DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem render={<Link to={paths.generalData} />}>Datos Generales<DropdownMenuShortcut>F10</DropdownMenuShortcut></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {globalMenus}
+      </div>
+      {contextualMenus}
       {location.pathname.startsWith(paths.generalData) && session.data?.capabilities.generalData && (
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger render={<Button variant="ghost" size="sm" />}>Datos Generales</DropdownMenuTrigger>

@@ -3,7 +3,10 @@ import type { ErpModuleId } from "@/features/workspace/module-routes"
 
 type ReportGroup = { label: string; reports: ReadonlyArray<{ label: string; path: string | null }> }
 const salesReports: readonly ReportGroup[] = [{ label: "Comisiones", reports: [{ label: "Reporte Comisiones x Cobranza", path: paths.collectionCommissions }] }]
+export const globalReportModules: readonly ErpModuleId[] = ["accounting"]
+
 export const reportMenuLabels: Partial<Record<ErpModuleId, string>> = {
+  accounting: "Reportes de Contabilidad",
   sales: "Reportes de Ventas", "sales-orders": "Reportes de Ventas", "sales-invoicing": "Reportes de Ventas",
 }
 

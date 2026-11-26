@@ -1,12 +1,12 @@
 # Menús de reportes por módulo
 
-Actualización del 2026-11-06. El encabezado muestra únicamente los reportes
-registrados para el módulo activo. Se usa **Reportes <módulo> → submenú → reporte**
-con Dropdown Menu y Submenu de shadcn/Base UI.
+**Proscai** y **Reportes de Contabilidad** comparten una fila del encabezado en
+todas las pantallas del ERP. Los demás menús de reportes se muestran según el
+módulo activo. El encabezado usa Dropdown Menu y Submenu de shadcn/Base UI.
 
 Los reportes financieros actuales pertenecen a **Contabilidad**:
 
-El menú principal se llama **Reportes Contabilidad**. El mismo formato se aplica
+El menú principal se llama **Reportes de Contabilidad**. El mismo formato se aplica
 por defecto a los módulos: Reportes Inventarios, Reportes Pedidos, Reportes Facturación,
 Reportes Bancos, etc. Los nombres proceden de `erpModuleNames` en
 `src/features/workspace/module-routes.ts`. Los submenús conservan sus nombres
@@ -19,16 +19,16 @@ propios, como Reportes Financieros, y se definen conforme se agregan.
 | Contabilidad | Reportes Financieros | Inventario por familia | /contabilidad/reportes/inventario-por-familia |
 | Ventas (Pedidos / Facturación) | Comisiones | Reporte Comisiones x Cobranza | /ventas/reportes/comisiones-por-cobranza |
 
-Inicio, Inventarios, Clientes, Proveedores, Compras y Bancos
-no heredan esos reportes. Si un módulo no tiene grupos con reportes, se ocultan
-el botón y su franja vacía. Al cambiar de módulo se desmontan los desplegables
-anteriores, incluyendo los submenús abiertos. El menú sigue disponible durante
-la carga o un error de la API porque depende del módulo, no de los datos remotos.
+El acceso a Contabilidad aparece una sola vez, incluso dentro de Contabilidad.
+El menú contextual aparece si el módulo activo tiene reportes propios. Al
+cambiar de módulo se desmonta su menú contextual, incluidos los submenús abiertos.
+Los menús se construyen desde el catálogo local, por lo que siguen disponibles
+durante la carga o un error de la API del módulo.
 
 El catálogo está en `src/features/reports/model.ts`, indexado por `ErpModuleId`.
 Para agregar un reporte se registra en el módulo propietario y dentro de su
-grupo; no existe un catálogo global de respaldo. Se puede reutilizar la misma
-estructura de submenús con grupos y reportes diferentes en cada módulo.
+grupo. `globalReportModules` indica qué módulos tienen un acceso fijo en la fila
+superior y reutiliza el mismo catálogo.
 `src/features/workspace/module-routes.ts` determina el módulo por prefijos de
 ruta completos; no confunde un prefijo parcial con otro módulo.
 
@@ -42,7 +42,7 @@ ventas y contabilidad permanecen iguales: este cambio sólo organiza navegación
 | Control | Efecto | HTTP / SQL |
 | --- | --- | --- |
 | Selector de módulos | Cambia catálogo de reportes según la ruta activa | Sin consulta adicional para construir el menú |
-| Reportes Contabilidad / Reportes Financieros | Abre submenú de Contabilidad | Sin HTTP ni SQL |
+| Reportes de Contabilidad / Reportes Financieros | Abre submenú de Contabilidad desde cualquier módulo | Sin HTTP ni SQL |
 | Reporte seleccionado | Abre ruta contable y carga su pantalla existente | Endpoints documentados en cada reporte |
 
 Validación: lint, typecheck y build. Navegador para módulos sin reportes,
@@ -55,7 +55,7 @@ con sus consultas de lectura existentes.
 Evidencia privada en `captures/ui/new-version/module-report-menus-20261106/`
 del backend. Sin cambios de SQL, backend, base de datos ni Firebase.
 
-Validación de la etiqueta principal: lint/typecheck/build aprobados; navegador
+Validación histórica de la etiqueta principal: lint/typecheck/build aprobados; navegador
 confirma `Reportes Contabilidad` tanto visible como accesible, conserva el submenú
 Reportes Financieros con los tres reportes y Escape, y no muestra un menú global
 en Inicio. Evidencia privada: `captures/ui/new-version/module-report-menu-labels-20261106/`.
@@ -68,4 +68,4 @@ Comisiones x Cobranza**, separado de Reportes Financieros de Contabilidad.
 `reportMenuLabels` permite la etiqueta explícita sin alterar los nombres de módulos.
 La ruta anterior /contabilidad/reportes/comisiones-por-cobranza redirige a /ventas
 con query/hash. La tarjeta del módulo indica Ventas. Otros reportes y módulos
-conservan su propietario y comportamiento; no se agrega un menú global.
+conservan su propietario y comportamiento.
