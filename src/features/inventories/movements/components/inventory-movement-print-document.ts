@@ -23,16 +23,18 @@ const styles = `
   dt { font-weight: bold; }
   dd { margin: 0; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 4pt 5pt; vertical-align: top; text-align: left; }
-  th { border-block: 1px solid #444; }
-  td { border-bottom: 1px solid #ddd; }
+  th, td { border: 1px solid #444; padding: 2.5pt 4pt; vertical-align: top; text-align: left; }
+  thead { display: table-header-group; }
+  th { background: #d0d0d0; print-color-adjust: exact; }
+  tbody { font-size: 9pt; }
+  td { overflow-wrap: anywhere; }
   tr { break-inside: avoid; }
   .number { text-align: right; white-space: nowrap; }
-  .customs { margin: 2pt 0 0; font-size: 9pt; }
-  .report-footer { margin-top: 12pt; break-inside: avoid; }
+  .customs { margin: 2pt 0 0; font-size: 8pt; }
+  .report-footer { margin-top: 12pt; border: 1px solid #444; padding: 4pt 6pt; break-inside: avoid; }
   .movement-summary { display: flex; flex-wrap: wrap; gap: 8pt 24pt; }
   .comments { white-space: pre-wrap; }
-  .total { display: flex; justify-content: flex-end; gap: 16pt; border-top: 1px solid #444; padding: 4pt 5pt; }
+  .total { display: flex; width: fit-content; gap: 16pt; margin-left: auto; border: 1px solid #444; padding: 8pt; }
   .signatures { display: flex; gap: 32pt; justify-content: space-evenly; margin-top: 38pt; break-inside: avoid; }
   .signatures p { min-width: 130pt; text-align: center; border-top: 1px solid #444; padding-top: 4pt; }
 `
@@ -59,7 +61,7 @@ export function buildInventoryMovementPrintDocument(report: InventoryMovementPri
     return `<tr><td class="number">${index + 1}</td><td class="number">${formatMovementValue(line.quantity)}</td>
       <td>${text(line.productCode)}</td><td>${text(line.description)}${customs}</td>
       ${transfer ? `<td>${text(line.warehouse ?? "")}</td>` : ""}
-      <td class="number">${cost.format(line.cost)}</td><td class="number">${formatMovementValue(line.cents / 100)}</td></tr>`
+      <td class="number">$ ${cost.format(line.cost)}</td><td class="number">$ ${formatMovementValue(line.cents / 100)}</td></tr>`
   }).join("")
 
   return `<!doctype html>
