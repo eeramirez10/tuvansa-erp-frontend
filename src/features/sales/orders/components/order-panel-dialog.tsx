@@ -10,6 +10,7 @@ import {
   secondaryActionDialogWidths,
 } from "@/features/sales/orders/components/order-action-dialog-metadata"
 import { OrderActionDesignContent } from "@/features/sales/orders/components/order-action-design-content"
+import { OrderPrintDialog } from "@/features/sales/orders/components/order-print-dialog"
 import { OrderCommentsContent } from "@/features/sales/orders/components/order-comments-content"
 import { OrderSecondaryActionDesignContent } from "@/features/sales/orders/components/order-secondary-action-design-content"
 import { orderKeys, orderPanelQueryOptions } from "@/features/sales/orders/logic"
@@ -153,6 +154,7 @@ function SecondaryActionDesignDialog({ order, panel, onOpenChange }: PanelDialog
 }
 
 export function OrderPanelDialog(props: PanelDialogProps) {
+  if (props.panel.key === "print") return <OrderPrintDialog id={props.order.id} number={props.order.number} onClose={() => props.onOpenChange(false)} />
   if (props.panel.key === "comments") return <CommentsPanelDialog {...props} />
   if (props.panel.section === "actions") return <ActionDesignDialog {...props} />
   return <SecondaryActionDesignDialog {...props} />

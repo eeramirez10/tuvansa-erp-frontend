@@ -351,6 +351,8 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 | Vista / control | Evento | Método y endpoint | Query key / mutation | Archivo |
 | --- | --- | --- | --- | --- |
 | Pedidos / Nuevo (hoja) | Abrir Captura de pedido en un modal; el primer paso selecciona Almacén | GET `/sales/orders/capture/options?companyId=1` | sales/orders/capture/options/companyId | order-capture-dialog.tsx |
+| Pedidos / Imprimir | Vista previa del folio abierto | GET `/sales/orders/:id` | Ficha vigente con permisos de lectura | order-print-dialog.tsx |
+| Vista previa / Imprimir | Elegir impresora, copias o Guardar como PDF | Sin petición adicional | Documento carta | order-print-document.ts |
 | Pedidos / Duplicar | Revisar la copia al 100 % | GET `/sales/orders/:id/actions/duplicate` | pedidos, vista previa y revisión | order-duplicate-dialog.tsx |
 | Duplicar / OK | Guardar una copia como Pedido | POST `/sales/orders/:id/actions/duplicate` | duplicateOrder | Folio P, una copia por clave de confirmación |
 | Captura / Cliente | Enter o salir del campo | GET `/sales/orders/capture/customers/:code` | sales/orders/capture/customer/code | order-capture-service.ts |

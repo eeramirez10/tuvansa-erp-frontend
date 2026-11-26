@@ -162,24 +162,6 @@ function LinesGrid({ order, mode }: { order: Order; mode: "labels" | "monarch" |
   )
 }
 
-function Print({ order, onClose }: { order: Order; onClose: () => void }) {
-  return (
-    <div className="mx-auto grid max-w-[24rem] gap-2 p-4">
-      <div className="grid grid-cols-2 gap-8">
-        <label className="grid grid-cols-[auto_1fr] items-center gap-1"><span>De la:</span><Input className="h-5 px-1 text-[9px]" readOnly value={order.number} /></label>
-        <label className="grid grid-cols-[auto_1fr] items-center gap-1"><span>A la:</span><Input className="h-5 px-1 text-[9px]" readOnly value={order.number} /></label>
-      </div>
-      <label className="grid grid-cols-[7rem_6rem] items-center gap-1"><span>Número de copias:</span><Input className="h-5 px-1 text-[9px]" defaultValue="1.00" /></label>
-      <div className="grid grid-cols-3 gap-x-4 gap-y-2">
-        {["Pedido", "Lista de empaque", "Resumen", "Pedido", "Pedido-surtido", "Asignado"].map((option, index) => <label className="flex items-center gap-1" key={`${option}-${index}`}><input defaultChecked={index === 0 || index === 3} name={index < 3 ? "print-main" : "print-detail"} type="radio" />{option}</label>)}
-      </div>
-      <div className="flex gap-5"><span>Imprimir en:</span><label><input className="mr-1" name="destination" type="radio" />Pantalla</label><label><input className="mr-1" defaultChecked name="destination" type="radio" />Impresora</label></div>
-      <Input className="h-5 px-1 text-[9px]" defaultValue="1" />
-      <Footer><Button size="sm">✓ OK</Button><Button onClick={onClose} size="sm" variant="outline">× Cancelar</Button></Footer>
-    </div>
-  )
-}
-
 export function OrderActionDesignContent({ order, panel, onClose }: ActionDesignProps) {
   switch (panel.key) {
     case "assign-all": return <Confirmation onClose={onClose} question="¿Desea asignar todo el pedido?" />
@@ -189,7 +171,6 @@ export function OrderActionDesignContent({ order, panel, onClose }: ActionDesign
     case "classifications": return <Classifications order={order} />
     case "quote-conversion": return <Confirmation onClose={onClose} question="¿Desea convertir el pedido/cotización?" />
     case "labels": return <LinesGrid mode="labels" order={order} />
-    case "print": return <Print onClose={onClose} order={order} />
     case "monarch": return <LinesGrid mode="monarch" order={order} />
     case "pieces": return order.lines.length === 0
       ? <div className="grid grid-cols-[2rem_1fr] items-center gap-2 p-3"><span className="text-xl text-amber-500">⚠</span><span>No hay partidas asignadas.</span><div className="col-span-2"><Footer><Button onClick={onClose} size="sm">OK</Button></Footer></div></div>
