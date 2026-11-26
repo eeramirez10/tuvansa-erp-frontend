@@ -45,6 +45,7 @@ export type ManualPolicyPreview = NonNullable<AccountingPolicy["manual"]> & {
   canApply: boolean
   canUnapply: boolean
   canDelete: boolean
+  linkedLiability?: boolean
   reason: string | null
 }
 
@@ -71,6 +72,27 @@ export type ManualPolicyInput = {
 export type ManualPolicyActionInput = { requestKey: string; revision: number; confirmed: true }
 
 export type DuplicatePolicyInput = { requestKey: string; revision: string; date: string; confirmed: true }
+
+export type PolicyLiabilityOptions = Pick<DuplicatePolicyPreview, "date" | "fiscalStart" | "fiscalEnd" | "reason">
+
+export type PolicyLiabilityDraft = { date: string; supplierCode: string; reference: string; amount: number }
+
+export type PolicyLiabilityPreview = {
+  revision: string
+  canConfirm: boolean
+  reason: string | null
+  totals: { debit: number; credit: number }
+  lines: Array<{ accountCode: string; name: string; costCenter: number; reference: string; debit: number; credit: number }>
+  payable: {
+    supplier: { code: string; name: string; currency: 1 | 2; exchangeRate: number }
+    amount: number
+    tax: number
+    subtotal: number
+    dueDate: string
+  }
+}
+
+export type PolicyLiabilityInput = PolicyLiabilityDraft & Pick<DuplicatePolicyInput, "requestKey" | "revision" | "confirmed">
 
 export type AccountingPolicyComments = {
   policy: { id: number; number: string }

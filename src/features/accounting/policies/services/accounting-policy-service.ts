@@ -13,6 +13,10 @@ import type {
   ManualPolicyInput,
   ManualPolicyOperation,
   ManualPolicyPreview,
+  PolicyLiabilityDraft,
+  PolicyLiabilityInput,
+  PolicyLiabilityOptions,
+  PolicyLiabilityPreview,
 } from "@/features/accounting/policies/model"
 import { apiClient } from "@/shared/api/api-client"
 
@@ -90,6 +94,25 @@ export async function getDuplicatePolicyPreview(id: number, signal?: AbortSignal
 
 export async function duplicateAccountingPolicy(id: number, input: DuplicatePolicyInput) {
   const { data } = await apiClient.post<ItemResponse<AccountingPolicy>>(`${policyPath}/${id}/actions/duplicate`, input)
+  return data.data
+}
+
+function policyLiabilityPath(id: number) {
+  return `${policyPath}/${id}/actions/duplicate-liability`
+}
+
+export async function getPolicyLiabilityOptions(id: number, signal?: AbortSignal) {
+  const { data } = await apiClient.get<ItemResponse<PolicyLiabilityOptions>>(policyLiabilityPath(id), { signal })
+  return data.data
+}
+
+export async function previewPolicyLiability(id: number, input: PolicyLiabilityDraft) {
+  const { data } = await apiClient.get<ItemResponse<PolicyLiabilityPreview>>(`${policyLiabilityPath(id)}/preview`, { params: input })
+  return data.data
+}
+
+export async function duplicatePolicyLiability(id: number, input: PolicyLiabilityInput) {
+  const { data } = await apiClient.post<ItemResponse<AccountingPolicy>>(policyLiabilityPath(id), input)
   return data.data
 }
 

@@ -6,6 +6,7 @@ import { AccountingPolicyActionButtons } from "@/features/accounting/policies/co
 import { AccountingPolicyActionDialog } from "@/features/accounting/policies/components/accounting-policy-action-dialog"
 import { AccountingPolicyDetails } from "@/features/accounting/policies/components/accounting-policy-details"
 import { AccountingPolicyDuplicateDialog } from "@/features/accounting/policies/components/accounting-policy-duplicate-dialog"
+import { AccountingPolicyLiabilityDialog } from "@/features/accounting/policies/components/accounting-policy-liability-dialog"
 import { AccountingPolicySearchDialog } from "@/features/accounting/policies/components/accounting-policy-search-dialog"
 import { AccountingPolicyToolbar } from "@/features/accounting/policies/components/accounting-policy-toolbar"
 import { ManualPolicyCaptureDialog } from "@/features/accounting/policies/components/manual-policy-capture-dialog"
@@ -14,6 +15,7 @@ import { primaryAccountingPolicyActions, secondaryAccountingPolicyActions } from
 import { accountingPolicyKeys, accountingPolicyQueryOptions } from "@/features/accounting/policies/logic"
 import type { AccountingPolicy, AccountingPolicyAction, ManualPolicyOperation } from "@/features/accounting/policies/model"
 import { getAdjacentAccountingPolicy } from "@/features/accounting/policies/services/accounting-policy-service"
+import { supplierKeys } from "@/features/accounts-payable/suppliers/logic"
 import { bankAccountKeys } from "@/features/treasury/banking/logic"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -47,8 +49,9 @@ export function AccountingPolicyCatalogPage() {
     onError: (error) => setNotice({ title: "No fue posible navegar", message: getApiErrorMessage(error), error: true }),
   })
 
-  function saved(result: AccountingPolicy, operation: "create" | "edit" | "duplicate" | ManualPolicyOperation) {
+  function saved(result: AccountingPolicy, operation: "create" | "edit" | "duplicate" | "duplicate-liability" | ManualPolicyOperation) {
     const titles = { create: "Póliza registrada", edit: "Póliza actualizada", duplicate: "Póliza duplicada",
+      "duplicate-liability": "Póliza y pasivo registrados",
       apply: "Póliza aplicada", unapply: "Póliza desaplicada", delete: "Póliza dada de baja" }
     queryClient.setQueryData(accountingPolicyKeys.detail(result.id), result)
     setCapture(null)
@@ -57,7 +60,8 @@ export function AccountingPolicyCatalogPage() {
     void queryClient.invalidateQueries({ queryKey: accountingPolicyKeys.all })
     void queryClient.invalidateQueries({ queryKey: ["accounting", "reports"] })
     void queryClient.invalidateQueries({ queryKey: bankAccountKeys.all })
-    if (operation === "create" || operation === "duplicate") void navigate(paths.accountingPolicy(result.id))
+    if (operation === "duplicate-liability" || operation === "delete") void queryClient.invalidateQueries({ queryKey: supplierKeys.all })
+    if (operation === "create" || operation === "duplicate" || operation === "duplicate-liability") void navigate(paths.accountingPolicy(result.id))
   }
 
   const busy = Boolean(capture || transition) || navigation.isPending
@@ -90,7 +94,12 @@ export function AccountingPolicyCatalogPage() {
             closeActionWindow(window.id)
             saved(result, "duplicate")
           }} policy={window.payload.policy} />
-          : <AccountingPolicyActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} policy={window.payload.policy} />}
+          : window.payload.action.key === "duplicate-liability" ? <AccountingPolicyLiabilityDialog
+            onClose={() => closeActionWindow(window.id)} onSaved={result => {
+              closeActionWindow(window.id)
+              saved(result, "duplicate-liability")
+            }} policy={window.payload.policy} />
+            : <AccountingPolicyActionDialog action={window.payload.action} onClose={() => closeActionWindow(window.id)} policy={window.payload.policy} />}
       </DesktopWindowIdentity>)}
       {capture && <DesktopWindowIdentity id={`accounting:manual-capture:${capture.id ?? "new"}`}>
         <ManualPolicyCaptureDialog onClose={() => setCapture(null)} onSaved={result => saved(result, capture.id ? "edit" : "create")} policyId={capture.id} />

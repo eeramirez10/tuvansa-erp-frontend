@@ -54,9 +54,10 @@ export function ManualPolicyTransitionDialog({ policy, operation, onClose, onSav
         </div>
         {query.isFetching && <p className="flex items-center gap-1" role="status"><Spinner /> Verificando la póliza…</p>}
         {query.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription></Alert>}
-        {allowed && <p>{text.text}</p>}
+        {allowed && <p>{operation === "delete" && preview.linkedLiability ? "¿Dar de baja la póliza y revertir el cargo al proveedor?" : text.text}</p>}
         {preview && !allowed && !query.isError && !query.isFetching && <Alert role="status">
-          <AlertDescription>{preview.reason || text.fallback}</AlertDescription>
+          <AlertDescription>{preview.reason ?? (preview.linkedLiability && operation !== "delete"
+            ? "Usa Baja para cancelar la póliza y el cargo al proveedor." : text.fallback)}</AlertDescription>
         </Alert>}
         {change.isError && <Alert variant="destructive">
           <AlertTitle>No fue posible registrar la operación</AlertTitle><AlertDescription>{getApiErrorMessage(change.error)}</AlertDescription>
