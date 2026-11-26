@@ -2,8 +2,8 @@ import { apiClient, sessionApiClient } from "@/shared/api/api-client"
 import type { Order } from "@/features/sales/orders/model"
 import type { CaptureCustomer, CaptureCustomerMatch, CaptureCustomerSearchCriteria, CaptureInput, CaptureOptions, CaptureProduct, CaptureProductFamily, CaptureProductMatch, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
 
-export async function getCaptureOptions(signal?: AbortSignal) {
-  return (await apiClient.get<{data: CaptureOptions}>("/sales/orders/capture/options", { signal })).data.data
+export async function getCaptureOptions(companyId: number, signal?: AbortSignal) {
+  return (await apiClient.get<{data: CaptureOptions}>("/sales/orders/capture/options", { params: { companyId }, signal })).data.data
 }
 export async function getCaptureCustomer(code: string, signal?: AbortSignal) {
   return (await apiClient.get<{data: CaptureCustomer}>(`/sales/orders/capture/customers/${encodeURIComponent(code)}`, { signal })).data.data
@@ -36,8 +36,8 @@ export async function searchCaptureProducts(criteria: CaptureProductSearchCriter
 export async function getCaptureProductFamilies(signal?: AbortSignal) {
   return (await apiClient.get<{ data: CaptureProductFamily[] }>("/sales/orders/capture/product-families", { signal })).data.data
 }
-export async function saveCapturedOrder(input: CaptureInput) {
-  return (await apiClient.post<{data: Order}>("/sales/orders/capture", input)).data.data
+export async function saveCapturedOrder(input: CaptureInput, companyId: number) {
+  return (await apiClient.post<{data: Order}>("/sales/orders/capture", input, { params: { companyId } })).data.data
 }
 export async function toggleOrderQuote(id: number) {
   return (await apiClient.post<{data: Order}>(`/sales/orders/${id}/actions/quote-conversion`, {})).data.data

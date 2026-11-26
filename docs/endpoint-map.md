@@ -350,13 +350,13 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 
 | Vista / control | Evento | Método y endpoint | Query key / mutation | Archivo |
 | --- | --- | --- | --- | --- |
-| Pedidos / Nuevo (hoja) | Abrir Captura de pedido en un modal; el primer paso selecciona Almacén | GET `/sales/orders/capture/options` | sales/orders/capture/options | order-capture-dialog.tsx |
+| Pedidos / Nuevo (hoja) | Abrir Captura de pedido en un modal; el primer paso selecciona Almacén | GET `/sales/orders/capture/options?companyId=1` | sales/orders/capture/options/companyId | order-capture-dialog.tsx |
 | Captura / Cliente | Enter o salir del campo | GET `/sales/orders/capture/customers/:code` | sales/orders/capture/customer/code | order-capture-service.ts |
 | Captura / Código | Enter o salir del campo; acepta ICOD o IEAN y muestra el ICOD canónico | GET `/sales/orders/capture/products/:identifier?warehouse=...&typeCode=P&customerCode=...` | sales/orders/capture/product/identifier/warehouse/typeCode/customerCode | order-capture-service.ts |
 | Captura / Agregar partida, Tab desde Pzas. | Incorporar renglón y devolver foco a Código | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
 | Captura / Renglón de partida | Seleccionar, cargar en la fila superior y actualizar en su posición | Sin escritura HTTP | Borrador React Hook Form | order-capture-dialog.tsx |
 | Captura / OK | Abrir Comentarios | Sin escritura HTTP | Borrador | order-capture-dialog.tsx |
-| Comentarios / OK | Guardar alta completa | POST `/sales/orders/capture` | saveCapturedOrder; invalida pedidos/productos/clientes | order-capture-service.ts |
+| Comentarios / OK | Guardar alta completa | POST `/sales/orders/capture?companyId=1` | saveCapturedOrder; invalida pedidos/productos/clientes | order-capture-service.ts |
 | Comentarios / T.C. y Moneda de cobro | Recalcular partidas y totales en PESOS o DOLARES | POST `/sales/orders/capture` | conversión local y validación final del backend | order-capture-dialog.tsx |
 | Pedidos / Comentarios / OK | Modificar T.C. o Moneda de cobro después del alta | PATCH `/sales/orders/:id/actions/comments` | updateOrderComments; invalida pedidos | order-panel-dialog.tsx |
 | ¿Continuo? / Sí, No | Nueva captura o abrir resultado | Sin escritura adicional | Reiniciar borrador / detalle del registro | order-capture-dialog.tsx |

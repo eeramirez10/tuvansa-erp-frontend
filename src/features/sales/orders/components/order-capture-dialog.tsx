@@ -7,6 +7,7 @@ import type { Order } from "@/features/sales/orders/model"
 import { captureCurrencyName, captureHeaderSchema, captureLineSchema, isBelowCaptureCost, captureTotals, type CaptureCustomer, type CaptureCustomerMatch, type CaptureDraftLine, type CaptureHeader, type CaptureLine, type CaptureProduct, type CaptureProductMatch } from "@/features/sales/orders/capture-model"
 import { captureCustomerMatchesQuery, captureCustomerQuery, captureOptionsQuery, captureProductMatchesQuery, captureProductQuery } from "@/features/sales/orders/capture-logic"
 import { orderKeys } from "@/features/sales/orders/logic"
+import { companySessionKey } from "@/features/startup/multicia/logic"
 import { saveCapturedOrder } from "@/features/sales/orders/services/order-capture-service"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { notifications } from "@/shared/notifications/notifications"
@@ -32,7 +33,9 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   onSaved: (order: Order) => void
 }) {
   const queryClient = useQueryClient()
-  const options = useQuery(captureOptionsQuery())
+  const companyId = Number(sessionStorage.getItem(companySessionKey) ?? "1")
+  const options = useQuery(captureOptionsQuery(companyId))
+  const movement = options.data?.types.find(type => type.code === "P")
   const [stage, setStage] = useState<"warehouse" | "capture" | "comments" | "continue">("warehouse")
   const [customer, setCustomer] = useState<CaptureCustomer | null>(null)
   const [product, setProduct] = useState<CaptureProduct | null>(null)
@@ -65,7 +68,7 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
   useEffect(() => {
     if (product && !loading) lineForm.setFocus("quantity")
   }, [product, loading, lineForm])
-  const mutation = useMutation({ mutationFn: saveCapturedOrder, retry: false, onSuccess: async order => {
+  const mutation = useMutation({ mutationFn: (input: Parameters<typeof saveCapturedOrder>[0]) => saveCapturedOrder(input, companyId), retry: false, onSuccess: async order => {
     setSaved(order); setStage("continue")
     await queryClient.invalidateQueries({ queryKey: orderKeys.all })
     await queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
@@ -230,8 +233,8 @@ export function OrderCaptureDialog({ onCustomerSearch, onProductSearch, onOpenCh
             {stage === "capture" ? <>
               <strong className="ml-2 w-[6.5rem] bg-module-sales py-1 text-center text-[11px] text-white">Pedido</strong>
               <div className="-mt-3 ml-[7.25rem] mr-2 grid grid-cols-[4rem_3.5rem_18rem_4.4375rem_6.5rem_4.3125rem_5.3125rem_6.625rem] items-center gap-x-1 gap-y-0.5">
-                <span className="text-right">Tipo</span><Input aria-label="Tipo" className={inputClass} value="P" readOnly /><Input aria-label="Descripción" className={inputClass} value={options.data?.types[0]?.description ?? ""} readOnly />
-                <span className="text-right">Número</span><Input aria-label="Número" className={inputClass} value={options.data?.types[0]?.nextNumber ?? ""} readOnly title="El folio definitivo se asigna al guardar" />
+                <span className="text-right">Tipo</span><Input aria-label="Tipo" className={inputClass} value={movement?.code ?? ""} readOnly /><Input aria-label="Descripción" className={inputClass} value={movement?.description ?? ""} readOnly />
+                <span className="text-right">Número</span><Input aria-label="Número" className={inputClass} value={movement?.nextNumber ?? ""} readOnly title="Folio orientativo. El número definitivo se asigna al guardar." />
                 <span className="text-right">Fecha</span><Input aria-label="Fecha" className={inputClass} type="date" {...form.register("orderedAt")} />
                 <label className="flex items-center justify-center gap-1"><input type="checkbox" {...form.register("initial")} />Inicial</label>
 

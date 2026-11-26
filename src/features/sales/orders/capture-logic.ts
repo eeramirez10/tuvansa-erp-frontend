@@ -4,7 +4,7 @@ import type { CaptureCustomerSearchCriteria, CaptureFamilyCalculation, CapturePr
 import { orderKeys } from "@/features/sales/orders/logic"
 import { getCaptureCustomer, getCaptureOptions, getCaptureProduct, getCaptureProductFamilies, searchCaptureCustomers, searchCaptureProducts } from "@/features/sales/orders/services/order-capture-service"
 
-export const captureOptionsQuery = () => queryOptions({ queryKey: [...orderKeys.all, "capture", "options"], queryFn: ({signal}) => getCaptureOptions(signal), staleTime: 0 })
+export const captureOptionsQuery = (companyId: number) => queryOptions({ queryKey: [...orderKeys.all, "capture", "options", companyId], queryFn: ({signal}) => getCaptureOptions(companyId, signal), staleTime: 0 })
 export const captureCustomerQuery = (code: string) => queryOptions({ queryKey: [...orderKeys.all, "capture", "customer", code], queryFn: ({signal}) => getCaptureCustomer(code, signal), staleTime: 0 })
 export const captureCustomerMatchesQuery = (criteria: CaptureCustomerSearchCriteria) => queryOptions({ queryKey: [...orderKeys.all, "capture", "customer-matches", criteria.code ?? "", criteria.name ?? "", criteria.taxId ?? ""], queryFn: ({signal}) => searchCaptureCustomers(criteria, signal), staleTime: 0 })
 export const captureProductQuery = (code: string, warehouse: string, typeCode: string, customerCode: string) => {
