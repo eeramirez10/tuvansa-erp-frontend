@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import InformationCircleIcon from "@hugeicons/core-free-icons/InformationCircleIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { Link } from "react-router"
@@ -12,8 +12,8 @@ import { clientKeys } from "@/features/accounts-receivable/clients/logic"
 import { movementKeys } from "@/features/inventories/movements/logic"
 import { productKeys } from "@/features/inventories/products/logic"
 import { invoiceKeys, invoicePanelQueryOptions, isLocalRemission } from "@/features/sales/invoicing/logic"
-import type { Invoice, InvoicePanel, InvoicePanelDefinition, StampingSimulation, TicketConversion, TicketConversionInput, TicketConversionResult } from "@/features/sales/invoicing/model"
-import { convertTicketToInvoice, editInvoiceLinePieces, simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
+import type { Invoice, InvoicePanel, InvoicePanelDefinition, InvoiceTransferInput, StampingSimulation, TicketConversion, TicketConversionInput, TicketConversionResult } from "@/features/sales/invoicing/model"
+import { confirmInvoiceTransfer, convertTicketToInvoice, editInvoiceLinePieces, getInvoiceTransferPreview, simulateInvoiceStamping } from "@/features/sales/invoicing/services/invoice-service"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
@@ -38,6 +38,8 @@ type Props = {
 }
 
 const decimal = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const stockQuantity = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 3 })
+const unitCost = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 4 })
 const simulationDate = new Intl.DateTimeFormat("es-MX", {
   dateStyle: "short", timeStyle: "short", timeZone: "America/Mexico_City",
 })
@@ -474,7 +476,106 @@ function PanelContent({ data, invoice }: { data: InvoicePanel; invoice: Invoice 
   }
 }
 
-export function InvoicePanelDialog({ invoice, panel, lineId, onOpenChange }: Props) {
+function InvoiceTransferDialog({ invoice, onOpenChange }: Props) {
+  const [warehouse, setWarehouse] = useState("")
+  const queryClient = useQueryClient()
+  const request = useRef<{ revision: string; key: string } | null>(null)
+  const submitting = useRef(false)
+  const query = useQuery({
+    queryKey: [...invoiceKeys.panel(invoice.id, "transfer"), "preview", warehouse],
+    queryFn: ({ signal }) => getInvoiceTransferPreview(invoice.id, warehouse, signal),
+    placeholderData: keepPreviousData,
+    refetchOnMount: "always", refetchOnWindowFocus: false, retry: false,
+  })
+  const save = useMutation({
+    mutationFn: (input: InvoiceTransferInput) => confirmInvoiceTransfer(invoice.id, input),
+    onSuccess: () => {
+      for (const queryKey of [invoiceKeys.all, clientKeys.all, movementKeys.all, productKeys.all, orderKeys.all]) {
+        void queryClient.invalidateQueries({ queryKey })
+      }
+    },
+    onError: () => { void query.refetch() },
+    onSettled: () => { submitting.current = false },
+  })
+  const preview = query.data
+  const receipt = save.data ?? preview?.receipt ?? invoice.transfer
+  const loading = query.isPending || (query.isFetching && !query.isFetchedAfterMount && !preview)
+  const allowed = Boolean(preview?.revision && !preview.reason && !receipt && !query.isFetching && !query.isError)
+
+  function confirm() {
+    const revision = preview?.revision
+    if (!revision || !allowed || submitting.current) return
+    if (request.current?.revision !== revision) request.current = { revision, key: crypto.randomUUID() }
+    submitting.current = true
+    save.mutate({ warehouse, revision, requestKey: request.current.key, confirmed: true })
+  }
+
+  return (
+    <ErpDataDialog
+      className="sm:max-w-[62rem]"
+      defaultWidth={736}
+      description={`Traspaso de la remisión ${invoice.number}`}
+      onOpenChange={(open) => { if (open || !submitting.current) onOpenChange(open) }}
+      title="Traspaso"
+      tone="sales"
+    >
+      <ErpDataDialogBody className="grid gap-2">
+        {loading && <div className="grid min-h-24 place-items-center"><Spinner /></div>}
+        {query.isError && !receipt && <Alert variant="destructive">
+          <AlertTitle>No fue posible cargar el traspaso</AlertTitle>
+          <AlertDescription>{getApiErrorMessage(query.error)}</AlertDescription>
+        </Alert>}
+        {(preview || receipt) && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Field label="Almacén de origen" value={receipt?.from ?? preview?.from} />
+            {receipt ? <Field label="Almacén de destino" value={receipt.to} /> : (
+              <label className="grid min-w-0 gap-0.5">
+                <span className="text-[8px]">Almacén de destino</span>
+                <select
+                  className="h-5 min-w-0 rounded-md border bg-background px-1 text-[9px]"
+                  disabled={save.isPending || !preview?.warehouses.length}
+                  onChange={(event) => { save.reset(); setWarehouse(event.currentTarget.value) }}
+                  value={warehouse}
+                >
+                  <option value="">Selecciona un almacén</option>
+                  {preview?.warehouses.map((item) => <option key={item.code} value={item.code}>{item.code} · {item.name}</option>)}
+                </select>
+              </label>
+            )}
+            <Field label="Fecha" value={date(receipt?.date ?? preview?.date)} />
+            <Field label="Abono a CxC (MXN)" value={number(receipt?.amount ?? preview?.amount)} />
+          </div>
+        )}
+        {receipt && <Alert role="status">
+          <AlertTitle>Traspaso registrado</AlertTitle>
+          <AlertDescription>Entrada de inventario {receipt.number}</AlertDescription>
+        </Alert>}
+        {!receipt && preview?.reason && <Alert><AlertDescription>{preview.reason}</AlertDescription></Alert>}
+        {preview && <DataTable height="h-48" minWidth="min-w-[500px]" columns={[
+          { label: "Código", key: "productCode" }, { label: "Descripción", key: "description" },
+          { label: "Entrada al destino", key: "quantity", format: value => stockQuantity.format(Number(value)), numeric: true },
+          { label: "Unidad", key: "unit" }, { label: "Precio", key: "price", format: number, numeric: true },
+          { label: "Costo", key: "cost", format: value => value === null ? "" : unitCost.format(Number(value)), numeric: true },
+        ]} rows={preview.lines} />}
+        {save.isError && !receipt && <Alert variant="destructive">
+          <AlertDescription>{getApiErrorMessage(save.error)}</AlertDescription>
+        </Alert>}
+        <footer className="flex justify-end gap-1">
+          {!receipt && !query.isError && <Button disabled={loading || !allowed || save.isPending}
+            onClick={confirm} size="sm">{save.isPending ? "Registrando…" : "Confirmar traspaso"}</Button>}
+          <Button disabled={save.isPending} onClick={() => onOpenChange(false)} size="sm" variant="outline">{receipt ? "Cerrar" : "Cancelar"}</Button>
+        </footer>
+      </ErpDataDialogBody>
+    </ErpDataDialog>
+  )
+}
+
+export function InvoicePanelDialog(props: Props) {
+  if (props.panel.key === "transfer" && /^FA\d+$/.test(props.invoice.number)) return <InvoiceTransferDialog {...props} />
+  return <InvoiceReadPanelDialog {...props} />
+}
+
+function InvoiceReadPanelDialog({ invoice, panel, lineId, onOpenChange }: Props) {
   const queryClient = useQueryClient()
   const editPieces = panel.key === "edit-pieces"
   const ticketToInvoice = panel.key === "ticket-to-invoice"

@@ -6,6 +6,9 @@ import type {
   InvoicePanel,
   InvoicePanelKey,
   InvoiceSearchResponse,
+  InvoiceTransferInput,
+  InvoiceTransferPreview,
+  InvoiceTransferReceipt,
   RemissionCancellation,
   RemissionCancellationInput,
   RemissionCancellationPreview,
@@ -109,6 +112,21 @@ export async function convertTicketToInvoice(invoiceId: number, input: TicketCon
     `/sales/invoices/${invoiceId}/${panelPaths["ticket-to-invoice"]}`,
     input,
   )
+  return response.data.data
+}
+
+const transferPath = (id: number) => `/sales/invoices/${id}/${panelPaths.transfer}`
+
+export async function getInvoiceTransferPreview(id: number, warehouse: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ItemResponse<InvoiceTransferPreview>>(`${transferPath(id)}/preview`, {
+    params: warehouse ? { warehouse } : undefined,
+    signal,
+  })
+  return response.data.data
+}
+
+export async function confirmInvoiceTransfer(id: number, input: InvoiceTransferInput) {
+  const response = await apiClient.post<ItemResponse<InvoiceTransferReceipt>>(transferPath(id), input)
   return response.data.data
 }
 

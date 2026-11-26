@@ -32,6 +32,7 @@ export type Invoice = {
   canceled: boolean
   cancellationAvailable?: boolean
   cancellation?: RemissionCancellation | null
+  transfer?: InvoiceTransferReceipt
   dates: {
     issuedAt: string | null
     dueAt: string | null
@@ -69,6 +70,22 @@ export type Invoice = {
   }
   lines: InvoiceLine[]
 }
+
+export type InvoiceTransferReceipt = { id: number; number: string; date: string; from: string; to: string; amount: number }
+
+export type InvoiceTransferPreview = {
+  warehouses: { code: string; name: string }[]
+  from: string
+  to: string | null
+  date: string
+  amount: number
+  revision: string | null
+  reason: string | null
+  receipt: InvoiceTransferReceipt | null
+  lines: { productCode: string; description: string; quantity: number; unit: string; price: number; cost: number | null }[]
+}
+
+export type InvoiceTransferInput = { warehouse: string; revision: string; requestKey: string; confirmed: true }
 
 export type InvoiceSearchResponse = {
   data: Invoice[]
