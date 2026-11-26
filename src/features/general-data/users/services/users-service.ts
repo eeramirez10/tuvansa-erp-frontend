@@ -10,7 +10,10 @@ export async function readWebSession() {
 }
 
 export async function startWebSession(identification: string, password: string) {
-  return (await sessionApiClient.post<Response<WebSession>>("/session", { identification, password })).data.data
+  await sessionApiClient.post<Response<WebSession>>("/session", { identification, password })
+  const session = await readWebSession()
+  if (!session) throw new Error("El navegador no guardó la sesión. Revisa la configuración de cookies e inténtalo de nuevo.")
+  return session
 }
 
 export async function endWebSession() {

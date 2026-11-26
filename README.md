@@ -26,9 +26,14 @@ copy .env.example .env
 pnpm dev
 ```
 
-La web usa `/api` en su mismo origen para enviar la sesión. Vite dirige
-las peticiones locales a `http://127.0.0.1:3000`. Se puede cambiar el destino
-del proxy con `ERP_API_PROXY_TARGET`.
+En desarrollo la web usa `/api` y Vite dirige las peticiones a
+`http://127.0.0.1:3000`. Se puede cambiar el destino del proxy local con
+`ERP_API_PROXY_TARGET`.
+
+La beta de Firebase usa `VITE_API_BASE_URL` en `.env.production` con la
+URL HTTPS completa de Docker. Compila con `pnpm build` y publica Hosting
+después de comprobar que el backend acepta el origen de Firebase y tiene
+configurada la ruta pública en `WEB_SESSION_CROSS_ORIGIN_PATH`.
 
 ## Comandos
 
