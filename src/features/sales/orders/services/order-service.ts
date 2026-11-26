@@ -1,6 +1,6 @@
 import { apiClient } from "@/shared/api/api-client"
 import type {
-  Order, OrderCommentsUpdateInput, OrderMutationInput, OrderPanel, OrderPanelKey, OrderSearchResponse,
+  Order, OrderCommentsUpdateInput, OrderDuplicatePreview, OrderMutationInput, OrderPanel, OrderPanelKey, OrderSearchResponse,
 } from "@/features/sales/orders/model"
 
 type ItemResponse<T> = { data: T }
@@ -50,6 +50,16 @@ export async function getOrderPanel(orderId: number, key: OrderPanelKey, signal?
     `/sales/orders/${orderId}/${panelPaths[key]}`, { signal },
   )
   return response.data
+}
+export async function getOrderDuplicatePreview(orderId: number, companyId: number, signal?: AbortSignal) {
+  return (await apiClient.get<ItemResponse<OrderDuplicatePreview>>(`/sales/orders/${orderId}/actions/duplicate`, {
+    params: { companyId }, signal,
+  })).data.data
+}
+export async function duplicateOrder(orderId: number, companyId: number, input: { requestKey: string; revision: string; orderedAt: string }) {
+  return (await apiClient.post<ItemResponse<Order>>(`/sales/orders/${orderId}/actions/duplicate`, input, {
+    params: { companyId },
+  })).data.data
 }
 export async function createOrder(input: OrderMutationInput) {
   const response = await apiClient.post<ItemResponse<Order>>("/sales/orders", input)

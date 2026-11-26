@@ -71,6 +71,15 @@ export type Order = {
   lines: OrderLine[]
 }
 
+export type OrderDuplicatePreview = {
+  order: { id: number; number: string }
+  summary: {
+    revision: string; orderedAt: string; customer: Order["customer"]; warehouse: string;
+    branch: number; agent: string; currency: "PESOS" | "DOLARES"; total: number
+  }
+  items: Array<{ productCode: string; description: string; quantity: number; unit: string }>
+}
+
 export type OrderSummary = Omit<Order, "lines">
 
 export type OrderSearchResponse = {

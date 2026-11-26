@@ -137,21 +137,6 @@ function Classifications({ order }: { order: Order }) {
   )
 }
 
-function Duplicate({ order, onClose }: { order: Order; onClose: () => void }) {
-  const cells = [order.customer.code, "", "100.00", new Date().toLocaleDateString("es-MX"), String(order.branch), ""]
-  const headers = ["Cliente", "Número", "Porcentaje", "Fecha", "Sucursal", "Agente"]
-  return (
-    <div className="grid gap-1">
-      <div className="grid grid-cols-[3.6rem_4.1rem_3.7rem_4.3rem_3.7rem_3.5rem] gap-px">
-        {headers.map((header) => <span className="truncate" key={header}>{header}</span>)}
-        {cells.map((cell, index) => <Input className="h-5 min-w-0 px-1 text-[9px]" key={`${headers[index]}-input`} readOnly value={cell} />)}
-      </div>
-      <EmptyGrid columns={headers} height="h-[10rem]" minWidth="min-w-[360px]" />
-      <Footer><Button size="sm">✓ OK</Button><Button onClick={onClose} size="sm" variant="outline">× Cancelar</Button></Footer>
-    </div>
-  )
-}
-
 function LinesGrid({ order, mode }: { order: Order; mode: "labels" | "monarch" | "pieces" }) {
   const columns = mode === "pieces"
     ? ["Producto", "Descripción", "Cantidad", "Pzas.", "Número", "Alm.", "Referencia", "Fecha", "Recepción", "Factura"]
@@ -203,7 +188,6 @@ export function OrderActionDesignContent({ order, panel, onClose }: ActionDesign
     case "boxes": return <Boxes order={order} />
     case "classifications": return <Classifications order={order} />
     case "quote-conversion": return <Confirmation onClose={onClose} question="¿Desea convertir el pedido/cotización?" />
-    case "duplicate": return <Duplicate onClose={onClose} order={order} />
     case "labels": return <LinesGrid mode="labels" order={order} />
     case "print": return <Print onClose={onClose} order={order} />
     case "monarch": return <LinesGrid mode="monarch" order={order} />
