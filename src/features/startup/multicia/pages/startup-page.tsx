@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { useNavigate, useSearchParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
@@ -11,9 +10,7 @@ import {
 } from "@/features/startup/multicia/logic"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/shared/ui/card"
-import { Input } from "@/shared/ui/input"
-import { Label } from "@/shared/ui/label"
+import { Card, CardContent, CardHeader } from "@/shared/ui/card"
 import {
   Table,
   TableBody,
@@ -23,16 +20,7 @@ import {
   TableRow,
 } from "@/shared/ui/table"
 
-const userFields = [
-  { label: "Identificación", type: "text" },
-  { label: "Nombre", type: "text" },
-  { label: "Clave", type: "password" },
-  { label: "Caduca", type: "text" },
-]
-
 export function StartupPage() {
-  const [showCompanies, setShowCompanies] = useState(false)
-
   return (
     <main className="grid min-h-svh place-items-center bg-muted/30 p-4">
       <div className="w-full max-w-lg">
@@ -40,27 +28,7 @@ export function StartupPage() {
           <img src="/favicon.svg" alt="" className="size-5" />
           TUVANSA ERP
         </div>
-        {showCompanies ? (
-          <CompanySelection />
-        ) : (
-          <Card aria-labelledby="startup-title">
-            <CardHeader className="border-b">
-              <h1 id="startup-title" className="text-sm font-semibold">Usuario</h1>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {userFields.map(({ label, type }, index) => (
-                <div key={label} className="grid gap-1">
-                  <Label htmlFor={`startup-user-${index}`}>{label}</Label>
-                  <Input id={`startup-user-${index}`} type={type} disabled />
-                </div>
-              ))}
-            </CardContent>
-            <CardFooter className="justify-end gap-2 border-t">
-              <Button onClick={() => setShowCompanies(true)}>Cancelar</Button>
-              <Button variant="outline" disabled>Aceptar</Button>
-            </CardFooter>
-          </Card>
-        )}
+        <CompanySelection />
       </div>
     </main>
   )

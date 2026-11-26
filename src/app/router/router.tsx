@@ -22,13 +22,15 @@ export const router = createBrowserRouter([
     path: paths.startup,
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RouteLoadingFallback,
+    middleware: [requireWebSession],
+    loader: () => null,
     lazy: () => import("@/features/startup/multicia/startup-route"),
   },
   {
     Component: ErpLayout,
     ErrorBoundary: RootErrorBoundary,
     HydrateFallback: RouteLoadingFallback,
-    middleware: [requireCompanyContext, requireWebSession],
+    middleware: [requireWebSession, requireCompanyContext],
     loader: () => null,
     children: [
       {

@@ -23,5 +23,6 @@ export function directoryState(user: DirectoryUser) {
 }
 
 export function signInPath(destination: string) {
+  if (destination === paths.home) return paths.signIn
   return `${paths.signIn}?${new URLSearchParams({ volver: destination })}`
 }

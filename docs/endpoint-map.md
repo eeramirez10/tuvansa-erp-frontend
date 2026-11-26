@@ -2,16 +2,17 @@
 
 ## Inicio y MULTICIA
 
-`/inicio` muestra **Usuario**. **Cancelar** abre **Selección de multicía** y lee
-`GET /companies`. Elegir **MEXICO** valida `GET /companies/1/context` e inicia el
-ERP. El alias se activa con clic o teclado y la fila también admite doble clic.
-Las demás compañías aparecen deshabilitadas.
+Sin sesión, la raíz del ERP abre `/ingresar`. Tras iniciar sesión, `/inicio`
+muestra **Selección de multicía** y lee `GET /companies`. Elegir **MEXICO**
+valida `GET /companies/1/context`, carga el almacén 01 y abre Inventarios por
+defecto. El alias se activa con clic o teclado y la fila también admite doble
+clic. Las demás compañías aparecen deshabilitadas.
 
 La pestaña guarda el ID en `sessionStorage`. Al recargar, el router valida el
 contexto antes de ejecutar los loaders del ERP. Sin contexto válido redirige a
-`/inicio` y conserva la ruta solicitada con sus parámetros y fragmento para
-volver después de elegir México. Los cuatro campos de Usuario y **Aceptar**
-están inactivos durante esta fase.
+`/inicio` y conserva el destino de los enlaces directos, incluidos sus
+parámetros y fragmento. Cerrar sesión borra la selección de esa pestaña y
+regresa a `/ingresar`.
 
 ## Proscai · Datos Generales · Usuarios
 

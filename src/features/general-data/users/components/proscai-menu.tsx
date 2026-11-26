@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 import { paths } from "@/app/router/paths"
+import { companySessionKey } from "@/features/startup/multicia/logic"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { isTypingOrInDialog } from "@/shared/ui/erp-shortcuts"
 import { Button } from "@/shared/ui/button"
@@ -17,10 +18,11 @@ export function ProscaiMenu() {
   const logout = useMutation({
     mutationFn: endWebSession,
     onSuccess: async () => {
+      sessionStorage.removeItem(companySessionKey)
       await queryClient.cancelQueries()
       queryClient.clear()
       queryClient.setQueryData(webSessionKey, null)
-      void navigate(signInPath(location.pathname + location.search + location.hash), { replace: true })
+      void navigate(paths.signIn, { replace: true })
     },
   })
   useEffect(() => {

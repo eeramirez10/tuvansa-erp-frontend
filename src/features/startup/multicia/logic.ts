@@ -19,18 +19,21 @@ export const companyContextQueryOptions = (id: number) => queryOptions({
 
 export function startupPathFor(url: URL) {
   const destination = url.pathname + url.search + url.hash
-  if (destination === paths.home) return paths.startup
+  if (destination === paths.home || destination === paths.inventoryProducts) return paths.startup
   const params = new URLSearchParams({ volver: destination })
   return `${paths.startup}?${params}`
 }
 
 export function getStartupDestination(value: string | null, origin: string) {
-  if (!value?.startsWith("/") || value.startsWith("//")) return paths.home
+  if (!value?.startsWith("/") || value.startsWith("//")) return paths.inventoryProducts
 
   const url = new URL(value, origin)
-  if (url.origin !== origin || !url.pathname.startsWith("/")) return paths.home
-  if (url.pathname.replace(/\/+$/, "").toLowerCase() === paths.startup) return paths.home
-  if (url.pathname.startsWith("//")) return paths.home
+  if (url.origin !== origin || url.pathname.startsWith("//")) return paths.inventoryProducts
+
+  const pathname = url.pathname.replace(/\/+$/, "").toLowerCase() || "/"
+  if ([paths.home, paths.startup, paths.signIn, paths.activateAccount].some(path => path === pathname)) {
+    return paths.inventoryProducts
+  }
 
   return url.pathname + url.search + url.hash
 }

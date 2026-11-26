@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router"
 import { z } from "zod"
 import { paths } from "@/app/router/paths"
-import { getStartupDestination } from "@/features/startup/multicia/logic"
+import { companySessionKey, getStartupDestination, startupPathFor } from "@/features/startup/multicia/logic"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -47,10 +47,13 @@ export function AccountForm({ activating = false }: { activating?: boolean }) {
         return
       }
       const session = await startWebSession(values.identification, values.password)
+      sessionStorage.removeItem(companySessionKey)
       await queryClient.cancelQueries()
       queryClient.clear()
       queryClient.setQueryData(webSessionKey, session)
-      void navigate(getStartupDestination(params.get("volver"), window.location.origin), { replace: true })
+      const { origin } = window.location
+      const destination = getStartupDestination(params.get("volver"), origin)
+      void navigate(startupPathFor(new URL(destination, origin)), { replace: true })
     } catch (error) {
       setFailure(getApiErrorMessage(error))
     } finally {
