@@ -354,7 +354,7 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 | Pedidos / Imprimir | Rango de folios, formato, cantidades, copias y destino | GET `/sales/orders/:id`, `/by-number/:folio` y `/:id/next` | Fichas vigentes con permisos de lectura | order-print-dialog.tsx |
 | Pedido y Lista de empaque | Cargar comentarios y datos de entrega | GET `/sales/orders/:id/actions/comments` cuando el origen es MySQL | Comentarios, dirección y contacto disponibles | order-print-dialog.tsx |
 | Pedido | Cargar los datos comerciales del cliente | GET `/accounts-receivable/clients/:id` | RFC, domicilio y datos de contacto disponibles | order-print-dialog.tsx |
-| Imprimir / OK | Pantalla abre el PDF en una ventana del navegador. Impresora abre la impresión del navegador | Usa los datos consultados con el rango y el formato seleccionados | Pedido, Lista de empaque o Resumen en formato carta | order-print-dialog.tsx, order-print-document.ts, order-print-pdf.ts |
+| Imprimir / OK | Pantalla abre el PDF en un modal del ERP. Impresora abre la impresión del navegador | Usa los datos consultados con el rango y el formato seleccionados | Pedido, Lista de empaque o Resumen en formato carta | order-print-dialog.tsx, order-print-document.ts, order-print-pdf.ts |
 | Pedidos / Duplicar | Revisar la copia al 100 % | GET `/sales/orders/:id/actions/duplicate` | pedidos, vista previa y revisión | order-duplicate-dialog.tsx |
 | Duplicar / OK | Guardar una copia como Pedido | POST `/sales/orders/:id/actions/duplicate` | duplicateOrder | Folio P, una copia por clave de confirmación |
 | Captura / Cliente | Enter o salir del campo | GET `/sales/orders/capture/customers/:code` | sales/orders/capture/customer/code | order-capture-service.ts |

@@ -75,7 +75,7 @@ function reportContent(section: OrderPrintSection, pageBreak: boolean): Content[
   ]
 }
 
-export async function showOrderPrintPdf(target: Window, sections: OrderPrintSection[], copies: number) {
+export function createOrderPrintPdf(sections: OrderPrintSection[], copies: number) {
   const definition: TDocumentDefinitions = {
     pageSize: "LETTER", pageMargins: [40, 40, 40, 40],
     defaultStyle: { font: "Roboto", fontSize: 10 },
@@ -83,19 +83,5 @@ export async function showOrderPrintPdf(target: Window, sections: OrderPrintSect
     content: Array.from({ length: copies }, () => sections).flat()
       .flatMap((section, index) => reportContent(section, index > 0)),
   }
-  const blob = await pdfMake.createPdf(definition).getBlob()
-  if (target.closed) return
-  const url = URL.createObjectURL(blob)
-  try {
-    target.location.replace(url)
-  } catch (error) {
-    URL.revokeObjectURL(url)
-    throw error
-  }
-  const closeWatcher = window.setInterval(() => {
-    if (target.closed) {
-      URL.revokeObjectURL(url)
-      window.clearInterval(closeWatcher)
-    }
-  }, 1000)
+  return pdfMake.createPdf(definition).getBlob()
 }
