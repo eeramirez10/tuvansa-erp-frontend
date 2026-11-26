@@ -58,7 +58,8 @@ export function OrderDuplicateDialog({ order, onOpenChange, onSaved }: Props) {
             <div><dt>Sucursal</dt><dd>{data.summary.branch}</dd></div>
             <div><dt>Agente</dt><dd>{data.summary.agent}</dd></div>
           </dl>
-          <ErpDataTableViewport className="max-h-56">
+          {data.items.length === 0 && <p className="text-sm">La copia se creará sin partidas. El origen no tiene cantidades para copiar.</p>}
+          {data.items.length > 0 && <ErpDataTableViewport className="max-h-56">
             <Table>
               <TableHeader><TableRow>
                 <TableHead>Código</TableHead><TableHead>Descripción</TableHead>
@@ -69,7 +70,7 @@ export function OrderDuplicateDialog({ order, onOpenChange, onSaved }: Props) {
                 <TableCell className="text-right">{line.quantity}</TableCell><TableCell>{line.unit}</TableCell>
               </TableRow>)}</TableBody>
             </Table>
-          </ErpDataTableViewport>
+          </ErpDataTableViewport>}
           <p className="text-right text-xs font-medium">Total {total} {data.summary.currency}</p>
         </>}
         <footer className="flex justify-end gap-2">
