@@ -45,6 +45,32 @@ export async function getAdjacentOrder(orderId: number, direction: "previous" | 
   const response = await apiClient.get<ItemResponse<Order | null>>(`/sales/orders/${orderId}/${direction}`)
   return response.data.data
 }
+export async function getOrdersForPrint(current: Pick<Order, "id" | "number">, from: string, to: string) {
+  const lower = from.trim().toUpperCase()
+  const upper = to.trim().toUpperCase()
+  if (!lower || !upper || lower.localeCompare(upper, "en") > 0) {
+    throw new Error("Indica un rango válido de folios.")
+  }
+  const lookup = (number: string) => number === current.number.toUpperCase()
+    ? getOrder(current.id) : getOrderByNumber(number)
+
+  const first = await lookup(lower)
+  if (lower === upper) return [first]
+  const last = await lookup(upper)
+  const orders = [first]
+  const seen = new Set([first.id])
+  let order = first
+  while (order.id !== last.id) {
+    const next = await getAdjacentOrder(order.id, "next")
+    if (!next || seen.has(next.id) || next.number.toUpperCase().localeCompare(upper, "en") > 0) {
+      throw new Error("El rango de pedidos cambió. Vuelve a consultar los folios.")
+    }
+    orders.push(next)
+    seen.add(next.id)
+    order = next
+  }
+  return orders
+}
 export async function getOrderPanel(orderId: number, key: OrderPanelKey, signal?: AbortSignal) {
   const response = await apiClient.get<ItemResponse<OrderPanel>>(
     `/sales/orders/${orderId}/${panelPaths[key]}`, { signal },

@@ -63,3 +63,11 @@ Las lecturas ya no reutilizan la restricción de alta exclusiva de México: resp
 El campo está en components/order-product-code-input.tsx y las sugerencias usan el endpoint existente de coincidencias. Su lista se renderiza sobre las ventanas ERP y conserva las proporciones de los inputs. Las ventanas de búsqueda continúan siendo independientes, movibles y al frente.
 
 Verificación local en Chromium con datos y respuestas HTTP simuladas: sugerencias, teclado, desconocido que abre buscador, búsqueda por descripción/IEAN, doble clic que agrega, Tab y regreso a Código, bloqueo de precio bajo costo, almacén 01 y ausencia de solicitudes de escritura. No se generó un pedido real. Evidencia excluida de Git en el backend: captures/ui/new-version/order-product-suggestions/.
+
+## Imprimir pedido
+
+En **Acciones → Imprimir**, **De la** y **A la** se inicializan con el folio abierto. Cambia los extremos para incluir un rango de folios existentes. El primer grupo elige **Pedido**, **Lista de empaque** o **Resumen**. El segundo elige la cantidad pedida, **Pedido-surtido** (restante) o **Asignado**. El resumen agrupa las cantidades por unidad para evitar sumar unidades distintas. La lista de empaque muestra los datos de entrega disponibles y las cantidades.
+
+**Pantalla** muestra la vista previa al pulsar OK. **Impresora** abre directamente el diálogo del navegador con las copias preparadas. El filtro `1` incluye todas las partidas. También admite `0`, código exacto mediante `ICOD = 'código'` o una comparación con `PLCANT`, `PLSURT` o `PLASIGNADO`.
+
+La captura de Omnis y la biblioteca de pruebas confirman los dos grupos de opciones y el campo de filtro `MEMFILQUERY`. El catálogo mexicano vincula Pedido y Cotización con `QTUVANSA001`. El diseño de salida web se construye con las fichas vigentes. El cotejo del PDF nativo sigue pendiente.
