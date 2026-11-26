@@ -3,6 +3,8 @@ import { useState } from "react"
 import { orderSearchQueryOptions } from "@/features/sales/orders/logic"
 import type { OrderSummary } from "@/features/sales/orders/model"
 import type { OrderSearchCriteria } from "@/features/sales/orders/services/order-service"
+import { getApiErrorMessage } from "@/shared/api/api-error"
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
 import { ErpDataDialog, ErpDataDialogBody, ErpDataTableViewport } from "@/shared/ui/erp-data-dialog"
 import { Input } from "@/shared/ui/input"
@@ -117,6 +119,12 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
           </div>
         </form>
 
+        {result.isError && <Alert variant="destructive">
+          <AlertTitle>No fue posible buscar pedidos</AlertTitle>
+          <AlertDescription>{getApiErrorMessage(result.error)}</AlertDescription>
+          <Button size="xs" variant="outline" disabled={result.isFetching} onClick={() => void result.refetch()}>Reintentar</Button>
+        </Alert>}
+
         <ErpDataTableViewport className="relative h-[24rem]" axes="none">
           <Table
             className="min-w-[760px] text-[9px]"
@@ -148,7 +156,7 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
               ))}
             </TableBody>
           </Table>
-          {submitted !== null && !result.isFetching && result.data?.data.length === 0 && <div className="pointer-events-none absolute inset-0 grid place-items-center pb-4 text-muted-foreground">No se encontraron pedidos.</div>}
+          {submitted !== null && !result.isFetching && !result.isError && result.data?.data.length === 0 && <div className="pointer-events-none absolute inset-0 grid place-items-center pb-4 text-muted-foreground">No se encontraron pedidos.</div>}
         </ErpDataTableViewport>
 
         <footer className="flex items-center justify-between gap-1">
