@@ -36,7 +36,7 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
   const [alternate, setAlternate] = useState<CaptureProductMatch | null>(null)
   const [alternatesFor, setAlternatesFor] = useState<CaptureProductMatch | null>(null)
   const [familiesOpen, setFamiliesOpen] = useState(false)
-  const result = useQuery({ ...captureProductMatchesQuery(criteria, warehouse), enabled: alternate === null && Boolean(criteria.code || criteria.description || criteria.supplierCode || criteria.familyPattern || criteria.exactCode), retry:false })
+  const result = useQuery({ ...captureProductMatchesQuery(criteria, warehouse), enabled: alternate === null && Boolean(criteria.code || criteria.description || criteria.supplierCode || criteria.familyPattern || criteria.exactCode || criteria.codePrefix), retry:false })
   const matches = alternate ? [alternate] : result.data ?? []
   const selected = matches.find(match => match.id === selectedId) ?? matches[0] ?? null
   const childOpen = alternatesFor !== null || familiesOpen
@@ -81,11 +81,11 @@ export function OrderProductMatchesDialog({ initialCode, warehouse, onOpenChange
         setAlternatesFor(null)
       }} /></DesktopWindowIdentity>}
     {familiesOpen && <DesktopWindowIdentity id="orders:capture:product-families">
-      <OrderProductFamiliesDialog onClose={() => setFamiliesOpen(false)} onApply={(familyPattern, exactCode) => {
+      <OrderProductFamiliesDialog onClose={() => setFamiliesOpen(false)} onApply={(familyPattern, calculation) => {
         setFields({ code: "", description: "", supplierCode: "" })
         setSelectedId(null)
         setAlternate(null)
-        setCriteria({ familyPattern, exactCode })
+        setCriteria({ familyPattern, ...calculation })
         setFamiliesOpen(false)
       }} />
     </DesktopWindowIdentity>}

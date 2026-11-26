@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
-import { captureProductFamiliesQuery } from "@/features/sales/orders/capture-logic"
-import type { CaptureProductFamily } from "@/features/sales/orders/capture-model"
+import { captureProductFamiliesQuery, parseCaptureFamilyCalculation } from "@/features/sales/orders/capture-logic"
+import type { CaptureFamilyCalculation, CaptureProductFamily } from "@/features/sales/orders/capture-model"
 import { getApiErrorMessage } from "@/shared/api/api-error"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Button } from "@/shared/ui/button"
@@ -24,15 +24,13 @@ function familyPattern(groups: CaptureProductFamily[], selected: FamilyChoice[])
 
 export function OrderProductFamiliesDialog({ onClose, onApply }: {
   onClose: () => void
-  onApply: (pattern: string, exactCode?: string) => void
+  onApply: (pattern: string, calculation: CaptureFamilyCalculation) => void
 }) {
   const families = useQuery(captureProductFamiliesQuery())
   const [selected, setSelected] = useState<FamilyChoice[]>([])
   const [calculation, setCalculation] = useState("1")
   const groups = families.data ?? []
-  const expression = calculation.trim()
-  const exactCode = /^ICOD\s*=\s*'([^']{1,13})'$/i.exec(expression)?.[1]?.trim()
-  const validCalculation = !expression || expression === "1" || Boolean(exactCode)
+  const filter = parseCaptureFamilyCalculation(calculation)
   return (
     <ErpDataDialog defaultWidth={510} description="Filtrar los productos por familia en el almacén activo"
       onOpenChange={onClose} title="Familias" tone="sales">
@@ -41,7 +39,7 @@ export function OrderProductFamiliesDialog({ onClose, onApply }: {
         {families.isError && <Alert variant="destructive"><AlertDescription>{getApiErrorMessage(families.error)}</AlertDescription></Alert>}
         <form className="grid gap-2" onSubmit={(event) => {
           event.preventDefault()
-          if (groups.length && validCalculation) onApply(familyPattern(groups, selected), exactCode)
+          if (groups.length && filter) onApply(familyPattern(groups, selected), filter)
         }}>
           {groups.map(({ position, label, options }) => (
             <label className="grid grid-cols-[8rem_1fr] items-center gap-1" key={position}>{label}
@@ -62,13 +60,13 @@ export function OrderProductFamiliesDialog({ onClose, onApply }: {
           ))}
           <label className="grid grid-cols-[8rem_1fr] items-center gap-1">
             Cálculo por código
-            <Input aria-invalid={!validCalculation} className="h-6" maxLength={32}
+            <Input aria-invalid={!filter} className="h-6" maxLength={64}
               onChange={event => setCalculation(event.target.value)} value={calculation} />
           </label>
-          {!validCalculation && <p className="text-destructive" role="alert">Usa un código exacto, por ejemplo ICOD='01201603', o 1 para quitar el filtro.</p>}
+          {!filter && <p className="text-destructive" role="alert">Usa ICOD='01201603', un prefijo como mid(ICOD,1,7)='0120160', o 1. La longitud debe coincidir con el prefijo.</p>}
           <footer className="flex justify-end gap-1">
             <Button onClick={onClose} type="button" size="sm" variant="outline">Cancelar</Button>
-            <Button disabled={groups.length === 0 || families.isFetching || !validCalculation} type="submit" size="sm">OK</Button>
+            <Button disabled={groups.length === 0 || families.isFetching || !filter} type="submit" size="sm">OK</Button>
           </footer>
         </form>
       </ErpDataDialogBody>

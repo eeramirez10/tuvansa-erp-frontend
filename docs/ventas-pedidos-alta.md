@@ -29,9 +29,10 @@ asignado o con surtido conserva la autorización. **Comentarios → Autorizó**
 muestra el usuario que dio la última autorización.
 
 En **Encuentra producto → Familias**, **Cálculo por código** permite usar
-`ICOD='01201603'` junto con los clasificadores elegidos. Usa `1` para
-quitar el filtro de código. Al elegir un resultado, vuelve a la captura
-en el almacén del pedido.
+`ICOD='01201603'` para un código exacto o `mid(ICOD,1,7)='0120160'`
+para un prefijo. La longitud indicada debe coincidir con la del prefijo.
+El cálculo se combina con los clasificadores elegidos y el almacén del
+pedido. Usa `1` para quitar el filtro de código.
 
 La ficha central de Pedido conserva la distribución observada en PROSCAI: ocho bandas de ancho desigual en el primer renglón (Pedido, Pedido cliente, Carrito, Status., Surtido, Anticipo, Canal y Sucursal), Cliente y Nombre ocupan el bloque izquierdo del segundo, y Fecha/Desde/Vence/Agt./Plazo/Almacén forman el tercero. La tabla mantiene las proporciones visibles de Producto y Descripción, seguida por cantidades e importes; abajo, Totales ocupa cerca de un tercio del ancho e Importes el espacio restante. Carrito, Anticipo, Canal y la primera Sucursal permanecen visibles pero vacíos porque el contrato HTTP aún no expone esos valores.
 

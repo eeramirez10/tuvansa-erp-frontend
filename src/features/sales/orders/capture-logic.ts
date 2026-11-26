@@ -1,6 +1,6 @@
 import { normalizeOrderWarehouse } from "@/features/sales/orders/order-warehouse"
 import { queryOptions } from "@tanstack/react-query"
-import type { CaptureCustomerSearchCriteria, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
+import type { CaptureCustomerSearchCriteria, CaptureFamilyCalculation, CaptureProductSearchCriteria } from "@/features/sales/orders/capture-model"
 import { orderKeys } from "@/features/sales/orders/logic"
 import { getCaptureCustomer, getCaptureOptions, getCaptureProduct, getCaptureProductFamilies, searchCaptureCustomers, searchCaptureProducts } from "@/features/sales/orders/services/order-capture-service"
 
@@ -13,8 +13,21 @@ export const captureProductQuery = (code: string, warehouse: string, typeCode: s
 }
 export const captureProductMatchesQuery = (criteria: CaptureProductSearchCriteria, warehouse: string) => {
   const warehouseCode = normalizeOrderWarehouse(warehouse)
-  return queryOptions({ queryKey: [...orderKeys.all, "capture", "product-matches", warehouseCode, criteria.code ?? "", criteria.description ?? "", criteria.supplierCode ?? "", criteria.familyPattern ?? "", criteria.exactCode ?? ""], queryFn: ({signal}) => searchCaptureProducts(criteria, warehouseCode, signal), staleTime: 0 })
+  return queryOptions({ queryKey: [...orderKeys.all, "capture", "product-matches", warehouseCode, criteria.code ?? "", criteria.description ?? "", criteria.supplierCode ?? "", criteria.familyPattern ?? "", criteria.exactCode ?? "", criteria.codePrefix ?? ""], queryFn: ({signal}) => searchCaptureProducts(criteria, warehouseCode, signal), staleTime: 0 })
 }
+
+export function parseCaptureFamilyCalculation(value: string): CaptureFamilyCalculation | null {
+  const expression = value.trim()
+  if (!expression || expression === "1") return {}
+  const exactCode = /^ICOD\s*=\s*'([^']{1,13})'$/i.exec(expression)?.[1]?.trim()
+  if (exactCode) return { exactCode }
+
+  const prefixExpression = /^mid\s*\(\s*ICOD\s*,\s*1\s*,\s*(\d{1,2})\s*\)\s*=\s*'([^']{1,13})'$/i.exec(expression)
+  if (!prefixExpression) return null
+  const [, length, codePrefix] = prefixExpression
+  return codePrefix.trim() === codePrefix && codePrefix.length === Number(length) ? { codePrefix } : null
+}
+
 export const captureProductFamiliesQuery = () => queryOptions({
   queryKey: [...orderKeys.all, "capture", "product-families"],
   queryFn: ({ signal }) => getCaptureProductFamilies(signal),

@@ -37,7 +37,9 @@ export interface CaptureProductSearchCriteria {
   supplierCode?: string
   familyPattern?: string
   exactCode?: string
+  codePrefix?: string
 }
+export type CaptureFamilyCalculation = Pick<CaptureProductSearchCriteria, "exactCode" | "codePrefix">
 export interface CaptureProductFamily {
   position: number
   label: string
