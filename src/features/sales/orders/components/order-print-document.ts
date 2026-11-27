@@ -1,11 +1,11 @@
 import type { Client } from "@/features/accounts-receivable/clients/model"
+import { orderDocumentTitles } from "@/features/sales/orders/constants"
 import type { Order } from "@/features/sales/orders/model"
 import { orderPrintFilter, printQuantities, type OrderPrintOptions } from "./order-print-settings"
 
 const price = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 5 })
 const money = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const quantity = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 3 })
-const documentTitles = { order: "Pedido", quote: "Cotización", unknown: "Documento de venta" } as const
 
 export type OrderPrintEntry = {
   order: Order
@@ -50,7 +50,7 @@ function createSection(
   options: OrderPrintOptions, filter: ReturnType<typeof orderPrintFilter>, company: string,
 ): OrderPrintSection {
   const { format, quantities } = options
-  const title = `${documentTitles[order.documentKind]} ${order.number}`
+  const title = `${orderDocumentTitles[order.documentKind]} ${order.number}`
   const legacy = order.storage?.legacyId !== null && !order.captureDetails
   const localCurrency = order.captureDetails?.collectionCurrency === "DOLARES" || (!order.captureDetails && order.currencyId === 1)
     ? "USD" : "MXN"

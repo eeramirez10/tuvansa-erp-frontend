@@ -1,5 +1,11 @@
 import type { OrderPanelDefinition } from "@/features/sales/orders/model"
 
+export const orderDocumentTitles = {
+  order: "Pedido",
+  quote: "Cotización",
+  unknown: "Documento de venta",
+} as const
+
 export const orderActionPanels: readonly OrderPanelDefinition[] = [
   { key: "assign-all", label: "Asignar todo", section: "actions" },
   { key: "authorize", label: "Autorizar", section: "actions" },

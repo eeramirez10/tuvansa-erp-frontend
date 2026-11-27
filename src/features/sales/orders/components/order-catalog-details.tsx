@@ -1,4 +1,5 @@
 import { useId } from "react"
+import { orderDocumentTitles } from "@/features/sales/orders/constants"
 import type { Order } from "@/features/sales/orders/model"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Checkbox } from "@/shared/ui/checkbox"
@@ -29,7 +30,7 @@ export function OrderCatalogDetails({ order }: { order: Order }) {
     <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card className="gap-0 py-0" size="sm">
         <CardHeader className="border-b bg-module-sales/10 py-1">
-          <CardTitle className="text-module-sales">Pedido</CardTitle>
+          <CardTitle className="text-module-sales">{orderDocumentTitles[order.documentKind]}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 px-2 py-1">
           <div className="grid grid-cols-2 gap-x-2 gap-y-1 sm:grid-cols-4 lg:grid-cols-[0.75fr_1.25fr_1.25fr_0.6fr_0.55fr_0.62fr_0.66fr_1fr]">

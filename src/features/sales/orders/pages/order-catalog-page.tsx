@@ -17,7 +17,7 @@ import { OrderPanelDialog } from "@/features/sales/orders/components/order-panel
 import { OrderSearchDialog } from "@/features/sales/orders/components/order-search-dialog"
 import { OrderPanelButtons } from "@/features/sales/orders/components/order-side-panels"
 import { OrderToolbar } from "@/features/sales/orders/components/order-toolbar"
-import { orderActionPanels, orderSecondaryActionPanels } from "@/features/sales/orders/constants"
+import { orderActionPanels, orderDocumentTitles, orderSecondaryActionPanels } from "@/features/sales/orders/constants"
 import { orderKeys, orderQueryOptions } from "@/features/sales/orders/logic"
 import type { Order, OrderPanelDefinition } from "@/features/sales/orders/model"
 import type { CaptureCustomerMatch, CaptureProductMatch } from "@/features/sales/orders/capture-model"
@@ -43,6 +43,7 @@ export function OrderCatalogPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [conversionOpen, setConversionOpen] = useState(false)
   const [assignmentOpen, setAssignmentOpen] = useState(false)
   const [customerSearch, setCustomerSearch] = useState<CustomerSearchWindow | null>(null)
   const [productSearch, setProductSearch] = useState<ProductSearchWindow | null>(null)
@@ -69,11 +70,20 @@ export function OrderCatalogPage() {
       setNotice({ kind: "error", title: "Autorización de pedido", message: getApiErrorMessage(error) })
     },
   })
-  const conversion = useMutation({ mutationFn: () => toggleOrderQuote(order.id), onSuccess: async next => {
-    await queryClient.invalidateQueries({ queryKey: orderKeys.all })
-    await queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
-    openOrder(next); setNotice({ kind: "success", title: "Cotiz", message: `${next.number} convertido a ${next.documentKind === "order" ? "Pedido" : "Cotización"}.` })
-  }, onError: error => setNotice({ kind: "error", title: "No fue posible convertir", message: getApiErrorMessage(error) }) })
+  const conversion = useMutation({
+    mutationFn: () => toggleOrderQuote(order.id),
+    onSuccess: next => {
+      queryClient.setQueryData(orderKeys.detail(next.id), next)
+      setConversionOpen(false)
+      setNotice({ kind: "success", title: "Cotiz", message: `${next.number} convertido a ${orderDocumentTitles[next.documentKind]}.` })
+      void queryClient.invalidateQueries({ queryKey: orderKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ["inventories", "products"] })
+    },
+    onError: error => {
+      setConversionOpen(false)
+      setNotice({ kind: "error", title: "No fue posible convertir", message: getApiErrorMessage(error) })
+    },
+  })
   const openAssignment = () => {
     if (order.authorization !== "O.K.") { setWarning("Para asignar un pedido es necesario autorizarlo antes."); return }
     setAssignmentOpen(true)
@@ -84,7 +94,7 @@ export function OrderCatalogPage() {
     setFormMode("edit")
   }
   const selectPanel = (panel: OrderPanelDefinition) => {
-    if (panel.key === "quote-conversion") { if (!conversion.isPending) conversion.mutate(); return }
+    if (panel.key === "quote-conversion") { setConversionOpen(true); return }
     if (panel.key === "authorize") { if (!authorizing) authorize(); return }
     if (panel.key === "assign-all") { openAssignment(); return }
     openPanelWindow(`orders:${order.id}:${panel.key}`, { order, panel })
@@ -100,7 +110,7 @@ export function OrderCatalogPage() {
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (event.defaultPrevented || !event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || event.repeat ||
-        isTypingOrInDialog(event) || formMode || searchOpen || assignmentOpen || authorizing || deleteOpen || warning || panelWindows.length) return
+        isTypingOrInDialog(event) || formMode || searchOpen || assignmentOpen || authorizing || conversionOpen || deleteOpen || warning || panelWindows.length) return
       const key=event.key.toLowerCase()
       if (key === "a") { event.preventDefault(); authorize() }
       if (key === "p") {
@@ -111,7 +121,7 @@ export function OrderCatalogPage() {
     }
     window.addEventListener("keydown", shortcut)
     return () => window.removeEventListener("keydown", shortcut)
-  }, [assignmentOpen, authorize, authorizing, deleteOpen, formMode, order, panelWindows.length, searchOpen, warning])
+  }, [assignmentOpen, authorize, authorizing, conversionOpen, deleteOpen, formMode, order, panelWindows.length, searchOpen, warning])
   return (
     <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
       <OrderToolbar disabled={navigation.isPending || deletion.isPending || authorizing || conversion.isPending} onCreate={() => { setCustomerSearch(null); setProductSearch(null); setFormMode("create") }} onDelete={() => setDeleteOpen(true)} onEdit={openEdit} onNext={() => navigation.mutate("next")} onPrevious={() => navigation.mutate("previous")} onSearch={() => setSearchOpen(true)} />
@@ -133,6 +143,20 @@ export function OrderCatalogPage() {
         ? <OrderDuplicateDialog order={window.payload.order} onOpenChange={open => { if (!open) closePanelWindow(window.id) }}
             onSaved={saved => { closePanelWindow(window.id); setNotice({ kind: "success", title: "Pedido duplicado", message: saved.number }); openOrder(saved) }} />
         : <OrderPanelDialog onOpenChange={(open) => { if (!open) closePanelWindow(window.id) }} order={window.payload.order} panel={window.payload.panel} />}</DesktopWindowIdentity>)}
+      <AlertDialog open={conversionOpen} onOpenChange={open => { if (!conversion.isPending) setConversionOpen(open) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cotización</AlertDialogTitle>
+            <AlertDialogDescription>¿Desea convertir el pedido/cotización {order.number}?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={conversion.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={conversion.isPending} onClick={() => conversion.mutate()}>
+              {conversion.isPending && <Spinner />}OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogMedia><HugeiconsIcon icon={Delete01Icon} /></AlertDialogMedia><AlertDialogTitle>¿Eliminar el pedido {order.number}?</AlertDialogTitle><AlertDialogDescription>Se eliminarán el encabezado y sus partidas si no existen facturas ni cantidades surtidas.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction disabled={deletion.isPending} onClick={() => deletion.mutate()} variant="destructive">{deletion.isPending && <Spinner />}Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <AlertDialog open={warning !== null} onOpenChange={open => { if (!open) setWarning(null) }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Pedidos</AlertDialogTitle><AlertDialogDescription>{warning}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogAction onClick={() => setWarning(null)}>OK</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </section>
