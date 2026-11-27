@@ -382,6 +382,7 @@ function TicketInvoicePreview({ preview, result, unavailable, reason }: {
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         <Field label="Remisión de origen" value={result?.sourceNumber ?? preview.sourceNumber} />
         <Field label="Tipo de factura" value={preview.targetType} />
+        {!result && <Field label="Fecha de emisión" value={date(preview.issuedAt)} />}
         <Field label={`Total (${preview.currency})`} value={number(preview.total)} />
         <Field label={`Saldo (${preview.currency})`} value={number(preview.balance)} />
       </div>

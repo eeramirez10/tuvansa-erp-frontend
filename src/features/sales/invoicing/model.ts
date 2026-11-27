@@ -182,6 +182,7 @@ export type TicketConversionResult = {
 export type TicketConversion = {
   sourceNumber: string
   targetType: "FE"
+  issuedAt: string
   total: number
   balance: number
   currency: string
