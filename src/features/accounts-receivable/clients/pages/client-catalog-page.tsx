@@ -118,7 +118,7 @@ export function ClientCatalogPage() {
   }
 
   return (
-    <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
+    <section className="flex w-full min-w-0 flex-1 flex-col gap-2">
       <ClientToolbar
         disabled={controlsDisabled}
         hasClient={Boolean(client)}
@@ -139,7 +139,7 @@ export function ClientCatalogPage() {
       )}
 
       {activeCapture ? <ClientCatalogCapture client={activeCapture.client} onClose={() => setCapture(null)} onSaved={saved} />
-        : client ? <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
+        : client ? <div className="grid min-w-0 items-start gap-2 @min-[70rem]/erp:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="min-w-0">
           <ClientPanelButtons onSelect={(panel) => openPanelWindow(`clients:${client.id}:${panel.key}`, { client, panel })} panels={clientActionPanels} title="Acciones">
             <Button

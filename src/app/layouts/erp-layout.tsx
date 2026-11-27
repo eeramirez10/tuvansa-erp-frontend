@@ -12,8 +12,8 @@ export function ErpLayout() {
   const activeModule = getErpModuleForPath(pathname)
 
   return (
-    <div className="flex min-h-svh min-w-0 flex-col bg-muted/30">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+    <div className="flex min-h-svh w-full min-w-0 flex-col bg-muted/30">
+      <header className="top-0 z-10 min-w-0 border-b bg-background/95 backdrop-blur lg:sticky">
         <ProscaiMenu
           globalMenus={globalReportModules.map(moduleId => <ReportsMenu key={moduleId} moduleId={moduleId} />)}
           contextualMenus={activeModule && !globalReportModules.includes(activeModule)
@@ -22,7 +22,7 @@ export function ErpLayout() {
         />
         <ErpModuleNavigation />
       </header>
-      <main className="flex min-w-0 flex-1 flex-col p-2">
+      <main className="@container/erp flex w-full min-w-0 flex-1 flex-col p-2">
         <Outlet />
       </main>
       <DesktopWindowTaskbar />

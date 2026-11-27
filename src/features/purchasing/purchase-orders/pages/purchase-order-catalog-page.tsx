@@ -75,7 +75,7 @@ export function PurchaseOrderCatalogPage() {
   }
 
   return (
-    <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
+    <section className="grid w-full min-w-0 items-start gap-2 p-2 @min-[44rem]/erp:grid-cols-[9rem_minmax(0,1fr)]">
       <PurchaseOrderToolbar
         disabled={navigation.isPending}
         hasOrder={!!purchaseOrder}
@@ -123,6 +123,6 @@ export function PurchaseOrderCatalogPage() {
       {removalWindows.map((window) => <DesktopWindowIdentity id={window.id} key={window.id}><PurchaseOrderRemovalDialog
         id={window.payload} onClose={() => closeRemovalWindow(window.id)} onRemoved={(result) => onRemoved(result, window.id)}
       /></DesktopWindowIdentity>)}
-    </main>
+    </section>
   )
 }

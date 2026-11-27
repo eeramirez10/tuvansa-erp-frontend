@@ -102,7 +102,7 @@ export function ErpModuleRouteCard({ pathname }: ErpModuleRouteCardProps) {
     routeCards.find((candidate) => candidate.matches(pathname)) ?? fallbackCard
 
   return (
-    <div className="flex w-[260px] shrink-0 flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1">
       <Card
         className={cn(
           "h-20 w-full justify-center py-0 shadow-sm",
@@ -110,11 +110,11 @@ export function ErpModuleRouteCard({ pathname }: ErpModuleRouteCardProps) {
         )}
         size="sm"
       >
-        <CardContent className="flex h-full items-center justify-between gap-4 px-4">
+        <CardContent className="flex h-full items-center justify-between gap-2 px-4">
           <p className="text-lg/tight font-bold tracking-tight">
             {routeCard.title}
           </p>
-          <div className="flex items-center gap-2 rounded-md border border-current/20 bg-background/15 px-2 py-1.5">
+          <div className="flex shrink-0 items-center gap-2 rounded-md border border-current/20 bg-background/15 px-2 py-1.5">
             <span className="text-xs font-bold">{routeCard.abbreviation}</span>
             <HugeiconsIcon
               className="size-8"

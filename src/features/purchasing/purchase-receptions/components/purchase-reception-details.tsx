@@ -46,19 +46,19 @@ export function PurchaseReceptionDetails({ reception, onCancel, selectedLineId, 
   const expenseTaxes = reception.totals.expenseTaxes
   if (expenseTaxes) {
     return (
-      <div className="grid min-w-0 gap-2">
+      <div className="@container/receipt grid min-w-0 gap-2">
         <Card size="sm">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b bg-module-reception/15 py-1">
             <CardTitle>Gastos múltiples</CardTitle>
             {onCancel && <CancellationControl expense onOpen={onCancel} reception={reception} />}
           </CardHeader>
-          <CardContent className="grid grid-cols-12 gap-2 py-1">
-            <Field className="col-span-3" label="Documento" fieldValue={reception.number} />
-            <Field className="col-span-3" label="Referencia" fieldValue={reception.supplierReference} />
-            <Field className="col-span-3" label="Fecha" fieldValue={reception.dates.receivedAt} />
-            <Field className="col-span-3" label="Vence" fieldValue={reception.dates.dueAt} />
-            <Field className="col-span-3" label="Proveedor" fieldValue={reception.supplier.code} />
-            <Field className="col-span-9" label="Nombre" fieldValue={reception.supplier.name} />
+          <CardContent className="grid min-w-0 grid-cols-2 @min-[40rem]/receipt:grid-cols-12 gap-2 py-1">
+            <Field className="@min-[40rem]/receipt:col-span-3" label="Documento" fieldValue={reception.number} />
+            <Field className="@min-[40rem]/receipt:col-span-3" label="Referencia" fieldValue={reception.supplierReference} />
+            <Field className="@min-[40rem]/receipt:col-span-3" label="Fecha" fieldValue={reception.dates.receivedAt} />
+            <Field className="@min-[40rem]/receipt:col-span-3" label="Vence" fieldValue={reception.dates.dueAt} />
+            <Field className="@min-[40rem]/receipt:col-span-3" label="Proveedor" fieldValue={reception.supplier.code} />
+            <Field className="col-span-full @min-[40rem]/receipt:col-span-9" label="Nombre" fieldValue={reception.supplier.name} />
           </CardContent>
         </Card>
         <Card className="min-w-0" size="sm">
@@ -96,29 +96,29 @@ export function PurchaseReceptionDetails({ reception, onCancel, selectedLineId, 
     )
   }
   return (
-    <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
+    <div className="@container/receipt flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 border-b bg-module-reception/15 py-1">
           <CardTitle className="text-module-reception-foreground">Recepción</CardTitle>
           {onCancel && <CancellationControl onOpen={onCancel} reception={reception} />}
         </CardHeader>
-        <CardContent className="grid grid-cols-12 gap-x-2 gap-y-1 py-1">
-          <Field className="col-span-2" label="Documento" fieldValue={reception.number} />
-          <Field className="col-span-2" label="Pedido" fieldValue={reception.orderNumber} />
-          <Field className="col-span-2" label="Referencia" fieldValue={reception.supplierReference} />
+        <CardContent className="grid min-w-0 grid-cols-2 @min-[40rem]/receipt:grid-cols-12 gap-x-2 gap-y-1 py-1">
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Documento" fieldValue={reception.number} />
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Pedido" fieldValue={reception.orderNumber} />
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Referencia" fieldValue={reception.supplierReference} />
           {reception.pedimento ? <>
-            <Field className="col-span-3" label="No. Pedimento" fieldValue={reception.pedimento.number} />
-            <div className="col-span-3" />
-          </> : <div className="col-span-6" />}
-          <Field className="col-span-2" label="Proveedor" fieldValue={reception.supplier.code} />
-          <Field className="col-span-5" label="Nombre" fieldValue={reception.supplier.name} />
-          <Field className="col-span-2" label="Departamento" fieldValue={reception.department} />
-          <div className="col-span-3" />
-          <Field className="col-span-2" label="Fecha" fieldValue={reception.dates.receivedAt} />
-          <Field className="col-span-2" label="Vence" fieldValue={reception.dates.dueAt} />
-          <Field className="col-span-1" label="Retraso" fieldValue={reception.delayDays} numeric />
-          <Field className="col-span-2" label="Almacén" fieldValue={reception.warehouse} />
-          <Field className="col-span-2" label="Sucursal" fieldValue={reception.branch} />
+            <Field className="col-span-full @min-[40rem]/receipt:col-span-3" label="No. Pedimento" fieldValue={reception.pedimento.number} />
+            <div className="hidden @min-[40rem]/receipt:block @min-[40rem]/receipt:col-span-3" />
+          </> : <div className="hidden @min-[40rem]/receipt:block @min-[40rem]/receipt:col-span-6" />}
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Proveedor" fieldValue={reception.supplier.code} />
+          <Field className="col-span-full @min-[40rem]/receipt:col-span-5" label="Nombre" fieldValue={reception.supplier.name} />
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Departamento" fieldValue={reception.department} />
+          <div className="hidden @min-[40rem]/receipt:block @min-[40rem]/receipt:col-span-3" />
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Fecha" fieldValue={reception.dates.receivedAt} />
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Vence" fieldValue={reception.dates.dueAt} />
+          <Field className="@min-[40rem]/receipt:col-span-1" label="Retraso" fieldValue={reception.delayDays} numeric />
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Almacén" fieldValue={reception.warehouse} />
+          <Field className="@min-[40rem]/receipt:col-span-2" label="Sucursal" fieldValue={reception.branch} />
         </CardContent>
       </Card>
 
@@ -159,7 +159,7 @@ export function PurchaseReceptionDetails({ reception, onCancel, selectedLineId, 
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-[12rem_minmax(0,1fr)] gap-2">
+      <div className="grid min-w-0 gap-2 @min-[40rem]/receipt:grid-cols-[12rem_minmax(0,1fr)]">
         <Card size="sm">
           <CardHeader className="border-b bg-module-reception/15 py-1"><CardTitle>Totales</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-3 gap-1 py-1">
@@ -171,7 +171,7 @@ export function PurchaseReceptionDetails({ reception, onCancel, selectedLineId, 
         </Card>
         <Card size="sm">
           <CardHeader className="border-b bg-module-reception/15 py-1"><CardTitle>Importes</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-6 gap-1 py-1">
+          <CardContent className="grid grid-cols-2 gap-1 py-1 @min-[32rem]/receipt:grid-cols-4 @min-[40rem]/receipt:grid-cols-6">
             <Field className="col-span-2" label="Subtotal" fieldValue={number.format(reception.totals.subtotal)} numeric />
             <Field label="Descuentos" fieldValue={number.format(reception.totals.discount)} numeric />
             <Field label="Fletes" fieldValue={number.format(reception.totals.freight)} numeric />

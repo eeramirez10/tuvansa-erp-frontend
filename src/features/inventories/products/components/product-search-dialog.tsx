@@ -58,16 +58,13 @@ export function ProductSearchDialog({
       title="Encuentra producto"
     >
       <ErpDataDialogBody>
-        <div
-          className="grid gap-0.5"
-          style={{ gridTemplateColumns: "7rem 9rem minmax(0, 1fr)" }}
-        >
-          <label className="grid gap-0.5">
+        <div className="grid min-w-0 grid-cols-2 gap-0.5 @min-[26rem]/dialog:grid-cols-[7rem_9rem_minmax(0,1fr)]">
+          <label className="grid min-w-0 gap-0.5">
             <span className="px-1">Código</span>
             <input
               autoFocus
               autoComplete="off"
-              className="h-5 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
+              className="h-5 w-full min-w-0 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
               onChange={(event) => {
                 setCode(event.target.value)
                 setSelectedProductId(null)
@@ -80,11 +77,11 @@ export function ProductSearchDialog({
               value={code}
             />
           </label>
-          <label className="grid gap-0.5">
+          <label className="grid min-w-0 gap-0.5">
             <span className="px-1">EAN</span>
             <input
               autoComplete="off"
-              className="h-5 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
+              className="h-5 w-full min-w-0 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
               name="inventory-product-ean-search"
               onChange={(event) => {
                 const normalizedEan = event.target.value.toUpperCase()
@@ -98,10 +95,10 @@ export function ProductSearchDialog({
               value={ean}
             />
           </label>
-          <label className="grid gap-0.5">
+          <label className="col-span-full grid min-w-0 gap-0.5 @min-[26rem]/dialog:col-span-1">
             <span className="px-1">Descripción</span>
             <input
-              className="h-5 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
+              className="h-5 w-full min-w-0 border border-input bg-background px-1 text-[9px] shadow-inner outline-none focus:border-module-inventory"
               autoComplete="off"
               onChange={(event) => {
                 setDescription(event.target.value)
@@ -170,7 +167,7 @@ export function ProductSearchDialog({
           </table>
         </ErpDataTableViewport>
 
-        <footer className="mt-1 flex items-center justify-between">
+        <footer className="mt-1 flex flex-wrap items-center justify-between gap-1">
           <Button className={compactButtonClass} type="button" variant="outline">
             ✓ Familias
           </Button>

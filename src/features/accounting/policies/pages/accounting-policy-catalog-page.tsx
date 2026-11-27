@@ -67,7 +67,7 @@ export function AccountingPolicyCatalogPage() {
   const busy = Boolean(capture || transition) || navigation.isPending
   const manual = policy?.manual
   return (
-    <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
+    <section className="grid w-full min-w-0 items-start gap-2 p-2 @min-[44rem]/erp:grid-cols-[9rem_minmax(0,1fr)]">
       <AccountingPolicyToolbar canDelete={Boolean(manual && !manual.canceled)} canEdit={Boolean(manual && !manual.canceled && !policy?.applied)}
         disabled={busy} hasPolicy={Boolean(policy)} onCreate={() => { setNotice(null); setCapture({}) }}
         onDelete={() => { if (policy?.manual) setTransition({ policy, operation: "delete" }) }}
@@ -107,6 +107,6 @@ export function AccountingPolicyCatalogPage() {
       {transition && <DesktopWindowIdentity id={`accounting:${transition.policy.id}:manual:${transition.operation}`}>
         <ManualPolicyTransitionDialog onClose={() => setTransition(null)} onSaved={saved} operation={transition.operation} policy={transition.policy} />
       </DesktopWindowIdentity>}
-    </main>
+    </section>
   )
 }

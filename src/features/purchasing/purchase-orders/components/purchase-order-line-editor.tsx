@@ -255,7 +255,7 @@ export function PurchaseOrderLineEditor({
       <ErpDataDialog defaultWidth={isCreation ? 875 : 682} description={description} title={title}
         onOpenChange={(open) => { if (!open && !disabled) onClose() }}>
         <ErpDataDialogBody>
-          <form className={`grid gap-1.5 ${isCreation ? "min-w-[50rem]" : "min-w-[38rem]"}`}
+          <form className="grid min-w-0 gap-1.5"
             onKeyDown={(event) => {
               if (event.key === "Escape" && !disabled) { event.preventDefault(); event.stopPropagation(); onClose() }
             }}
@@ -272,7 +272,7 @@ export function PurchaseOrderLineEditor({
               } else setConfirmation(submitted)
             })(event) }}>
             {creation?.header(lines.some((line) => !!line.productCode.trim()))}
-            <fieldset className="grid grid-cols-[1.6fr_1fr_2.5rem_1fr_1fr_.8fr_1.2fr] gap-x-1.5 gap-y-1" disabled={disabled || !canCapture}>
+            <fieldset className="grid min-w-0 grid-cols-2 gap-x-1.5 gap-y-1 @min-[26rem]/dialog:grid-cols-3 @min-[39rem]/dialog:grid-cols-[1.6fr_1fr_2.5rem_1fr_1fr_.8fr_1.2fr]" disabled={disabled || !canCapture}>
               <Field label="Producto">
                 <div className="flex gap-0.5">
                   <Input {...productInput} aria-label="Producto" className={`${fieldClass} uppercase`} maxLength={13}
@@ -296,7 +296,7 @@ export function PurchaseOrderLineEditor({
                     moveNext()
                   }
                 }} /></Field>
-              <label className="col-span-5 flex items-center gap-2"><span>Descripción</span>
+              <label className="col-span-full flex min-w-0 items-center gap-2 @min-[39rem]/dialog:col-span-5"><span>Descripción</span>
                 <Input className={`${fieldClass} bg-muted`} readOnly value={current?.description ?? ""} />
               </label>
             </fieldset>
@@ -327,7 +327,7 @@ export function PurchaseOrderLineEditor({
               </Table>
             </ErpDataTableViewport>
             {creation?.footer(lines)}
-            <footer className="flex items-center justify-center gap-1">
+            <footer className="flex flex-wrap items-center justify-center gap-1">
               {isCreation && <Button disabled={disabled || !canCapture || !current?.productCode.trim() || (!!creation?.maxLines && fields.length >= creation.maxLines && selected + 1 >= fields.length)}
                 onClick={moveNext} size="sm" type="button" variant="outline">Siguiente partida</Button>}
               <Button disabled={disabled || !canCapture || pendingLookups > 0 || !!productError || (isCreation && !lines.some((line) => line.productCode.trim() && line.quantity > 0))} size="sm" type="submit">

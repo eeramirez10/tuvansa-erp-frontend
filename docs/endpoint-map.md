@@ -366,7 +366,7 @@ Detalle: [flujo, alcance y validación](ventas-pedidos-alta.md). Rutas relativas
 | Comentarios / T.C. y Moneda de cobro | Recalcular partidas y totales en PESOS o DOLARES | POST `/sales/orders/capture` | conversión local y validación final del backend | order-capture-dialog.tsx |
 | Pedidos / Comentarios / OK | Modificar T.C. o Moneda de cobro después del alta | PATCH `/sales/orders/:id/actions/comments` | updateOrderComments; invalida pedidos | order-panel-dialog.tsx |
 | ¿Continuo? / Sí, No | Nueva captura o abrir resultado | Sin escritura adicional | Reiniciar borrador / detalle del registro | order-capture-dialog.tsx |
-| Pedidos / Cotiz | Alternar Pedido/Cotización | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote; invalida pedidos/productos | order-catalog-page.tsx |
+| Pedidos / Cotiz → OK | Alternar Pedido/Cotización y actualizar el encabezado con el tipo guardado | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote; actualiza la ficha e invalida pedidos/productos | order-catalog-page.tsx |
 
 ### Pedidos: autorización, asignación y cambio de partidas
 
@@ -381,7 +381,7 @@ Implementación 2026-09-17 basada en `ORDERS_*` del reporte `orders-behaviors-ne
 | Pedidos / Autorizar | Clic o Ctrl+A autoriza o desautoriza. El botón indica el estado y se deshabilita durante la operación | POST `/sales/orders/:id/actions/authorization` | `authorized`, `revision` y sesión con permiso `MPED5` | order-catalog-page.tsx |
 | Pedidos / Asignar todo | Clic o Ctrl+P | POST `/sales/orders/:id/actions/assignment` | setOrderAssignment | order-assignment-dialog.tsx |
 | Pedidos / Editar | Clic; selecciona renglones. Tab desde Pzas. agrega/actualiza o elimina si el código quedó vacío y devuelve foco a Código/IEAN | PATCH `/sales/orders/:id` | updateOrder; reemplazo del detalle completo | order-form-dialog.tsx |
-| Pedidos / Cotiz | Clic en Pedido o Cotización | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote | order-catalog-page.tsx |
+| Pedidos / Cotiz | Confirmar con **OK** | POST `/sales/orders/:id/actions/quote-conversion` | toggleOrderQuote | order-catalog-page.tsx |
 
 Las escrituras quedan en PostgreSQL/Neon. La lectura MySQL determina autorización con `PEPAR9='O.K.'`. La interfaz bloquea asignación sin autorización, edición autorizada y desautorización con cantidades asignadas; el servidor repite las validaciones.
 
@@ -400,7 +400,7 @@ La UI guarda una cotización y permite convertirla con Cotiz. El primer OK difie
 | Facturación / Cancelar remisión / Confirmar | Registrar la cancelación | POST `/sales/invoices/:id/actions/cancel-remission` | Envía motivo, fecha, confirmación, UUID y la opción de regenerar el pedido. Actualiza Facturación, Pedidos, Inventarios y Clientes |
 | Facturación / Edita pzas | Abrir Cambio pzas para la partida seleccionada | GET `/sales/invoices/:id/summaries/edit-pieces` | Carga el valor textual y la versión de cada partida |
 | Facturación / Edita pzas / OK | Guardar el valor de la partida | PATCH `/sales/invoices/:id/summaries/edit-pieces/:lineId` | Envía el texto, la versión y un UUID. Actualiza la partida en Facturación y CT |
-| Facturación / Sumarios / Tiket > Factura | Consultar la remisión de origen y el destino FE | GET `/sales/invoices/:id/summaries/ticket-to-invoice` | Muestra el total, el saldo, la moneda y el motivo si la conversión está bloqueada |
+| Facturación / Sumarios / Tiket > Factura | Consultar la remisión de origen y el destino FE | GET `/sales/invoices/:id/summaries/ticket-to-invoice` | Muestra el total, el saldo, la moneda y la fecha de emisión propuesta. Si el ejercicio está cerrado para esa fecha, muestra el motivo y deshabilita Confirmar |
 | Tiket > Factura / Confirmar | Registrar la conversión local | POST `/sales/invoices/:id/summaries/ticket-to-invoice` | Envía la versión y conserva el UUID al reintentar la misma vista previa. Muestra el folio FEW pendiente de timbrar y actualiza Facturación, Clientes, Pedidos e Inventarios |
 | Pedidos / Auxiliar | Abrir folio de la remisión | GET `/sales/orders/:id/actions/auxiliar` | Permite abrir el documento asociado en Facturación |
 | Clientes / Saldo o Movimientos | Consultar el cliente | GET `/accounts-receivable/clients/:id/balance` o `/movements` | Incluye el cargo FA en el saldo del cliente |

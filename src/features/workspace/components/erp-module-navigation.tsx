@@ -151,17 +151,17 @@ export function ErpModuleNavigation() {
     module.path !== undefined && (module.path === paths.accountingPolicies ? location.pathname.startsWith("/contabilidad/") : module.path === paths.inventoryProducts ? location.pathname.startsWith("/inventarios/") : location.pathname.startsWith(module.path))
 
   return (
-    <nav aria-label="Módulos del ERP" className="overflow-x-auto border-b bg-card">
-      <div className="mx-auto grid w-full min-w-[74rem] grid-cols-[200px_minmax(0,1fr)_300px] items-start gap-2 px-2 py-3">
-        <div className="flex h-20 items-center justify-center">
+    <nav aria-label="Módulos del ERP" className="@container/modules w-full min-w-0 border-b bg-card">
+      <div className="grid w-full min-w-0 items-start gap-2 px-2 py-3 @min-[28rem]/modules:grid-cols-[auto_minmax(0,1fr)] @min-[74rem]/modules:grid-cols-[200px_minmax(0,1fr)_300px]">
+        <div className="flex min-w-0 items-center justify-center @min-[74rem]/modules:h-20">
           <InterfaceSizeToggle />
         </div>
-        <div className="flex items-start justify-self-center gap-[6px]">
-          <div className="mt-4 flex w-[120px] shrink-0 flex-col gap-1">
+        <div className="order-last col-span-full flex min-w-0 flex-wrap items-start justify-center gap-x-[6px] @min-[74rem]/modules:order-none @min-[74rem]/modules:col-span-1">
+          <div className="flex w-[120px] max-w-full flex-col gap-1 @min-[74rem]/modules:mt-4">
             <SplitModuleButton left={receptionModule} right={ordersModule} />
           </div>
 
-          <div className="mt-[10px] flex w-[120px] shrink-0 flex-col gap-1">
+          <div className="flex w-[120px] max-w-full flex-col gap-1 @min-[74rem]/modules:mt-[10px]">
             <ModuleButton
               active={isActive(rawMaterialsModule)}
               module={rawMaterialsModule}
@@ -172,7 +172,7 @@ export function ErpModuleNavigation() {
             />
           </div>
 
-          <div className="flex w-[120px] shrink-0 flex-col gap-1">
+          <div className="flex w-[120px] max-w-full flex-col gap-1">
             <ModuleButton
               active={isActive(productionModule)}
               module={productionModule}
@@ -184,7 +184,7 @@ export function ErpModuleNavigation() {
             <ModuleButton active={isActive(bankingModule)} module={bankingModule} />
           </div>
 
-          <div className="mt-[10px] flex w-[120px] shrink-0 flex-col gap-1">
+          <div className="flex w-[120px] max-w-full flex-col gap-1 @min-[74rem]/modules:mt-[10px]">
             <ModuleButton
               active={isActive(finishedProductsModule)}
               module={finishedProductsModule}
@@ -195,12 +195,12 @@ export function ErpModuleNavigation() {
             />
           </div>
 
-          <div className="mt-4 flex w-[120px] shrink-0 flex-col gap-1">
+          <div className="flex w-[120px] max-w-full flex-col gap-1 @min-[74rem]/modules:mt-4">
             <SplitModuleButton left={salesOrdersModule} right={invoicingModule} />
           </div>
         </div>
 
-        <div className="justify-self-end">
+        <div className="w-full max-w-[260px] min-w-0 justify-self-center @min-[28rem]/modules:justify-self-end">
           <ErpModuleRouteCard pathname={location.pathname} />
         </div>
       </div>
