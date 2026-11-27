@@ -46,7 +46,7 @@ function Totals({ header, lines, supplier }: {
     ["Subtotal", money.format(subtotal)], ["Descuento", money.format(subtotal * (1 - discountFactor))],
     ["IEPS", money.format(excise)], ["I.V.A.", money.format(tax)], ["Gran total", money.format(subtotal * discountFactor + charges + tax)],
   ]
-  return <dl className="grid grid-cols-6 gap-1 text-[9px]">
+  return <dl className="grid grid-cols-2 gap-1 text-[9px] @min-[28rem]/dialog:grid-cols-3 @min-[40rem]/dialog:grid-cols-6">
     {values.map(([label, value]) => <div className="rounded-sm border bg-muted/30 px-1" key={label}>
       <dt>{label}</dt><dd className="text-right font-mono">{value}</dd>
     </div>)}
@@ -126,7 +126,7 @@ function CreateDraft({ defaults, warehouse, usedDefaultWarehouse, onClose, onCre
       error={save.isError ? getApiErrorMessage(save.error) : supplierError}
       creation={{
         canCapture, maxLines: defaults.maxLines,
-        header: (hasLines) => <fieldset className="grid grid-cols-7 gap-1.5 rounded-sm border p-1.5" disabled={save.isPending}>
+        header: (hasLines) => <fieldset className="grid min-w-0 grid-cols-2 gap-1.5 rounded-sm border p-1.5 @min-[28rem]/dialog:grid-cols-4 @min-[44rem]/dialog:grid-cols-7" disabled={save.isPending}>
           <Field label="Tipo"><Input className={`${fieldClass} bg-muted`} readOnly value="O" /></Field>
           <Field label="Número"><Input className={`${fieldClass} bg-muted`} readOnly value="Al guardar" /></Field>
           {dateField("Fecha", "orderedAt")}{dateField("Desde", "from", header.orderedAt)}{dateField("Vence", "dueAt", header.from)}
@@ -144,7 +144,7 @@ function CreateDraft({ defaults, warehouse, usedDefaultWarehouse, onClose, onCre
                 size="xs" type="button" variant="outline" onClick={() => openWindow("purchase-orders:create:supplier", supplierCode.trim())}>…</Button>
             </div>
           </Field>
-          <div className="col-span-3"><Field label="Nombre"><Input className={`${fieldClass} bg-muted`} readOnly value={canCapture ? supplier.name : ""} /></Field></div>
+          <div className="col-span-full min-w-0 @min-[44rem]/dialog:col-span-3"><Field label="Nombre"><Input className={`${fieldClass} bg-muted`} readOnly value={canCapture ? supplier.name : ""} /></Field></div>
           <Field label="Clasificador"><Input className={`${fieldClass} uppercase`} maxLength={9} value={header.agent} onChange={(event) => set("agent", event.target.value)} /></Field>
           <Field label="Moneda"><Input className={`${fieldClass} bg-muted`} readOnly value={supplier?.currencyName ?? ""} /></Field>
           <Field label="Plazo"><Input className={`${fieldClass} bg-muted`} readOnly value={supplier?.terms ?? ""} /></Field>
@@ -153,7 +153,7 @@ function CreateDraft({ defaults, warehouse, usedDefaultWarehouse, onClose, onCre
           </p>}
         </fieldset>,
         footer: (lines) => <fieldset className="grid gap-1.5 rounded-sm border p-1.5" disabled={save.isPending}>
-          <div className="grid grid-cols-9 gap-1">
+          <div className="grid grid-cols-2 gap-1 @min-[28rem]/dialog:grid-cols-3 @min-[44rem]/dialog:grid-cols-9">
             {header.discountPercentages.map((rate, index) =>
               <Field key={index} label={`Dto. ${index + 1} %`}><Input className={fieldClass} min={0} max={100} readOnly={defaults.discountLocked}
                 step="0.01" type="number" value={rate} onChange={(event) => {

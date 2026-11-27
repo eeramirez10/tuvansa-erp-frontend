@@ -20,27 +20,27 @@ function Field({ label, fieldValue, className = "", numeric = false }: { label: 
 
 export function AccountingPolicyDetails({ policy }: { policy: AccountingPolicy }) {
   return (
-    <div className="flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
+    <div className="@container/policy flex min-w-0 flex-col gap-2 [font-family:Tahoma,'Segoe_UI',sans-serif]">
       <Card size="sm">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-1 border-b bg-module-accounting/15 py-1">
           <CardTitle>Póliza</CardTitle>
           {policy.manual?.canceled && <span className="text-xs font-medium" role="status">Póliza dada de baja</span>}
         </CardHeader>
-        <CardContent className="grid grid-cols-12 gap-x-2 gap-y-1 py-1">
-          <Field className="col-span-2" label="Documento" fieldValue={policy.number} />
-          <Field className="col-span-2" label="Fecha" fieldValue={policy.date} />
-          <Field className="col-span-2" label="Cheque" fieldValue={policy.cheque} />
-          <Field className="col-span-1" label="MCia" fieldValue={policy.company} />
-          <Field className="col-span-2" label="Origen" fieldValue={policy.origin} />
-          <div className="col-span-1 grid min-w-0 gap-0.5">
+        <CardContent className="grid min-w-0 grid-cols-2 @min-[40rem]/policy:grid-cols-12 gap-x-2 gap-y-1 py-1">
+          <Field className="@min-[40rem]/policy:col-span-2" label="Documento" fieldValue={policy.number} />
+          <Field className="@min-[40rem]/policy:col-span-2" label="Fecha" fieldValue={policy.date} />
+          <Field className="@min-[40rem]/policy:col-span-2" label="Cheque" fieldValue={policy.cheque} />
+          <Field className="@min-[40rem]/policy:col-span-1" label="MCia" fieldValue={policy.company} />
+          <Field className="@min-[40rem]/policy:col-span-2" label="Origen" fieldValue={policy.origin} />
+          <div className="@min-[40rem]/policy:col-span-1 grid min-w-0 gap-0.5">
             <Label className="text-[9px]/none" htmlFor="accounting-policy-applied">Aplicada</Label>
             <div className="flex h-4 items-center px-1"><Checkbox checked={policy.applied} disabled id="accounting-policy-applied" /></div>
           </div>
-          <div className="col-span-2" />
-          <Field className="col-span-5" label="Beneficiario" fieldValue={policy.beneficiary} />
-          <Field className="col-span-3" label="Familia" fieldValue={policy.family} />
-          <div className="col-span-4" />
-          <Field className="col-span-7" label="Concepto" fieldValue={policy.concept} />
+          <div className="hidden @min-[40rem]/policy:block @min-[40rem]/policy:col-span-2" />
+          <Field className="col-span-full @min-[40rem]/policy:col-span-5" label="Beneficiario" fieldValue={policy.beneficiary} />
+          <Field className="@min-[40rem]/policy:col-span-3" label="Familia" fieldValue={policy.family} />
+          <div className="hidden @min-[40rem]/policy:block @min-[40rem]/policy:col-span-4" />
+          <Field className="col-span-full @min-[40rem]/policy:col-span-7" label="Concepto" fieldValue={policy.concept} />
         </CardContent>
       </Card>
 

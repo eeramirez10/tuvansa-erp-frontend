@@ -25,6 +25,8 @@ import {
 import { cn } from "@/shared/utils/cn"
 
 let nextWindowOffset = 0
+const viewportMargin = 12
+const taskbarClearance = 40
 
 function readViewport() {
   const { clientWidth, clientHeight } = document.documentElement
@@ -60,8 +62,8 @@ export function ErpDataDialog({
   const interfaceSize = useAppStore(selectInterfaceSize)
   const interfaceScale = interfaceSize === "large" ? 1.2 : 1
   const [viewport, setViewport] = useState(readViewport)
-  const availableWidth = viewport.width / interfaceScale - 16
-  const availableHeight = viewport.height / interfaceScale - 48
+  const availableWidth = viewport.width / interfaceScale - viewportMargin * 2
+  const availableHeight = viewport.height / interfaceScale - viewportMargin - taskbarClearance
   const defaultWindowWidth = Math.min(defaultWidth, availableWidth)
   const windowId = useDesktopWindowId(
     providedWindowId ?? `erp-window-${generatedWindowId}`,
@@ -81,7 +83,7 @@ export function ErpDataDialog({
   const [position, setPosition] = useState(() => {
     const offset = (nextWindowOffset++ % 7) * 24
     return {
-      x: Math.max(8, (availableWidth - defaultWindowWidth) / 2 + offset),
+      x: viewportMargin + (availableWidth - defaultWindowWidth) / 2 + offset,
       y: 80 + offset,
     }
   })
@@ -117,7 +119,7 @@ export function ErpDataDialog({
     const observer = new ResizeObserver(measure)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [minimized, maximized])
+  }, [availableWidth, availableHeight, minimized, maximized])
 
   useEffect(() => {
     registerWindow(windowId, title)
@@ -134,8 +136,8 @@ export function ErpDataDialog({
     : Math.min(preferredHeight, availableHeight)
   const fittedHeight = height === "auto" ? Math.min(measuredHeight, availableHeight) : height
   const fittedPosition = {
-    x: Math.max(8, Math.min(position.x, 8 + availableWidth - width)),
-    y: Math.max(8, Math.min(position.y, 8 + availableHeight - fittedHeight)),
+    x: Math.max(viewportMargin, Math.min(position.x, viewportMargin + availableWidth - width)),
+    y: Math.max(viewportMargin, Math.min(position.y, viewportMargin + availableHeight - fittedHeight)),
   }
   const toggleMaximized = () => toggleMaximizeWindow(windowId)
   const toneClasses =
@@ -195,7 +197,7 @@ export function ErpDataDialog({
           setPosition(nextPosition)
           setSize({ width: element.offsetWidth, height: element.offsetHeight })
         }}
-        position={maximized ? { x: 8, y: 8 } : fittedPosition}
+        position={maximized ? { x: viewportMargin, y: viewportMargin } : fittedPosition}
         scale={interfaceScale}
         size={
           maximized
@@ -270,7 +272,7 @@ export function ErpDataDialog({
             {description}
           </p>
 
-          <div className={cn("flex min-h-0 flex-1 flex-col overflow-auto", fillHeight && "h-full")}>
+          <div className={cn("@container/dialog flex min-h-0 min-w-0 flex-1 flex-col overflow-auto", fillHeight && "h-full")}>
             {children}
           </div>
         </section>

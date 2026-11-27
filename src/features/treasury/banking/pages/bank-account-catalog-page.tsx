@@ -71,7 +71,7 @@ export function BankAccountCatalogPage({ account }: { account?: BankAccount }) {
     open(saved)
   }
 
-  return <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
+  return <section className="flex w-full min-w-0 flex-1 flex-col gap-2">
     <BankAccountToolbar disabled={navigation.isPending || Boolean(mode) || editor?.mode === "delete"}
       hasAccount={account !== undefined} onCreate={() => start("create")}
       onDelete={() => { if (account) setEditor({ mode: "delete", account }) }}

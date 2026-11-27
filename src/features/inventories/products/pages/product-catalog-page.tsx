@@ -397,7 +397,7 @@ export function ProductCatalogPage() {
   }, [codeError, focusField, saving])
 
   return (
-    <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
+    <section className="flex w-full min-w-0 flex-1 flex-col gap-2">
       <ProductToolbar
         disabled={controlsDisabled}
         editDisabled={!product?.editing?.writable}
@@ -454,8 +454,8 @@ export function ProductCatalogPage() {
         </div>
       )}
 
-      {shownProduct ? <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
-        <aside className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1">
+      {shownProduct ? <div className="grid min-w-0 items-start gap-2 @min-[70rem]/erp:grid-cols-[10rem_minmax(0,1fr)_14rem]">
+        <aside className="grid min-w-0 gap-2 sm:grid-cols-2 @min-[70rem]/erp:grid-cols-1">
           {product && (
             <>
               <ProductPanelButtons hideActions={capturing || Boolean(removing)} onSelect={openQueryPanel}

@@ -97,7 +97,7 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
       <ErpDataDialogBody className="grid gap-1.5">
         <form className="grid gap-1" onSubmit={(event) => { event.preventDefault(); search() }}>
           <div className="overflow-x-auto pb-0.5">
-            <div className="grid min-w-[45rem] grid-cols-[3.4rem_5rem_3.4rem_4.5rem_4.5rem_3.2rem_3rem_3.2rem_3.3rem_3.2rem_3rem] gap-0.5">
+            <div className="grid min-w-0 grid-cols-2 gap-0.5 @min-[27rem]/dialog:grid-cols-4 @min-[45rem]/dialog:grid-cols-[3.4rem_5rem_3.4rem_4.5rem_4.5rem_3.2rem_3rem_3.2rem_3.3rem_3.2rem_3rem]">
               {fields.map((field, index) => (
                 <label className="grid min-w-0 gap-0.5" key={field.key}>
                   <span className="truncate text-[8px]">{field.label}</span>
@@ -159,7 +159,7 @@ export function OrderSearchDialog({ onOpenChange, onSelect }: {
           {submitted !== null && !result.isFetching && !result.isError && result.data?.data.length === 0 && <div className="pointer-events-none absolute inset-0 grid place-items-center pb-4 text-muted-foreground">No se encontraron pedidos.</div>}
         </ErpDataTableViewport>
 
-        <footer className="flex items-center justify-between gap-1">
+        <footer className="flex flex-wrap items-center justify-between gap-1">
           <div className="flex items-center gap-1">
             <Button disabled={page <= 1 || result.isFetching} onClick={() => { setSelected(null); setPage((current) => current - 1) }} size="xs" variant="outline">Anterior</Button>
             <span className="min-w-16 text-center">{submitted === null ? "" : `${page} / ${Math.max(pages, 1)}`}</span>

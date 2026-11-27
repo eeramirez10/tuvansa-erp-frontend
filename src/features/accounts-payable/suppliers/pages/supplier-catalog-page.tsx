@@ -92,7 +92,7 @@ export function SupplierCatalogPage() {
   }
 
   return (
-    <section className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-2">
+    <section className="flex w-full min-w-0 flex-1 flex-col gap-2">
       <SupplierToolbar
         disabled={navigationMutation.isPending || Boolean(activeCapture) || Boolean(removing)}
         hasSupplier={Boolean(supplier)}
@@ -113,7 +113,7 @@ export function SupplierCatalogPage() {
 
       {activeCapture ? (
         <SupplierCatalogCapture onClose={() => setCapture(null)} onSaved={saved} supplier={activeCapture.supplier} />
-      ) : supplier ? <div className="grid min-w-0 items-start gap-2 xl:grid-cols-[10rem_minmax(0,1fr)_14rem]">
+      ) : supplier ? <div className="grid min-w-0 items-start gap-2 @min-[70rem]/erp:grid-cols-[10rem_minmax(0,1fr)_14rem]">
         <aside className="min-w-0"><SupplierPanelButtons onSelect={(panel) => openPanelWindow(`suppliers:${supplier.id}:${panel.key}`, { supplier, panel })} panels={supplierActionPanels} title="Acciones" /></aside>
         <SupplierCatalogDetails supplier={supplier} />
         <aside className="min-w-0"><SupplierPanelButtons onSelect={(panel) => openPanelWindow(`suppliers:${supplier.id}:${panel.key}`, { supplier, panel })} panels={supplierQueryPanels} title="Consultas" /></aside>

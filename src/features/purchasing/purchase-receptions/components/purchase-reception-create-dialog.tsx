@@ -145,7 +145,7 @@ function PurchaseReceptionCreateDraft({ preview, saving, onSubmit, onClose }: {
         : []),
     }))}>
       <fieldset className="grid min-w-0 gap-2" disabled={saving}>
-        <div className="grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)]">
+        <div className="grid gap-1.5 @min-[23rem]/dialog:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)]">
           <label className="grid min-w-0 gap-0.5">
             <span>Almacén</span>
             <select className={fieldClass + " w-full border border-input bg-background"} {...register("warehouse")}>
@@ -178,7 +178,7 @@ function PurchaseReceptionCreateDraft({ preview, saving, onSubmit, onClose }: {
               <span>Capturar datos de importación</span>
             </label>
             {includePedimento && (
-              <fieldset className="grid min-w-0 gap-1.5 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)_7rem]">
+              <fieldset className="grid min-w-0 gap-1.5 @min-[23rem]/dialog:grid-cols-2 @min-[37rem]/dialog:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)_7rem]">
                 <legend className="sr-only">Datos de importación</legend>
                 <label className="grid min-w-0 content-start gap-0.5">
                   <span>No. Pedimento</span>
@@ -290,7 +290,7 @@ function PurchaseReceptionCreateDraft({ preview, saving, onSubmit, onClose }: {
         </ErpDataTableViewport>
         {errors.root?.message && <p className="text-destructive" role="alert">{errors.root.message}</p>}
       </fieldset>
-      <footer className="flex justify-end gap-1.5">
+      <footer className="flex flex-wrap justify-end gap-1.5">
         <Button disabled={saving || selectedCount === 0} size="sm" type="submit">
           {saving && <Spinner />}
           OK

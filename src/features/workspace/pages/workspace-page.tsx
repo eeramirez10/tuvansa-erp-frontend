@@ -9,7 +9,7 @@ import { Badge } from "@/shared/ui/badge"
 
 export function WorkspacePage() {
   return (
-    <section className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-4">
+    <section className="flex w-full min-w-0 flex-1 flex-col gap-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Espacio de trabajo</p>

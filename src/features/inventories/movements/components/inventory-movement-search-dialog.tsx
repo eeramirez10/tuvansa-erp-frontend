@@ -130,7 +130,7 @@ export function InventoryMovementSearchDialog({ onClose, onSelect }: InventoryMo
           }}
           onSubmit={(event) => void submit(event)}
         >
-          <div className="grid grid-cols-7 gap-0.5">
+          <div className="grid grid-cols-2 gap-0.5 @min-[25rem]/dialog:grid-cols-4 @min-[36rem]/dialog:grid-cols-7">
             {movementSearchFields.map(({ key, label }) => (
               <label className="grid min-w-0 gap-0.5" key={key}>
                 <span className="truncate px-1" title={label}>{label}</span>

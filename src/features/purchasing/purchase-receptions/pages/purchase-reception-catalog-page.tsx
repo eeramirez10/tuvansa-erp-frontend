@@ -84,7 +84,7 @@ export function PurchaseReceptionCatalogPage() {
   })
 
   return (
-    <main className="grid min-w-[74rem] grid-cols-[9rem_minmax(0,1fr)] items-start gap-2 p-2">
+    <section className="grid w-full min-w-0 items-start gap-2 p-2 @min-[44rem]/erp:grid-cols-[9rem_minmax(0,1fr)]">
       <PurchaseReceptionToolbar
         disabled={navigation.isPending}
         hasReception={Boolean(reception)}
@@ -145,6 +145,6 @@ export function PurchaseReceptionCatalogPage() {
                 onClose={() => closeActionWindow(windowId)} reception={document} />}
         </DesktopWindowIdentity>
       ))}
-    </main>
+    </section>
   )
 }
