@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentProps,
@@ -24,6 +25,11 @@ import {
 import { cn } from "@/shared/utils/cn"
 
 let nextWindowOffset = 0
+
+function readViewport() {
+  const { clientWidth, clientHeight } = document.documentElement
+  return { width: clientWidth, height: clientHeight }
+}
 
 type ErpDataDialogProps = {
   title: string
@@ -53,8 +59,9 @@ export function ErpDataDialog({
   const generatedWindowId = useId()
   const interfaceSize = useAppStore(selectInterfaceSize)
   const interfaceScale = interfaceSize === "large" ? 1.2 : 1
-  const availableWidth = (window.innerWidth - 16) / interfaceScale
-  const availableHeight = (window.innerHeight - 48) / interfaceScale
+  const [viewport, setViewport] = useState(readViewport)
+  const availableWidth = viewport.width / interfaceScale - 16
+  const availableHeight = viewport.height / interfaceScale - 48
   const defaultWindowWidth = Math.min(defaultWidth, availableWidth)
   const windowId = useDesktopWindowId(
     providedWindowId ?? `erp-window-${generatedWindowId}`,
@@ -79,10 +86,38 @@ export function ErpDataDialog({
     }
   })
   const [size, setSize] = useState<{
-    width: number | string
-    height: number | string
+    width: number
+    height: number
   } | null>(null)
+  const [measuredHeight, setMeasuredHeight] = useState(0)
   const rndRef = useRef<Rnd>(null)
+  const minimized = windowState?.minimized ?? false
+  const maximized = windowState?.maximized ?? false
+
+  useEffect(() => {
+    const updateViewport = () => {
+      const next = readViewport()
+      setViewport(previous => previous.width === next.width && previous.height === next.height ? previous : next)
+    }
+    const observer = new ResizeObserver(updateViewport)
+    observer.observe(document.documentElement)
+    window.addEventListener("resize", updateViewport)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", updateViewport)
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    const element = rndRef.current?.getSelfElement()
+    if (!element || minimized || maximized) return
+
+    const measure = () => setMeasuredHeight(element.offsetHeight)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [minimized, maximized])
 
   useEffect(() => {
     registerWindow(windowId, title)
@@ -90,18 +125,19 @@ export function ErpDataDialog({
     return () => unregisterWindow(windowId)
   }, [focusWindow, registerWindow, title, unregisterWindow, windowId])
 
-  if (windowState?.minimized) return null
+  if (minimized) return null
 
-  const maximized = windowState?.maximized ?? false
-  const toggleMaximized = () => {
-    if (!maximized) {
-      const element = rndRef.current?.getSelfElement()
-      if (element) {
-        setSize({ width: element.offsetWidth, height: element.offsetHeight })
-      }
-    }
-    toggleMaximizeWindow(windowId)
+  const width = Math.min(size?.width ?? defaultWidth, availableWidth)
+  const preferredHeight = size?.height ?? defaultHeight
+  const height = preferredHeight === "auto"
+    ? "auto"
+    : Math.min(preferredHeight, availableHeight)
+  const fittedHeight = height === "auto" ? Math.min(measuredHeight, availableHeight) : height
+  const fittedPosition = {
+    x: Math.max(8, Math.min(position.x, 8 + availableWidth - width)),
+    y: Math.max(8, Math.min(position.y, 8 + availableHeight - fittedHeight)),
   }
+  const toggleMaximized = () => toggleMaximizeWindow(windowId)
   const toneClasses =
     tone === "banking"
       ? "border-module-banking/70"
@@ -130,118 +166,116 @@ export function ErpDataDialog({
   }
 
   return createPortal(
-    <Rnd
-      ref={rndRef}
-      bounds="window"
-      cancel=".erp-window-controls"
-      className={cn(
-        "fixed flex max-h-[calc(100vh-3rem)] !max-w-none flex-col overflow-hidden rounded-sm border bg-muted text-[9px]/none shadow-2xl [font-family:Tahoma,'Segoe_UI',sans-serif]",
-        toneClasses,
-        className,
-        "!max-w-none",
-      )}
-      default={{
-        x: position.x,
-        y: position.y,
-        width: defaultWindowWidth,
-        height: defaultHeight,
-      }}
-      disableDragging={maximized}
-      dragHandleClassName="erp-window-drag-handle"
-      enableResizing={!maximized}
-      maxHeight={availableHeight}
-      maxWidth={availableWidth}
-      minHeight={120}
-      minWidth={320}
-      onDragStart={() => focusWindow(windowId)}
-      onDragStop={(_, data) => setPosition({ x: data.x, y: data.y })}
-      onMouseDown={(event) => {
-        // Portal events also bubble through the parent dialog's React tree.
-        if (rndRef.current?.getSelfElement()?.contains(event.target as Node)) focusWindow(windowId)
-      }}
-      onResizeStart={() => focusWindow(windowId)}
-      onResizeStop={(_, __, element, ___, nextPosition) => {
-        setPosition(nextPosition)
-        setSize({ width: element.offsetWidth, height: element.offsetHeight })
-      }}
-      position={maximized ? { x: 8, y: 8 } : position}
-      scale={interfaceScale}
-      size={
-        maximized
-          ? {
-              width: availableWidth,
-              height: availableHeight,
-            }
-          : (size ?? undefined)
-      }
-      style={{ zIndex: windowState?.zIndex ?? 100 }}
-    >
-      <section
-        aria-describedby={descriptionId}
-        aria-labelledby={titleId}
-        className={cn("flex min-h-0 flex-1 flex-col overflow-auto", fillHeight && "h-full")}
-        onKeyDown={keyboardAction}
-        role="dialog"
+    <div className="pointer-events-none fixed inset-0" style={{ zIndex: windowState?.zIndex ?? 100 }}>
+      <Rnd
+        ref={rndRef}
+        bounds="parent"
+        cancel=".erp-window-controls"
+        className={cn(
+          "pointer-events-auto flex-col overflow-hidden rounded-sm border bg-muted text-[9px]/none shadow-2xl [font-family:Tahoma,'Segoe_UI',sans-serif]",
+          toneClasses,
+          className,
+          "!max-w-none",
+        )}
+        disableDragging={maximized}
+        dragHandleClassName="erp-window-drag-handle"
+        enableResizing={!maximized}
+        maxHeight={availableHeight}
+        maxWidth={availableWidth}
+        minHeight={Math.min(120, availableHeight)}
+        minWidth={Math.min(320, availableWidth)}
+        onDragStart={() => focusWindow(windowId)}
+        onDragStop={(_, data) => setPosition({ x: data.x, y: data.y })}
+        onMouseDown={(event) => {
+          // Portal events also bubble through the parent dialog's React tree.
+          if (rndRef.current?.getSelfElement()?.contains(event.target as Node)) focusWindow(windowId)
+        }}
+        onResizeStart={() => focusWindow(windowId)}
+        onResizeStop={(_, __, element, ___, nextPosition) => {
+          setPosition(nextPosition)
+          setSize({ width: element.offsetWidth, height: element.offsetHeight })
+        }}
+        position={maximized ? { x: 8, y: 8 } : fittedPosition}
+        scale={interfaceScale}
+        size={
+          maximized
+            ? {
+                width: availableWidth,
+                height: availableHeight,
+              }
+            : { width, height }
+        }
+        style={{ display: "flex", maxHeight: availableHeight }}
       >
-        <header
-          className={cn(
-            "erp-window-drag-handle flex h-7 shrink-0 cursor-move items-center justify-between border-b bg-gradient-to-b px-1.5 select-none",
-            tone === "banking"
-              ? "border-module-banking/50 from-module-banking/35 to-module-banking/15"
-              : tone === "payable"
-                ? "border-module-payable/50 from-module-payable/35 to-module-payable/15"
-                : tone === "receivable"
-                  ? "border-module-receivable/50 from-module-receivable/35 to-module-receivable/15"
-                  : tone === "sales"
-                    ? "border-module-sales/50 from-module-sales/35 to-module-sales/15"
-                    : "border-module-inventory/50 from-module-inventory/35 to-module-inventory/15",
-          )}
-          onDoubleClick={toggleMaximized}
+        <section
+          aria-describedby={descriptionId}
+          aria-labelledby={titleId}
+          className="flex min-h-0 flex-1 flex-col"
+          onKeyDown={keyboardAction}
+          role="dialog"
         >
-          <h2 className="truncate text-[10px] font-normal" id={titleId}>
-            {title}
-          </h2>
-          <div className="erp-window-controls flex items-center gap-0.5">
-            <Button
-              aria-label="Minimizar"
-              className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[11px]"
-              onClick={() => minimizeWindow(windowId)}
-              title="Minimizar"
-              type="button"
-              variant="outline"
-            >
-              <span aria-hidden className="-translate-y-0.5">—</span>
-            </Button>
-            <Button
-              aria-label={maximized ? "Restaurar" : "Maximizar"}
-              className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[10px]"
-              onClick={toggleMaximized}
-              title={maximized ? "Restaurar" : "Maximizar"}
-              type="button"
-              variant="outline"
-            >
-              <span aria-hidden>{maximized ? "❐" : "□"}</span>
-            </Button>
-            <Button
-              aria-label="Cerrar"
-              className="h-4.5 w-7 border-destructive/50 bg-destructive/80 p-0 text-[12px] text-white hover:bg-destructive"
-              onClick={() => onOpenChange(false)}
-              title="Cerrar"
-              type="button"
-              variant="destructive"
-            >
-              <span aria-hidden>×</span>
-            </Button>
+          <header
+            className={cn(
+              "erp-window-drag-handle flex h-7 shrink-0 cursor-move items-center justify-between border-b bg-gradient-to-b px-1.5 select-none",
+              tone === "banking"
+                ? "border-module-banking/50 from-module-banking/35 to-module-banking/15"
+                : tone === "payable"
+                  ? "border-module-payable/50 from-module-payable/35 to-module-payable/15"
+                  : tone === "receivable"
+                    ? "border-module-receivable/50 from-module-receivable/35 to-module-receivable/15"
+                    : tone === "sales"
+                      ? "border-module-sales/50 from-module-sales/35 to-module-sales/15"
+                      : "border-module-inventory/50 from-module-inventory/35 to-module-inventory/15",
+            )}
+            onDoubleClick={toggleMaximized}
+          >
+            <h2 className="truncate text-[10px] font-normal" id={titleId}>
+              {title}
+            </h2>
+            <div className="erp-window-controls flex items-center gap-0.5">
+              <Button
+                aria-label="Minimizar"
+                className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[11px]"
+                onClick={() => minimizeWindow(windowId)}
+                title="Minimizar"
+                type="button"
+                variant="outline"
+              >
+                <span aria-hidden className="-translate-y-0.5">—</span>
+              </Button>
+              <Button
+                aria-label={maximized ? "Restaurar" : "Maximizar"}
+                className="h-4.5 w-7 border-foreground/25 bg-background/55 p-0 text-[10px]"
+                onClick={toggleMaximized}
+                title={maximized ? "Restaurar" : "Maximizar"}
+                type="button"
+                variant="outline"
+              >
+                <span aria-hidden>{maximized ? "❐" : "□"}</span>
+              </Button>
+              <Button
+                aria-label="Cerrar"
+                className="h-4.5 w-7 border-destructive/50 bg-destructive/80 p-0 text-[12px] text-white hover:bg-destructive"
+                onClick={() => onOpenChange(false)}
+                title="Cerrar"
+                type="button"
+                variant="destructive"
+              >
+                <span aria-hidden>×</span>
+              </Button>
+            </div>
+          </header>
+
+          <p className="sr-only" id={descriptionId}>
+            {description}
+          </p>
+
+          <div className={cn("flex min-h-0 flex-1 flex-col overflow-auto", fillHeight && "h-full")}>
+            {children}
           </div>
-        </header>
-
-        <p className="sr-only" id={descriptionId}>
-          {description}
-        </p>
-
-        {children}
-      </section>
-    </Rnd>,
+        </section>
+      </Rnd>
+    </div>,
     document.body,
   )
 }
